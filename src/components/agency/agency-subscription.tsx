@@ -203,7 +203,7 @@ export function AgencySubscription() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
@@ -262,7 +262,7 @@ export function AgencySubscription() {
             transition={{ delay: 0.05 + idx * 0.05 }}
           >
             <Card
-              className={`border-0 shadow-sm h-full cursor-pointer transition-all ${
+              className={`border-0 shadow-sm h-full cursor-pointer transition-all bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 ${
                 selectedPlan === plan.id
                   ? 'ring-2 ring-emerald-500 shadow-lg'
                   : 'hover:shadow-md'
@@ -307,7 +307,7 @@ export function AgencySubscription() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
       >
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-emerald-600" />
@@ -402,7 +402,7 @@ export function AgencySubscription() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">{t('transactions')}</CardTitle>
             </CardHeader>

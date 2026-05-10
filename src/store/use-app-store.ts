@@ -13,6 +13,7 @@ export type ViewName =
   | 'customer-history'
   | 'customer-notifications'
   | 'customer-profile'
+  | 'customer-favorites'
   | 'agency-dashboard'
   | 'agency-settings'
   | 'agency-profile'
@@ -21,7 +22,8 @@ export type ViewName =
   | 'admin-transactions'
   | 'admin-agencies'
   | 'admin-audit'
-  | 'admin-users';
+  | 'admin-users'
+  | 'admin-analytics';
 
 interface UserState {
   id: string;

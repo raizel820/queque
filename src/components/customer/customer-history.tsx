@@ -152,7 +152,7 @@ export function CustomerHistory() {
           <button
             key={f.value}
             onClick={() => setFilter(f.value)}
-            className={`px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors min-h-9 ${
+            className={`px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors min-h-9 active:scale-95 ${
               filter === f.value
                 ? 'bg-emerald-600 text-white'
                 : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -184,7 +184,7 @@ export function CustomerHistory() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: idx * 0.03 }}
             >
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">

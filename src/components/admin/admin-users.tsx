@@ -144,7 +144,7 @@ export function AdminUsers() {
       </div>
 
       {/* Search & Filters */}
-      <Card className="border-0 shadow-sm">
+      <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
         <CardContent className="p-4 space-y-3">
           <div className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -226,7 +226,7 @@ export function AdminUsers() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: idx * 0.02 }}
             >
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">

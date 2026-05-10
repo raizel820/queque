@@ -65,6 +65,8 @@ export async function GET(request: NextRequest) {
       isSponsored: agency.isSponsored,
       isQueueOpen: agency.isQueueOpen,
       serviceCount: agency._count.services,
+      workingHoursStart: agency.workingHoursStart,
+      workingHoursEnd: agency.workingHoursEnd,
       isPaused: agency.queueSettings.length > 0 ? agency.queueSettings[0].isPaused : false,
       createdAt: agency.createdAt,
     }))

@@ -369,6 +369,58 @@ const ar = {
   dismissAlert: "فهمت",
   fileTooLarge: "حجم الملف يتجاوز 5 ميغابايت",
   seconds: "ثانية",
+
+  // ─── Admin Analytics ──────────────────
+  analytics: "التحليلات",
+  totalReservationsAll: "إجمالي الحجوزات",
+  avgWaitTimeStat: "متوسط وقت الانتظار",
+  busiestDay: "أزدحم يوم",
+  peakHour: "ساعة الذروة",
+  registrationsTrend: "اتجاه التسجيلات",
+  last14Days: "آخر 14 يوماً",
+  topAgencies: "المؤسسات الأكثر نشاطاً",
+  reservations: "حجوزات",
+  peakHours: "ساعات الذروة",
+  hourly: "بالساعة",
+  noAnalyticsData: "لا توجد بيانات تحليلية",
+
+  // ─── Customer Favorites ──────────────
+  favorites: "المفضلات",
+  favoriteAgency: "إضافة إلى المفضلات",
+  unfavoriteAgency: "إزالة من المفضلات",
+  noFavoritesYet: "لا توجد مؤسسات في المفضلات بعد",
+  noFavoritesDesc: "اضغط على قلب أي مؤسسة لإضافتها إلى المفضلات",
+  joinFromFavorites: "انضم للطابور",
+
+  // ─── Working Hours ──────────────────
+  openUntil: "مفتوح حتى",
+  closedNow: "مغلق حالياً",
+  openFrom: "يفتح من",
+  workingHoursStart: "بداية ساعات العمل",
+  workingHoursEnd: "نهاية ساعات العمل",
+
+  // ─── Notification Preferences ─────────
+  notifPrefs: "إعدادات الإشعارات",
+  notifPrefsDesc: "اختر الإشعارات التي تريد تلقيها",
+  queueCalledNotif: "إشعار الاستدعاء",
+  turnApproachingNotif: "اقتراب الدور",
+  completedNotif: "إتمام الخدمة",
+
+  // ─── Enhanced Register ──────────────
+  algeriaPrefix: "+213",
+  phoneWithPrefix: "رقم الهاتف",
+  agreeTerms: "أوافق على",
+  termsOfService: "شروط الاستخدام",
+  andStr: "و",
+  privacyPolicy: "سياسة الخ隐私",
+  mustAgreeTerms: "يجب الموافقة على الشروط",
+  agencyCodeField: "كود المؤسسة (اختياري)",
+  agencyCodeFieldDesc: "أدخل كود المؤسسة للانضمام كموظف",
+  adminSecretCode: "رمز المدير السري",
+  adminCodeDesc: "مطلوب فقط لإنشاء حساب مدير",
+  invalidAdminCode: "رمز المدير غير صحيح",
+  passwordMinLength: "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+  justNow: "الآن",
 };
 
 export default ar;

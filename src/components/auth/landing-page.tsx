@@ -31,31 +31,22 @@ import {
 
 function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
+  const isInView = useInView(ref, { once: true });
 
-  const numericTarget = target;
-  const prefix = suffix === '+' ? '' : '';
   const displaySuffix = suffix;
 
   return (
     <motion.span
       ref={ref}
       className="tabular-nums"
-      initial={{ opacity: 0, y: 10 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5 }}
     >
-      {isInView ? (
-        <motion.span
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          {prefix}{numericTarget}{displaySuffix}
-        </motion.span>
-      ) : (
-        '0'
-      )}
+      <motion.span
+        initial={{ opacity: 0, y: 10 }}
+        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+        transition={{ duration: 0.5 }}
+      >
+        {target.toLocaleString()}{displaySuffix}
+      </motion.span>
     </motion.span>
   );
 }

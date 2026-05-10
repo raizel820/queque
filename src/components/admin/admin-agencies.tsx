@@ -32,6 +32,7 @@ import {
   Loader2,
   Edit3,
   Filter,
+  Clock,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -44,6 +45,8 @@ interface Agency {
   plan: string;
   status: string;
   createdAt: string;
+  workingHoursStart?: string;
+  workingHoursEnd?: string;
 }
 
 const statusOptions = [
@@ -206,7 +209,7 @@ export function AdminAgencies() {
           ))}
         </div>
       ) : filteredAgencies.length === 0 ? (
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardContent className="py-16 text-center">
             <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground">{t('noData')}</p>
@@ -221,7 +224,7 @@ export function AdminAgencies() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.03 }}
             >
-              <Card className="border-0 shadow-sm">
+              <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="flex items-center gap-3 flex-1">
@@ -249,6 +252,12 @@ export function AdminAgencies() {
                           >
                             {agency.status === 'ACTIVE' ? t('active') : t('inactive')}
                           </Badge>
+                          {agency.workingHoursStart && agency.workingHoursEnd && (
+                            <span className="text-[10px] text-muted-foreground flex items-center gap-0.5" dir="ltr">
+                              <Clock className="h-2.5 w-2.5" />
+                              {agency.workingHoursStart}-{agency.workingHoursEnd}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>

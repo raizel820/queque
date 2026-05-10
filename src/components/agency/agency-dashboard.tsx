@@ -190,11 +190,11 @@ export function AgencyDashboard() {
       <div className="p-4 lg:p-6 space-y-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-2xl" />
+            <Skeleton key={i} className="h-28 rounded-2xl skeleton-shimmer" />
           ))}
         </div>
-        <Skeleton className="h-32 rounded-2xl" />
-        <Skeleton className="h-64 rounded-2xl" />
+        <Skeleton className="h-32 rounded-2xl skeleton-shimmer" />
+        <Skeleton className="h-64 rounded-2xl skeleton-shimmer" />
       </div>
     );
   }
@@ -289,7 +289,7 @@ export function AgencyDashboard() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: idx * 0.05 }}
             >
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+              <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
                 <CardContent className={`p-4 rounded-xl ${stat.color}`}>
                   <div className="flex items-center justify-between mb-2">
                     <div className={`h-8 w-8 rounded-lg ${stat.iconBg} flex items-center justify-center`}>
@@ -307,7 +307,7 @@ export function AgencyDashboard() {
       </div>
 
       {/* Now Serving + Call Next */}
-      <Card className="border-0 shadow-sm overflow-hidden">
+      <Card className="border-0 shadow-sm overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
         <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-5">
           <div className="flex items-center justify-between">
             <div>
@@ -359,7 +359,7 @@ export function AgencyDashboard() {
       </Card>
 
       {/* Waiting List */}
-      <Card className="border-0 shadow-sm">
+      <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="h-4 w-4 text-emerald-600" />

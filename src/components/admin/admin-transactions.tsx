@@ -158,7 +158,7 @@ export function AdminTransactions() {
       <h1 className="text-2xl font-bold text-foreground">{t('pendingPayments')}</h1>
 
       {payments.length === 0 ? (
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardContent className="py-16 text-center">
             <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground">{t('noData')}</p>
@@ -173,7 +173,7 @@ export function AdminTransactions() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.03 }}
             >
-              <Card className="border-0 shadow-sm">
+              <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     {/* Agency Info */}

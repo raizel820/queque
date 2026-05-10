@@ -16,6 +16,7 @@ import { CustomerQueue } from '@/components/customer/customer-queue';
 import { CustomerHistory } from '@/components/customer/customer-history';
 import { CustomerProfile } from '@/components/customer/customer-profile';
 import { CustomerNotifications } from '@/components/customer/customer-notifications';
+import { CustomerFavorites } from '@/components/customer/customer-favorites';
 
 // Agency Views
 import { AgencyDashboard } from '@/components/agency/agency-dashboard';
@@ -29,6 +30,7 @@ import { AdminTransactions } from '@/components/admin/admin-transactions';
 import { AdminAgencies } from '@/components/admin/admin-agencies';
 import { AdminAuditLogs } from '@/components/admin/admin-audit-logs';
 import { AdminUsers } from '@/components/admin/admin-users';
+import { AdminAnalytics } from '@/components/admin/admin-analytics';
 
 // Shared
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
@@ -51,6 +53,8 @@ import {
   Bell,
   ClipboardList,
   Users,
+  Heart,
+  BarChart3,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -75,6 +79,8 @@ function ViewRouter() {
       return <CustomerProfile />;
     case 'customer-notifications':
       return <CustomerNotifications />;
+    case 'customer-favorites':
+      return <CustomerFavorites />;
     case 'agency-dashboard':
       return <AgencyDashboard />;
     case 'agency-settings':
@@ -93,6 +99,8 @@ function ViewRouter() {
       return <AdminAuditLogs />;
     case 'admin-users':
       return <AdminUsers />;
+    case 'admin-analytics':
+      return <AdminAnalytics />;
     default:
       return <LandingPage />;
   }
@@ -107,37 +115,38 @@ function CustomerBottomNav() {
     { view: 'customer-home' as const, icon: HomeIcon, label: t('home') },
     { view: 'customer-queue' as const, icon: TicketCheck, label: t('myQueue') },
     { view: 'customer-history' as const, icon: CalendarDays, label: t('history') },
+    { view: 'customer-favorites' as const, icon: Heart, label: t('favorites') },
     { view: 'customer-profile' as const, icon: User, label: t('profile') },
     { view: 'customer-notifications' as const, icon: Bell, label: t('notifications') },
   ];
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 bg-white/90 dark:bg-gray-950/90 backdrop-blur-lg border-t border-border safe-area-bottom">
+    <nav className="fixed bottom-0 inset-x-0 z-50 bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl safe-area-bottom">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
         {items.map((item) => {
           const active = currentView === item.view;
           const Icon = item.icon;
           return (
-            <button
+            <motion.button
               key={item.view}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
               onClick={() => setView(item.view)}
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors rounded-xl ${
-                active
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
             >
-              <Icon className={`h-5 w-5 transition-transform ${active ? 'scale-110' : ''}`} />
-              <span className={`text-[10px] font-medium ${active ? 'font-semibold' : ''}`}>
-                {item.label}
-              </span>
               {active && (
                 <motion.div
-                  layoutId="customer-nav-indicator"
-                  className="absolute -top-px w-8 h-0.5 bg-emerald-600 dark:bg-emerald-400 rounded-full"
+                  layoutId="customer-nav-dot"
+                  className="absolute -top-0 h-1 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400"
+                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                 />
               )}
-            </button>
+              <Icon className={`h-5 w-5 transition-all duration-200 ${active ? 'scale-110 text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
+              <span className={`text-[10px] font-medium transition-colors ${active ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-muted-foreground'}`}>
+                {item.label}
+              </span>
+            </motion.button>
           );
         })}
       </div>
@@ -165,7 +174,7 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
             <TicketCheck className="h-4 w-4 text-white" />
           </div>
-          <span className="font-bold text-emerald-700 dark:text-emerald-400">QueueWise</span>
+          <span className="font-bold text-gradient">QueueWise</span>
         </div>
         <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -184,12 +193,19 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
                 setView(item.view);
                 onClose();
               }}
-              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 active
-                  ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                  ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
+              {active && (
+                <motion.div
+                  layoutId="agency-sidebar-active"
+                  className="absolute start-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-gradient-to-b from-emerald-500 to-teal-500"
+                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                />
+              )}
               <Icon className="h-5 w-5" />
               {item.label}
             </button>
@@ -197,13 +213,15 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-3 py-4 border-t border-border space-y-2">
+      {/* Divider + Footer */}
+      <div className="mx-3 border-t border-border" />
+      <div className="px-3 py-4 space-y-2">
         <div className="flex items-center gap-2 px-3 py-2">
-          <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+          <div className="relative h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
             <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
               {user?.fullName?.charAt(0)?.toUpperCase() || 'A'}
             </span>
+            <div className="absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-gray-950" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{user?.fullName}</p>
@@ -242,7 +260,7 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
               animate={{ x: 0 }}
               exit={{ x: isRTL(user?.language ?? 'ar') ? '100%' : '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 z-50 w-72 bg-white dark:bg-gray-950 border-e border-border lg:hidden shadow-xl"
+              className="fixed inset-y-0 z-50 w-72 bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl border-e border-border lg:hidden shadow-xl"
             >
               {sidebar}
             </motion.aside>
@@ -251,7 +269,7 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
       </AnimatePresence>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white dark:bg-gray-950 border-e border-border">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl border-e border-border">
         {sidebar}
       </aside>
     </>
@@ -265,6 +283,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
 
   const navItems = [
     { view: 'admin-dashboard' as const, icon: LayoutDashboard, label: t('dashboard') },
+    { view: 'admin-analytics' as const, icon: BarChart3, label: t('analytics') },
     { view: 'admin-transactions' as const, icon: CreditCard, label: t('transactions') },
     { view: 'admin-agencies' as const, icon: Building2, label: t('agencies') },
     { view: 'admin-audit' as const, icon: ClipboardList, label: t('auditLogsPage') },
@@ -278,7 +297,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
             <ShieldCheck className="h-4 w-4 text-white" />
           </div>
-          <span className="font-bold text-emerald-700 dark:text-emerald-400">QueueWise Admin</span>
+          <span className="font-bold text-gradient">QueueWise Admin</span>
         </div>
         <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -296,12 +315,19 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
                 setView(item.view);
                 onClose();
               }}
-              className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 active
-                  ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                  ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
+              {active && (
+                <motion.div
+                  layoutId="admin-sidebar-active"
+                  className="absolute start-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-gradient-to-b from-emerald-500 to-teal-500"
+                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                />
+              )}
               <Icon className="h-5 w-5" />
               {item.label}
             </button>
@@ -309,10 +335,12 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
         })}
       </nav>
 
-      <div className="px-3 py-4 border-t border-border space-y-2">
+      <div className="mx-3 border-t border-border" />
+      <div className="px-3 py-4 space-y-2">
         <div className="flex items-center gap-2 px-3 py-2">
-          <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+          <div className="relative h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
             <ShieldCheck className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+            <div className="absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-gray-950" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{user?.fullName}</p>
@@ -350,7 +378,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
               animate={{ x: 0 }}
               exit={{ x: isRTL(user?.language ?? 'ar') ? '100%' : '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 z-50 w-72 bg-white dark:bg-gray-950 border-e border-border lg:hidden shadow-xl"
+              className="fixed inset-y-0 z-50 w-72 bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl border-e border-border lg:hidden shadow-xl"
             >
               {sidebar}
             </motion.aside>
@@ -358,7 +386,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
         )}
       </AnimatePresence>
 
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white dark:bg-gray-950 border-e border-border">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl border-e border-border">
         {sidebar}
       </aside>
     </>
@@ -411,7 +439,7 @@ export default function Home() {
       <main className={`flex-1 min-w-0 ${isAgency || isAdmin ? 'lg:ms-64' : ''}`}>
         {/* Top bar for agency/admin */}
         {(isAgency || isAdmin) && (
-          <header className="sticky top-0 z-30 h-16 bg-white/90 dark:bg-gray-950/90 backdrop-blur-lg border-b border-border flex items-center justify-between px-4">
+          <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-4">
             <Button variant="ghost" size="icon" className="lg:hidden h-10 w-10" onClick={toggleSidebar}>
               <Menu className="h-5 w-5" />
             </Button>

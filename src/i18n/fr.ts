@@ -371,6 +371,58 @@ const fr: Record<TranslationKeys, string> = {
   dismissAlert: "Compris",
   fileTooLarge: "La taille du fichier dépasse 5 Mo",
   seconds: "Seconde",
+
+  // ─── Admin Analytics ──────────────────
+  analytics: "Analytique",
+  totalReservationsAll: "Total des réservations",
+  avgWaitTimeStat: "Temps d'attente moyen",
+  busiestDay: "Jour le plus chargé",
+  peakHour: "Heure de pointe",
+  registrationsTrend: "Tendance des inscriptions",
+  last14Days: "14 derniers jours",
+  topAgencies: "Établissements les plus actifs",
+  reservations: "Réservations",
+  peakHours: "Heures de pointe",
+  hourly: "Par heure",
+  noAnalyticsData: "Aucune donnée analytique",
+
+  // ─── Customer Favorites ──────────────
+  favorites: "Favoris",
+  favoriteAgency: "Ajouter aux favoris",
+  unfavoriteAgency: "Retirer des favoris",
+  noFavoritesYet: "Aucun favori pour le moment",
+  noFavoritesDesc: "Appuyez sur le cœur d'un établissement pour l'ajouter aux favoris",
+  joinFromFavorites: "Rejoindre la file",
+
+  // ─── Working Hours ──────────────────
+  openUntil: "Ouvert jusqu'à",
+  closedNow: "Fermé actuellement",
+  openFrom: "Ouvert à partir de",
+  workingHoursStart: "Début des heures d'ouverture",
+  workingHoursEnd: "Fin des heures d'ouverture",
+
+  // ─── Notification Preferences ─────────
+  notifPrefs: "Préférences de notification",
+  notifPrefsDesc: "Choisissez les notifications que vous souhaitez recevoir",
+  queueCalledNotif: "Notification d'appel",
+  turnApproachingNotif: "Tour approchant",
+  completedNotif: "Service terminé",
+
+  // ─── Enhanced Register ──────────────
+  algeriaPrefix: "+213",
+  phoneWithPrefix: "Numéro de téléphone",
+  agreeTerms: "J'accepte les",
+  termsOfService: "Conditions d'utilisation",
+  andStr: "et",
+  privacyPolicy: "Politique de confidentialité",
+  mustAgreeTerms: "Vous devez accepter les conditions",
+  agencyCodeField: "Code de l'établissement (optionnel)",
+  agencyCodeFieldDesc: "Entrez le code pour rejoindre en tant qu'employé",
+  adminSecretCode: "Code secret admin",
+  adminCodeDesc: "Requis uniquement pour créer un compte admin",
+  invalidAdminCode: "Code admin invalide",
+  passwordMinLength: "Le mot de passe doit contenir au moins 6 caractères",
+  justNow: "à l'instant",
 };
 
 export default fr;

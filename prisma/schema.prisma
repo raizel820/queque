@@ -20,6 +20,7 @@ model User {
   language     String   @default("ar")       // ar | fr | en
   avatarUrl    String?
   freeSmsCount Int      @default(10)
+  notificationPreferences String @default("{\"queue_called\":true,\"turn_approaching\":true,\"completed\":true}")
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -32,6 +33,7 @@ model User {
   auditLogs       AuditLog[]
   notifications   Notification[]
   managedTransactions Transaction[] @relation("ReviewedBy")
+  favorites        Favorite[]
 }
 
 // ─── Agency Model ─────────────────────────────────────────
@@ -58,6 +60,8 @@ model Agency {
   isSponsored        Boolean  @default(false)
   subscriptionTier   String   @default("BASIC")  // BASIC | PREMIUM
   subscriptionStatus String   @default("INACTIVE") // ACTIVE | INACTIVE | SUSPENDED | PENDING
+  workingHoursStart  String   @default("08:00")
+  workingHoursEnd    String   @default("17:00")
   isQueueOpen        Boolean  @default(true)
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
@@ -69,6 +73,7 @@ model Agency {
   staff         AgencyStaff[]
   transactions  Transaction[]
   queueSettings QueueSettings[]
+  favorites     Favorite[]
   owner         User          @relation(fields: [ownerId], references: [id])
   ownerId       String
 }
@@ -189,6 +194,19 @@ model Notification {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId, isRead])
+}
+
+// ─── Favorite ───────────────────────────────────────────
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  agencyId   String
+  createdAt  DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  agency Agency @relation(fields: [agencyId], references: [id])
+
+  @@unique([userId, agencyId])
 }
 
 // ─── Audit Log ────────────────────────────────────────────

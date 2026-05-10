@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -16,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { TicketCheck, ArrowLeft, Loader2, Eye, EyeOff, UserPlus } from 'lucide-react';
+import { TicketCheck, ArrowLeft, Loader2, Eye, EyeOff, UserPlus, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import type { UserRole } from '@/store/use-app-store';
@@ -30,14 +31,28 @@ export function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [role, setRole] = useState<UserRole>('CUSTOMER');
+  const [agencyCode, setAgencyCode] = useState('');
+  const [adminCode, setAdminCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleRegister = async () => {
+    // Validation
     if (!username.trim() || !fullName.trim() || !password.trim()) {
       toast.error(t('requiredField'));
+      return;
+    }
+
+    if (username.trim().length < 3) {
+      toast.error(t('username') + ' - min 3');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error(t('passwordMinLength'));
       return;
     }
 
@@ -46,23 +61,39 @@ export function RegisterForm() {
       return;
     }
 
-    if (password.length < 4) {
-      toast.error(t('password'));
+    if (!agreeTerms) {
+      toast.error(t('mustAgreeTerms'));
+      return;
+    }
+
+    if (role === 'SUPER_ADMIN' && !adminCode.trim()) {
+      toast.error(t('adminSecretCode'));
       return;
     }
 
     setLoading(true);
     try {
+      const body: Record<string, string> = {
+        username: username.trim(),
+        fullName: fullName.trim(),
+        password,
+        role,
+      };
+
+      if (phoneNumber.trim()) {
+        body.phoneNumber = phoneNumber.trim();
+      }
+      if (agencyCode.trim() && (role === 'AGENCY_STAFF' || role === 'AGENCY_OWNER')) {
+        body.agencyCode = agencyCode.trim().toUpperCase();
+      }
+      if (role === 'SUPER_ADMIN') {
+        body.adminCode = adminCode.trim();
+      }
+
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: username.trim(),
-          fullName: fullName.trim(),
-          password,
-          phoneNumber: phoneNumber.trim() || undefined,
-          role,
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -84,7 +115,7 @@ export function RegisterForm() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Background gradient + decorative pattern */}
+      {/* Background gradient */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/20" />
         <div
@@ -130,7 +161,6 @@ export function RegisterForm() {
           transition={{ duration: 0.4 }}
           className="w-full max-w-md"
         >
-          {/* Glow behind card when focused */}
           <div className={`relative transition-all duration-700 ${isFocused ? 'scale-[1.01]' : ''}`}>
             <div
               className={`absolute -inset-1 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-teal-400/20 dark:from-emerald-500/10 dark:to-teal-500/10 blur-xl transition-opacity duration-700 ${isFocused ? 'opacity-100' : 'opacity-0'}`}
@@ -149,7 +179,7 @@ export function RegisterForm() {
                   {t('register')}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 pt-4">
+              <CardContent className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
                 {/* Role Selector */}
                 <div className="space-y-2">
                   <Label>{t('selectRole')}</Label>
@@ -161,6 +191,12 @@ export function RegisterForm() {
                       <SelectItem value="CUSTOMER">{t('loginAsCustomer')}</SelectItem>
                       <SelectItem value="AGENCY_STAFF">{t('loginAsAgency')} (Staff)</SelectItem>
                       <SelectItem value="AGENCY_OWNER">{t('loginAsAgency')} (Owner)</SelectItem>
+                      <SelectItem value="SUPER_ADMIN">
+                        <span className="flex items-center gap-2">
+                          <Shield className="h-3.5 w-3.5" />
+                          {t('loginAsAdmin')}
+                        </span>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -190,6 +226,27 @@ export function RegisterForm() {
                     onBlur={() => setFocusedField(null)}
                     className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
                   />
+                </div>
+
+                {/* Phone with Algeria prefix */}
+                <div className="space-y-2">
+                  <Label htmlFor="reg-phone">{t('phoneWithPrefix')}</Label>
+                  <div className="flex gap-2">
+                    <div className="flex items-center h-12 px-3 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-muted-foreground flex-shrink-0" dir="ltr">
+                      {t('algeriaPrefix')}
+                    </div>
+                    <Input
+                      id="reg-phone"
+                      type="tel"
+                      placeholder="05XX XXX XXX"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      onFocus={() => setFocusedField('phone')}
+                      onBlur={() => setFocusedField(null)}
+                      className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+                      dir="ltr"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -242,19 +299,57 @@ export function RegisterForm() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="reg-phone">{t('phoneOptional')}</Label>
-                  <Input
-                    id="reg-phone"
-                    type="tel"
-                    placeholder="05XX XXX XXX"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    onFocus={() => setFocusedField('phone')}
-                    onBlur={() => setFocusedField(null)}
-                    className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                    dir="ltr"
+                {/* Agency code (for staff/owner) */}
+                {(role === 'AGENCY_STAFF' || role === 'AGENCY_OWNER') && (
+                  <div className="space-y-2">
+                    <Label htmlFor="reg-agency-code">{t('agencyCodeField')}</Label>
+                    <Input
+                      id="reg-agency-code"
+                      placeholder={t('agencyCodePlaceholder')}
+                      value={agencyCode}
+                      onChange={(e) => setAgencyCode(e.target.value)}
+                      onFocus={() => setFocusedField('agency-code')}
+                      onBlur={() => setFocusedField(null)}
+                      className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+                      dir="ltr"
+                    />
+                    <p className="text-xs text-muted-foreground">{t('agencyCodeFieldDesc')}</p>
+                  </div>
+                )}
+
+                {/* Admin secret code */}
+                {role === 'SUPER_ADMIN' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="reg-admin-code">{t('adminSecretCode')}</Label>
+                    <Input
+                      id="reg-admin-code"
+                      type="password"
+                      placeholder="••••••••"
+                      value={adminCode}
+                      onChange={(e) => setAdminCode(e.target.value)}
+                      onFocus={() => setFocusedField('admin-code')}
+                      onBlur={() => setFocusedField(null)}
+                      className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+                      dir="ltr"
+                    />
+                    <p className="text-xs text-muted-foreground">{t('adminCodeDesc')}</p>
+                  </div>
+                )}
+
+                {/* Terms checkbox */}
+                <div className="flex items-start gap-3 pt-1">
+                  <Checkbox
+                    id="reg-terms"
+                    checked={agreeTerms}
+                    onCheckedChange={(checked) => setAgreeTerms(checked === true)}
+                    className="mt-0.5"
                   />
+                  <label htmlFor="reg-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                    {t('agreeTerms')}{' '}
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t('termsOfService')}</span>{' '}
+                    {t('andStr')}{' '}
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t('privacyPolicy')}</span>
+                  </label>
                 </div>
               </CardContent>
               <CardFooter className="flex-col gap-4 pt-2 pb-6">

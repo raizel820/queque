@@ -371,6 +371,58 @@ const en: Record<TranslationKeys, string> = {
   dismissAlert: "Got it",
   fileTooLarge: "File size exceeds 5 MB limit",
   seconds: "Seconds",
+
+  // ─── Admin Analytics ──────────────────
+  analytics: "Analytics",
+  totalReservationsAll: "Total Reservations",
+  avgWaitTimeStat: "Avg. Wait Time",
+  busiestDay: "Busiest Day",
+  peakHour: "Peak Hour",
+  registrationsTrend: "Registrations Trend",
+  last14Days: "Last 14 days",
+  topAgencies: "Top Agencies",
+  reservations: "Reservations",
+  peakHours: "Peak Hours",
+  hourly: "Hourly",
+  noAnalyticsData: "No analytics data available",
+
+  // ─── Customer Favorites ──────────────
+  favorites: "Favorites",
+  favoriteAgency: "Add to Favorites",
+  unfavoriteAgency: "Remove from Favorites",
+  noFavoritesYet: "No favorites yet",
+  noFavoritesDesc: "Tap the heart on any agency to add it to your favorites",
+  joinFromFavorites: "Join Queue",
+
+  // ─── Working Hours ──────────────────
+  openUntil: "Open Until",
+  closedNow: "Currently Closed",
+  openFrom: "Open From",
+  workingHoursStart: "Working Hours Start",
+  workingHoursEnd: "Working Hours End",
+
+  // ─── Notification Preferences ─────────
+  notifPrefs: "Notification Preferences",
+  notifPrefsDesc: "Choose which notifications you want to receive",
+  queueCalledNotif: "Called Notification",
+  turnApproachingNotif: "Turn Approaching",
+  completedNotif: "Completed",
+
+  // ─── Enhanced Register ──────────────
+  algeriaPrefix: "+213",
+  phoneWithPrefix: "Phone Number",
+  agreeTerms: "I agree to the",
+  termsOfService: "Terms of Service",
+  andStr: "and",
+  privacyPolicy: "Privacy Policy",
+  mustAgreeTerms: "You must agree to the terms",
+  agencyCodeField: "Agency Code (optional)",
+  agencyCodeFieldDesc: "Enter agency code to join as staff",
+  adminSecretCode: "Secret Admin Code",
+  adminCodeDesc: "Required only for admin account creation",
+  invalidAdminCode: "Invalid admin code",
+  passwordMinLength: "Password must be at least 6 characters",
+  justNow: "just now",
 };
 
 export default en;

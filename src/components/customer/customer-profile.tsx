@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -29,6 +30,8 @@ import {
   Sun,
   Moon,
   Palette,
+  Bell,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -44,11 +47,64 @@ export function CustomerProfile() {
   const [phoneNumber, setPhoneNumber] = useState(user?.username === 'demo' ? '' : '');
   const [savingPhone, setSavingPhone] = useState(false);
 
+  // Notification preferences state
+  const [notifPrefs, setNotifPrefs] = useState({
+    queue_called: true,
+    turn_approaching: true,
+    completed: true,
+  });
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [notifSaving, setNotifSaving] = useState(false);
+
   const handleLanguageChange = (newLang: string) => {
     const langTyped = newLang as Language;
     updateDocumentDirection(langTyped);
     if (user) {
       setUser({ ...user, language: langTyped });
+    }
+  };
+
+  // Fetch notification preferences
+  const fetchNotifPrefs = async () => {
+    if (!user?.id) return;
+    setNotifLoading(true);
+    try {
+      const res = await fetch(`/api/user/profile?userId=${user.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.notificationPreferences) {
+          setNotifPrefs(typeof data.notificationPreferences === 'string'
+            ? JSON.parse(data.notificationPreferences)
+            : data.notificationPreferences);
+        }
+      }
+    } catch {
+      // silent
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifPrefs();
+  }, []);
+
+  const saveNotifPrefs = async () => {
+    if (!user?.id) return;
+    setNotifSaving(true);
+    try {
+      const res = await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, preferences: notifPrefs }),
+      });
+      if (res.ok) {
+        toast.success(t('success'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setNotifSaving(false);
     }
   };
 
@@ -99,7 +155,7 @@ export function CustomerProfile() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <Card className="border-0 shadow-sm mb-4 overflow-hidden">
+        <Card className="border-0 shadow-sm mb-4 overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           {/* Top gradient banner */}
           <div className="h-20 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 relative" />
           <CardContent className="p-5 -mt-10 relative">
@@ -139,13 +195,58 @@ export function CustomerProfile() {
         </Card>
       </motion.div>
 
-      {/* Phone Number */}
+      {/* Notification Preferences */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
       >
         <Card className="border-0 shadow-sm mb-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Bell className="h-4 w-4 text-emerald-600" />
+              {t('notifPrefs')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-xs text-muted-foreground mb-4">{t('notifPrefsDesc')}</p>
+            <div className="space-y-4">
+              {[
+                { key: 'queue_called' as const, label: t('queueCalledNotif') },
+                { key: 'turn_approaching' as const, label: t('turnApproachingNotif') },
+                { key: 'completed' as const, label: t('completedNotif') },
+              ].map((item) => (
+                <div key={item.key} className="flex items-center justify-between">
+                  <Label className="text-sm text-foreground">{item.label}</Label>
+                  <Switch
+                    checked={notifPrefs[item.key]}
+                    onCheckedChange={(checked) =>
+                      setNotifPrefs((prev) => ({ ...prev, [item.key]: checked }))
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+            <Button
+              size="sm"
+              className="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-10"
+              onClick={saveNotifPrefs}
+              disabled={notifSaving || notifLoading}
+            >
+              {notifSaving ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Check className="h-4 w-4 me-2" />}
+              {t('save')}
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Phone Number */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+      >
+        <Card className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Phone className="h-4 w-4 text-emerald-600" />
@@ -181,7 +282,7 @@ export function CustomerProfile() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="border-0 shadow-sm mb-4">
+        <Card className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-emerald-600" />
@@ -237,7 +338,7 @@ export function CustomerProfile() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
       >
-        <Card className="border-0 shadow-sm mb-4">
+        <Card className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <LanguageSwitcher />
@@ -265,7 +366,7 @@ export function CustomerProfile() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <Card className="border-0 shadow-sm mb-4">
+        <Card className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Palette className="h-4 w-4 text-emerald-600" />
@@ -298,7 +399,7 @@ export function CustomerProfile() {
                     : 'border-border hover:border-emerald-200'
                 }`}
               >
-                <Moon className="h-5 w-5 mx-auto mb-1.5 text-indigo-400" />
+                <Moon className="h-5 w-5 mx-auto mb-1.5 text-slate-400" />
                 <span className="text-xs font-medium">{t('darkMode')}</span>
               </motion.button>
             </div>

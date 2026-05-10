@@ -23,6 +23,7 @@ import {
   Loader2,
   TicketCheck,
   Clock,
+  Heart,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -39,6 +40,8 @@ interface AgencyListItem {
   customCode: string;
   isQueueOpen: boolean;
   serviceCount: number;
+  workingHoursStart?: string;
+  workingHoursEnd?: string;
 }
 
 interface AgencyDetail {
@@ -54,6 +57,8 @@ interface AgencyDetail {
   isPaused: boolean;
   currentServingNumber: number;
   lastIssuedNumber: number;
+  workingHoursStart?: string;
+  workingHoursEnd?: string;
   services: { id: string; name: string; nameAr?: string; nameFr?: string; waitingCount: number }[];
 }
 
@@ -77,9 +82,28 @@ export function CustomerHome() {
   const [agencyCode, setAgencyCode] = useState('');
   const [selectedAgency, setSelectedAgency] = useState<AgencyDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [togglingFav, setTogglingFav] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAgencies();
+  }, []);
+
+  const fetchFavorites = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch(`/api/favorites?userId=${user.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFavoriteIds(new Set((data.favorites ?? []).map((f: { agencyId: string }) => f.agencyId)));
+      }
+    } catch {
+      // silent
+    }
+  };
+
+  useEffect(() => {
+    fetchFavorites();
   }, []);
 
   const fetchAgencies = async () => {
@@ -193,6 +217,42 @@ export function CustomerHome() {
 
   const getCategoryValue = (cat: string) => cat.toUpperCase();
 
+  const toggleFavorite = async (e: React.MouseEvent, agencyId: string) => {
+    e.stopPropagation();
+    if (!user?.id) return;
+    setTogglingFav(agencyId);
+    try {
+      const res = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, agencyId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          if (data.favorited) next.add(agencyId);
+          else next.delete(agencyId);
+          return next;
+        });
+        toast.success(data.favorited ? t('favoriteAgency') : t('unfavoriteAgency'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setTogglingFav(null);
+    }
+  };
+
+  const isOpenNow = (start: string, end: string) => {
+    if (!start || !end) return null;
+    const now = new Date();
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    const cur = now.getHours() * 60 + now.getMinutes();
+    return cur >= sh * 60 + sm && cur < eh * 60 + em;
+  };
+
   // Agency Detail View
   if (loadingDetail) {
     return (
@@ -218,7 +278,7 @@ export function CustomerHome() {
           ← {t('back')}
         </button>
 
-        <Card className="shadow-lg border-0 mb-4 overflow-hidden">
+        <Card className="shadow-lg border-0 mb-4 overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <div className="h-32 bg-gradient-to-r from-emerald-500 to-teal-600" />
           <CardContent className="p-4 -mt-10">
             <div className="h-16 w-16 rounded-2xl bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center mb-3 border-4 border-white dark:border-gray-800">
@@ -245,6 +305,27 @@ export function CustomerHome() {
               >
                 {selectedAgency.isPaused ? t('paused') : selectedAgency.isQueueOpen ? t('openNow') : t('closed')}
               </Badge>
+              {selectedAgency.workingHoursStart && selectedAgency.workingHoursEnd && (() => {
+                const open = isOpenNow(selectedAgency.workingHoursStart, selectedAgency.workingHoursEnd);
+                return (
+                  <Badge
+                    variant="outline"
+                    className={
+                      open
+                        ? 'text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
+                        : 'text-[10px] bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200'
+                    }
+                  >
+                    <Clock className="h-2.5 w-2.5 me-1" />
+                    {open
+                      ? `${t('openUntil')} ${selectedAgency.workingHoursEnd}`
+                      : selectedAgency.isPaused
+                        ? t('paused')
+                        : `${t('closedNow')} · ${t('openFrom')} ${selectedAgency.workingHoursStart}`
+                    }
+                  </Badge>
+                );
+              })()}
             </div>
 
             {/* Queue Info */}
@@ -331,7 +412,7 @@ export function CustomerHome() {
           placeholder={t('searchAgency')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="ps-11 h-12 text-base rounded-xl bg-white dark:bg-gray-900 shadow-sm border-gray-200 dark:border-gray-800"
+          className="ps-11 h-12 text-base rounded-xl bg-white dark:bg-gray-900/80 shadow-sm border-gray-200 dark:border-gray-800 dark:backdrop-blur-sm"
         />
       </div>
 
@@ -363,7 +444,7 @@ export function CustomerHome() {
             <button
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all min-h-9 ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all min-h-9 active:scale-95 ${
                 selectedCategory === cat.value
                   ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/25'
                   : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
@@ -381,7 +462,7 @@ export function CustomerHome() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="relative overflow-hidden rounded-2xl">
-              <Skeleton className="h-40 rounded-2xl" />
+              <Skeleton className="h-40 rounded-2xl skeleton-shimmer" />
               <div className="absolute inset-0 shimmer rounded-2xl" />
             </div>
           ))}
@@ -403,7 +484,7 @@ export function CustomerHome() {
               className="group"
             >
               <Card
-                className="h-full cursor-pointer border-0 shadow-sm hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 group-hover:border-emerald-200 dark:group-hover:border-emerald-800"
+                className="h-full cursor-pointer border-0 shadow-sm hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-200 hover:-translate-y-0.5 group-hover:border-emerald-200 dark:group-hover:border-emerald-800 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50"
                 onClick={() => handleSelectAgency(agency)}
               >
                 <CardContent className="p-4">
@@ -444,7 +525,21 @@ export function CustomerHome() {
                     <Badge variant="secondary" className="text-[10px]">
                       {getCategoryLabel(agency.category)}
                     </Badge>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      {/* Heart favorite button */}
+                      <button
+                        onClick={(e) => toggleFavorite(e, agency.id)}
+                        disabled={togglingFav === agency.id}
+                        className="h-7 w-7 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                      >
+                        {togglingFav === agency.id ? (
+                          <Loader2 className="h-3.5 w-3.5 text-red-500 animate-spin" />
+                        ) : favoriteIds.has(agency.id) ? (
+                          <Heart className="h-3.5 w-3.5 text-red-500 fill-red-500" />
+                        ) : (
+                          <Heart className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
+                        )}
+                      </button>
                       {/* Mini waiting count badge */}
                       {agency.isQueueOpen && (
                         <motion.div

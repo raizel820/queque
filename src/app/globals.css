@@ -182,8 +182,67 @@ html {
 button, a, [role="button"], .cursor-pointer, [onclick] {
   transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.15s ease;
 }
-button:active, a:active, [role="button"]:active {
-  transform: scale(0.98);
+
+/* ─── Button active scale ──────────────────── */
+button:active, [role="button"]:active {
+  transform: scale(0.97);
+}
+button, [role="button"] {
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.15s ease;
+}
+
+/* ─── Card hover lift ──────────────────────── */
+.card-hover-lift {
+  @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+}
+
+/* ─── Input focus emerald glow ─────────────── */
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+  transition: box-shadow 0.2s ease;
+}
+
+/* ─── Skeleton shimmer ─────────────────────── */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.08) 50%, hsl(var(--muted)) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+/* ─── Card elevated shadow ─────────────────── */
+.card-elevated {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 4px 6px -1px rgb(0 0 0 / 0.03);
+}
+
+/* ─── Sonner/Toast custom overrides ────────── */
+[data-sonner-toast][data-type="success"] {
+  --normal-bg: #ecfdf5 !important;
+  --normal-border: #a7f3d0 !important;
+  --normal-text: #065f46 !important;
+}
+.dark [data-sonner-toast][data-type="success"] {
+  --normal-bg: #064e3b !important;
+  --normal-border: #065f46 !important;
+  --normal-text: #a7f3d0 !important;
+}
+[data-sonner-toast][data-type="error"] {
+  --normal-bg: #fef2f2 !important;
+  --normal-border: #fecaca !important;
+  --normal-text: #991b1b !important;
+}
+.dark [data-sonner-toast][data-type="error"] {
+  --normal-bg: #7f1d1d !important;
+  --normal-border: #991b1b !important;
+  --normal-text: #fecaca !important;
+}
+[data-sonner-toast] {
+  border-radius: 14px !important;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.08), 0 1px 3px rgb(0 0 0 / 0.06) !important;
+  padding: 14px 16px !important;
 }
 
 /* ─── Animated gradient for hero ───────────── */
@@ -216,12 +275,10 @@ button:active, a:active, [role="button"]:active {
 
 /* ─── Text gradient ────────────────────────── */
 .text-gradient {
-  background: linear-gradient(135deg, #059669, #0d9488, #059669);
-  background-size: 200% 200%;
+  background: linear-gradient(135deg, #059669, #0d9488);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: gradient-shift 4s ease-in-out infinite;
 }
 
 /* ─── Shimmer loading effect ───────────────── */
@@ -257,6 +314,11 @@ button:active, a:active, [role="button"]:active {
 @keyframes count-up {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes badge-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.2); }
+  50% { box-shadow: 0 0 8px 2px rgba(16, 185, 129, 0.15); }
 }
 
 .animate-count-up {

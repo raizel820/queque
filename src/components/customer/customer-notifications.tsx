@@ -194,7 +194,7 @@ export function CustomerNotifications() {
                   exit={{ opacity: 0, x: 20, scale: 0.95, transition: { duration: 0.2 } }}
                   transition={{ duration: 0.25, delay: idx * 0.03 }}
                 >
-                  <Card className={`border-0 shadow-sm overflow-hidden border-s-4 ${config.color} ${!notif.isRead ? 'bg-emerald-50/30 dark:bg-emerald-900/5' : ''}`}>
+                  <Card className={`border-0 shadow-sm overflow-hidden border-s-4 ${config.color} ${!notif.isRead ? 'bg-emerald-50/30 dark:bg-emerald-900/5' : ''} ${idx === 0 && !notif.isRead ? 'bg-gradient-to-r from-emerald-50/50 to-teal-50/30 dark:from-emerald-950/30 dark:to-teal-950/20' : ''} bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md`}>
                     <CardContent className="p-4 flex items-start gap-3">
                       <div className={`flex-shrink-0 h-9 w-9 rounded-lg ${config.iconBg} flex items-center justify-center mt-0.5`}>
                         <IconComponent className={`h-4 w-4 ${config.iconColor}`} />
@@ -214,7 +214,15 @@ export function CustomerNotifications() {
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{notif.message}</p>
                         <p className="text-[10px] text-muted-foreground/60 mt-1.5">
-                          {new Date(notif.createdAt).toLocaleString()}
+                          {(() => {
+                            const diff = Date.now() - new Date(notif.createdAt).getTime();
+                            const mins = Math.floor(diff / 60000);
+                            if (mins < 1) return t('justNow') || 'just now';
+                            if (mins < 60) return `${mins} ${t('minutesLabel') || 'min'} ago`;
+                            const hours = Math.floor(mins / 60);
+                            if (hours < 24) return `${hours} ${t('hours') || 'hour'} ago`;
+                            return new Date(notif.createdAt).toLocaleString();
+                          })()}
                         </p>
                       </div>
                       <button

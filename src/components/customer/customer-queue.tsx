@@ -62,10 +62,10 @@ export function CustomerQueue() {
             id: r.id,
             queueNumber: r.displayNumber || `${r.queueNumber}`,
             status: r.status,
-            position: 0,
-            peopleAhead: 0,
-            estimatedWait: r.estimatedWait || 0,
-            currentServingNumber: '0',
+            position: (r.position as number) || 0,
+            peopleAhead: (r.peopleAhead as number) || 0,
+            estimatedWait: (r.estimatedWait as number) || 0,
+            currentServingNumber: (r.currentServingNumber as string) || '0',
             agencyName: agency?.name || 'Agency',
             agencyNameAr: agency?.nameAr,
             agencyNameFr: agency?.nameFr,
@@ -163,9 +163,9 @@ export function CustomerQueue() {
   if (loading) {
     return (
       <div className="px-4 py-4 pb-24">
-        <Skeleton className="h-8 w-32 mb-6" />
-        <Skeleton className="h-72 rounded-2xl mb-4" />
-        <Skeleton className="h-40 rounded-2xl" />
+        <Skeleton className="h-8 w-32 mb-6 skeleton-shimmer" />
+        <Skeleton className="h-72 rounded-2xl mb-4 skeleton-shimmer" />
+        <Skeleton className="h-40 rounded-2xl skeleton-shimmer" />
       </div>
     );
   }
@@ -318,7 +318,7 @@ export function CustomerQueue() {
             transition={{ duration: 0.3 }}
           >
             <Card
-              className={`mb-4 border-0 shadow-lg overflow-hidden ${
+              className={`mb-4 border-0 shadow-lg overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 ${
                 isCalled
                   ? 'animate-[pulse-glow_2s_ease-in-out_infinite]'
                   : ''

@@ -52,6 +52,8 @@ interface AgencySettingsData {
   maxReservations: number;
   isQueueOpen: boolean;
   services: AgencyService[];
+  workingHoursStart: string;
+  workingHoursEnd: string;
 }
 
 export function AgencySettings() {
@@ -197,7 +199,7 @@ export function AgencySettings() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <ToggleLeft className="h-4 w-4 text-emerald-600" />
@@ -269,6 +271,37 @@ export function AgencySettings() {
                 className="h-11 w-32"
               />
             </div>
+
+            <Separator />
+
+            {/* Working Hours */}
+            <div className="space-y-3">
+              <Label className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                {t('workingHours')}
+              </Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="time"
+                  value={settings?.workingHoursStart ?? '08:00'}
+                  onChange={(e) =>
+                    setSettings((prev) => (prev ? { ...prev, workingHoursStart: e.target.value } : prev))
+                  }
+                  className="h-11 w-32"
+                  dir="ltr"
+                />
+                <span className="text-sm text-muted-foreground">—</span>
+                <Input
+                  type="time"
+                  value={settings?.workingHoursEnd ?? '17:00'}
+                  onChange={(e) =>
+                    setSettings((prev) => (prev ? { ...prev, workingHoursEnd: e.target.value } : prev))
+                  }
+                  className="h-11 w-32"
+                  dir="ltr"
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </motion.div>
@@ -279,7 +312,7 @@ export function AgencySettings() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
       >
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">

@@ -68,10 +68,10 @@ export function AdminDashboard() {
       <div className="p-4 lg:p-6 space-y-4">
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-2xl" />
+            <Skeleton key={i} className="h-28 rounded-2xl skeleton-shimmer" />
           ))}
         </div>
-        <Skeleton className="h-64 rounded-2xl" />
+        <Skeleton className="h-64 rounded-2xl skeleton-shimmer" />
       </div>
     );
   }
@@ -88,8 +88,8 @@ export function AdminDashboard() {
       label: t('activeQueues'),
       value: stats?.activeQueues ?? 0,
       icon: Users,
-      color: 'bg-blue-50 dark:bg-blue-900/20',
-      iconColor: 'text-blue-600 dark:text-blue-400',
+      color: 'bg-teal-50 dark:bg-teal-900/20',
+      iconColor: 'text-teal-600 dark:text-teal-400',
     },
     {
       label: t('dailyReservations'),
@@ -135,7 +135,7 @@ export function AdminDashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
             >
-              <Card className="border-0 shadow-sm">
+              <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
                 <CardContent className={`p-4 rounded-xl ${stat.color}`}>
                   <Icon className={`h-5 w-5 ${stat.iconColor} mb-2`} />
                   <p className="text-2xl font-bold text-foreground">{stat.value}</p>

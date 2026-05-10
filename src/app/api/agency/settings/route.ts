@@ -21,6 +21,8 @@ export async function GET(req: NextRequest) {
         maxReservations: 50,
         isQueueOpen: true,
         services: [],
+        workingHoursStart: '08:00',
+        workingHoursEnd: '17:00',
       });
     }
 
@@ -29,6 +31,8 @@ export async function GET(req: NextRequest) {
       maxReservations: agency.maxActiveReservations,
       isQueueOpen: agency.isQueueOpen,
       services: agency.services,
+      workingHoursStart: agency.workingHoursStart,
+      workingHoursEnd: agency.workingHoursEnd,
     });
   } catch (error) {
     console.error('Agency settings GET error:', error);
@@ -39,7 +43,7 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { avgServiceTime, maxReservations, isQueueOpen } = body;
+    const { avgServiceTime, maxReservations, isQueueOpen, workingHoursStart, workingHoursEnd } = body;
 
     // For MVP, update the first active agency
     const agency = await db.agency.findFirst({ where: { isActive: true } });
@@ -53,6 +57,8 @@ export async function PATCH(req: NextRequest) {
         ...(avgServiceTime !== undefined && { averageServiceTime: avgServiceTime }),
         ...(maxReservations !== undefined && { maxActiveReservations: maxReservations }),
         ...(isQueueOpen !== undefined && { isQueueOpen }),
+        ...(workingHoursStart !== undefined && { workingHoursStart }),
+        ...(workingHoursEnd !== undefined && { workingHoursEnd }),
       },
     });
 

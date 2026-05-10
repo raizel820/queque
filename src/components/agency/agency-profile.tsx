@@ -29,6 +29,7 @@ import {
   X,
   Copy,
   Download,
+  Clock,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -46,6 +47,8 @@ interface AgencyInfo {
   email?: string;
   code: string;
   logoUrl?: string;
+  workingHoursStart?: string;
+  workingHoursEnd?: string;
 }
 
 const categoryOptions: { value: string; key: TranslationKeys }[] = [
@@ -224,7 +227,7 @@ export function AgencyProfile() {
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <Card className="border-0 shadow-sm overflow-hidden">
+        <Card className="border-0 shadow-sm overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           {/* Cover/Logo Area */}
           <div className="h-28 bg-gradient-to-r from-emerald-500 to-teal-600 relative">
             <div className="absolute -bottom-10 start-5">
@@ -349,6 +352,10 @@ export function AgencyProfile() {
                       <span className="text-muted-foreground">{profile.email}</span>
                     </div>
                   )}
+                  <div className="flex items-center gap-3 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-muted-foreground">{t('workingHours')}: {profile?.workingHoursStart || '08:00'} - {profile?.workingHoursEnd || '17:00'}</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -362,7 +369,7 @@ export function AgencyProfile() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
       >
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <QrCode className="h-4 w-4 text-emerald-600" />
