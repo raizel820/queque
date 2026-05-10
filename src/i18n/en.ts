@@ -259,6 +259,30 @@ const en: Record<TranslationKeys, string> = {
   step3: "Track & Wait",
   step3Desc: "Track your position and get notified",
 
+  // ─── Landing Stats ────────────────────────
+  landingStatAgencies: "Agencies",
+  landingStatUsers: "Users Served",
+  landingStatLocation: "Algeria - M'Sila",
+
+  // ─── Notifications Center ─────────────────
+  notifications: "Notifications",
+  noNotifications: "No notifications",
+  markAllRead: "Mark all as read",
+  
+  // ─── Audit Logs ────────────────────────────
+  auditLogsPage: "Audit Logs",
+  allLogs: "All Logs",
+  filterByAction: "Filter by action",
+  todayLogs: "Today's Logs",
+  
+  // ─── Extra ─────────────────────────────────
+  searchPlaceholder: "Search...",
+  noResults: "No results found",
+  confirmLogout: "Are you sure you want to logout?",
+  poweredBy: "Powered by",
+  rightsReserved: "All rights reserved",
+  version: "Version 1.0",
+
   // ─── Themes ──────────────────────────────
   lightMode: "Light Mode",
   darkMode: "Dark Mode",

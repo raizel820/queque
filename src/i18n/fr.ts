@@ -259,6 +259,30 @@ const fr: Record<TranslationKeys, string> = {
   step3: "Suivez et attendez",
   step3Desc: "Suivez votre position et recevez une notification",
 
+  // ─── Landing Stats ────────────────────────
+  landingStatAgencies: "Établissements",
+  landingStatUsers: "Utilisateurs",
+  landingStatLocation: "Algérie - M'Sila",
+
+  // ─── Notifications Center ─────────────────
+  notifications: "Notifications",
+  noNotifications: "Aucune notification",
+  markAllRead: "Tout marquer comme lu",
+  
+  // ─── Audit Logs ────────────────────────────
+  auditLogsPage: "Journal d'audit",
+  allLogs: "Tous les logs",
+  filterByAction: "Filtrer par action",
+  todayLogs: "Logs du jour",
+  
+  // ─── Extra ─────────────────────────────────
+  searchPlaceholder: "Rechercher...",
+  noResults: "Aucun résultat trouvé",
+  confirmLogout: "Êtes-vous sûr de vouloir vous déconnecter ?",
+  poweredBy: "Propulsé par",
+  rightsReserved: "Tous droits réservés",
+  version: "Version 1.0",
+
   // ─── Themes ──────────────────────────────
   lightMode: "Mode clair",
   darkMode: "Mode sombre",

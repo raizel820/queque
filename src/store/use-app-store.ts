@@ -11,6 +11,7 @@ export type ViewName =
   | 'customer-home'
   | 'customer-queue'
   | 'customer-history'
+  | 'customer-notifications'
   | 'customer-profile'
   | 'agency-dashboard'
   | 'agency-settings'
@@ -91,11 +92,7 @@ export const useAppStore = create<AppState>()(
         set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
       logout: () => {
-        // Clear all persisted state
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('queuewise-app');
-          localStorage.removeItem('queuewise-lang');
-        }
+        // Set state first (triggers persist to write new values)
         set({
           user: null,
           isAuthenticated: false,
@@ -103,6 +100,14 @@ export const useAppStore = create<AppState>()(
           previousView: null,
           sidebarOpen: false,
         });
+        // Then clear localStorage after state update
+        setTimeout(() => {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('queuewise-app');
+            localStorage.removeItem('queuewise-lang');
+            window.location.reload();
+          }
+        }, 50);
       },
     }),
     {
@@ -114,6 +119,14 @@ export const useAppStore = create<AppState>()(
     }
   )
 );
+
+// Helper to get the persist API for clearing storage
+useAppStore.persist.clearStorage = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('queuewise-app');
+    localStorage.removeItem('queuewise-lang');
+  }
+};
 
 // Helper to set document direction
 export function updateDocumentDirection(lang: Language) {

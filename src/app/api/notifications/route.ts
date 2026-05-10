@@ -5,8 +5,6 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    const limit = parseInt(searchParams.get('limit') || '50', 10)
-    const offset = parseInt(searchParams.get('offset') || '0', 10)
 
     if (!userId) {
       return NextResponse.json(
@@ -15,36 +13,46 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const [notifications, total, unreadCount] = await Promise.all([
-      db.notification.findMany({
-        where: { userId },
-        orderBy: [
-          { isRead: 'asc' },
-          { createdAt: 'desc' },
-        ],
-        take: limit,
-        skip: offset,
-      }),
-      db.notification.count({ where: { userId } }),
-      db.notification.count({
-        where: { userId, isRead: false },
-      }),
-    ])
-
-    // Mark all as read after fetching
-    await db.notification.updateMany({
-      where: { userId, isRead: false },
-      data: { isRead: true },
+    const notifications = await db.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
     })
 
-    return NextResponse.json({
-      success: true,
-      notifications,
-      total,
-      unreadCount,
-      limit,
-      offset,
+    return NextResponse.json({ success: true, notifications })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { userId, type, title, message, entityId } = body
+
+    if (!userId || !title) {
+      return NextResponse.json(
+        { success: false, error: 'userId and title are required' },
+        { status: 400 }
+      )
+    }
+
+    const notification = await db.notification.create({
+      data: {
+        userId,
+        type: type || 'SYSTEM',
+        title,
+        message: message || '',
+        isRead: false,
+        entityId: entityId || null,
+      },
     })
+
+    return NextResponse.json({ success: true, notification }, { status: 201 })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(

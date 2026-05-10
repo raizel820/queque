@@ -257,6 +257,30 @@ const ar = {
   step3: "تابع وانتظر",
   step3Desc: "تابع موقعك وتلق إشعاراً عند اقتراب دورك",
 
+  // ─── Landing Stats ────────────────────────
+  landingStatAgencies: "المؤسسات",
+  landingStatUsers: "مستخدم",
+  landingStatLocation: "الجزائر - المسيلة",
+
+  // ─── Notifications Center ─────────────────
+  notifications: "الإشعارات",
+  noNotifications: "لا توجد إشعارات",
+  markAllRead: "تحديد الكل كمقروء",
+  
+  // ─── Audit Logs ────────────────────────────
+  auditLogsPage: "سجل المراجعة",
+  allLogs: "جميع السجلات",
+  filterByAction: "تصفية حسب الإجراء",
+  todayLogs: "سجلات اليوم",
+  
+  // ─── Extra ─────────────────────────────────
+  searchPlaceholder: "بحث...",
+  noResults: "لا توجد نتائج",
+  confirmLogout: "هل أنت متأكد من تسجيل الخروج؟",
+  poweredBy: "مدعوم بواسطة",
+  rightsReserved: "جميع الحقوق محفوظة",
+  version: "الإصدار 1.0",
+
   // ─── Themes ──────────────────────────────
   lightMode: "الوضع الفاتح",
   darkMode: "الوضع الداكن",

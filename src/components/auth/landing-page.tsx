@@ -40,9 +40,9 @@ export function LandingPage() {
   ];
 
   const stats = [
-    { icon: Building2, value: '10+', label: 'agency' },
-    { icon: Users, value: '1,000+', label: 'usersServed' },
-    { icon: MapPin, value: 'M\'Sila', label: 'algeria' },
+    { icon: Building2, value: '10+', labelKey: 'landingStatAgencies' as const },
+    { icon: Users, value: '1,000+', labelKey: 'landingStatUsers' as const },
+    { icon: MapPin, value: 'M\'Sila', labelKey: 'landingStatLocation' as const },
   ];
 
   return (
@@ -197,7 +197,7 @@ export function LandingPage() {
                       <Icon className="h-5 w-5 text-white" />
                     </div>
                     <p className="text-2xl md:text-3xl font-extrabold text-white">{stat.value}</p>
-                    <p className="text-xs text-emerald-100 font-medium">{stat.label}</p>
+                    <p className="text-xs text-emerald-100 font-medium">{t(stat.labelKey)}</p>
                   </motion.div>
                 );
               })}
@@ -286,15 +286,21 @@ export function LandingPage() {
           </div>
         </div>
         <footer className="w-full px-4 py-8 text-center bg-emerald-50 dark:bg-emerald-950/30">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <TicketCheck className="h-3.5 w-3.5 text-white" />
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+              <TicketCheck className="h-4 w-4 text-white" />
             </div>
-            <span className="font-bold text-sm text-emerald-700 dark:text-emerald-400">QueueWise</span>
+            <span className="font-bold text-sm bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
+              QueueWise
+            </span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            QueueWise © {new Date().getFullYear()} — Smart Queue Management
+          <p className="text-sm text-muted-foreground mb-1">
+            {t('poweredBy')} Z.ai Technology
           </p>
+          <p className="text-xs text-muted-foreground/60">
+            QueueWise © {new Date().getFullYear()} · {t('rightsReserved')}
+          </p>
+          <p className="text-[10px] text-muted-foreground/40 mt-2">{t('version')}</p>
         </footer>
       </div>
 

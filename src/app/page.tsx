@@ -15,6 +15,7 @@ import { CustomerHome } from '@/components/customer/customer-home';
 import { CustomerQueue } from '@/components/customer/customer-queue';
 import { CustomerHistory } from '@/components/customer/customer-history';
 import { CustomerProfile } from '@/components/customer/customer-profile';
+import { CustomerNotifications } from '@/components/customer/customer-notifications';
 
 // Agency Views
 import { AgencyDashboard } from '@/components/agency/agency-dashboard';
@@ -26,6 +27,7 @@ import { AgencySubscription } from '@/components/agency/agency-subscription';
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
 import { AdminTransactions } from '@/components/admin/admin-transactions';
 import { AdminAgencies } from '@/components/admin/admin-agencies';
+import { AdminAuditLogs } from '@/components/admin/admin-audit-logs';
 
 // Shared
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
@@ -45,6 +47,8 @@ import {
   LogOut,
   Menu,
   X,
+  Bell,
+  ClipboardList,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -67,6 +71,8 @@ function ViewRouter() {
       return <CustomerHistory />;
     case 'customer-profile':
       return <CustomerProfile />;
+    case 'customer-notifications':
+      return <CustomerNotifications />;
     case 'agency-dashboard':
       return <AgencyDashboard />;
     case 'agency-settings':
@@ -81,6 +87,8 @@ function ViewRouter() {
       return <AdminTransactions />;
     case 'admin-agencies':
       return <AdminAgencies />;
+    case 'admin-audit':
+      return <AdminAuditLogs />;
     default:
       return <LandingPage />;
   }
@@ -96,6 +104,7 @@ function CustomerBottomNav() {
     { view: 'customer-queue' as const, icon: TicketCheck, label: t('myQueue') },
     { view: 'customer-history' as const, icon: CalendarDays, label: t('history') },
     { view: 'customer-profile' as const, icon: User, label: t('profile') },
+    { view: 'customer-notifications' as const, icon: Bell, label: t('notifications') },
   ];
 
   return (
@@ -254,6 +263,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
     { view: 'admin-dashboard' as const, icon: LayoutDashboard, label: t('dashboard') },
     { view: 'admin-transactions' as const, icon: CreditCard, label: t('transactions') },
     { view: 'admin-agencies' as const, icon: Building2, label: t('agencies') },
+    { view: 'admin-audit' as const, icon: ClipboardList, label: t('auditLogsPage') },
   ];
 
   const sidebar = (
