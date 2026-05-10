@@ -331,8 +331,47 @@ const ar = {
   // ─── Agency Code ────────────────────────
   shareCodeText: "شارك هذا الكود مع عملائك",
 
+  // ─── Bottom Nav / More Menu ──────────────
+  more: "المزيد",
+  moreMenuTitle: "المزيد من الخيارات",
+  quickStats: "إحصائيات سريعة",
+  agenciesNearby: "مؤسسات قريبة",
+  activeQueuesCount: "طوابير نشطة",
+  avgWaitShort: "متوسط الانتظار",
+  totalServices: "إجمالي الخدمات",
+
+  // ─── Queue Progress ──────────────────────
+  yourPosition: "موقعك",
+  peopleAheadOf: "أمامك في الطابور",
+  estimatedTimeLeft: "الوقت المتبقي",
+  yourTurnAlert: "دورك الآن!",
+  yourTurnDesc: "يرجى التوجه إلى مكتب الخدمة",
+  turnCalledAt: "تم الاستدعاء في",
+
+  // ─── Agency Dashboard Enhancements ───────
+  todayOverview: "نظرة عامة على اليوم",
+  queueEfficiency: "كفاءة الطابور",
+  serviceBreakdown: "تفصيل الخدمات",
+  noServiceData: "لا توجد بيانات بعد",
+  completionRate: "معدل الإنجاز",
+  noShowRate: "معدل عدم الحضور",
+
+  // ─── Admin Enhancements ──────────────────
+  systemHealth: "صحة النظام",
+  uptime: "وقت التشغيل",
+  responseTime: "زمن الاستجابة",
+  activeUsersToday: "المستخدمون النشطون اليوم",
+  weeklyGrowth: "النمو الأسبوعي",
+  platformVersion: "إصدار المنصة",
+  lastUpdated: "آخر تحديث",
+
+  // ─── Weekly Summary ──────────────────────
+  weeklySummary: "الملخص الأسبوعي",
+  thisWeek: "هذا الأسبوع",
+  lastWeek: "الأسبوع الماضي",
+  autoRefresh: "تحديث تلقائي كل 10 ثوانٍ",
+
   // ─── Customer Queue ─────────────────────
-  yourTurnAlert: "!دورك الآن",
 
   // ─── Countdown Labels ───────────────────
   hours: "ساعة",

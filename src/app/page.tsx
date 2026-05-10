@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore, updateDocumentDirection } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
-import { isRTL, type Language } from '@/i18n';
+import { isRTL, type Language, type TranslationKeys } from '@/i18n';
 
 // Auth Views
 import { LandingPage } from '@/components/auth/landing-page';
@@ -55,9 +55,17 @@ import {
   Users,
   Heart,
   BarChart3,
+  MoreHorizontal,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'sonner';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
 function ViewRouter() {
   const { currentView } = useAppStore();
@@ -106,51 +114,153 @@ function ViewRouter() {
   }
 }
 
-// Customer Bottom Navigation
+// Customer Bottom Navigation — 4 tabs + More Sheet
 function CustomerBottomNav() {
-  const { currentView, setView } = useAppStore();
+  const { currentView, setView, user } = useAppStore();
   const { t } = useLanguage();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  const items = [
+  // Fetch unread notification count
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchUnread = async () => {
+      try {
+        const res = await fetch(`/api/notifications?userId=${user.id}&unreadOnly=true`);
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.notifications?.length ?? 0);
+        }
+      } catch {
+        // silent
+      }
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  const mainItems = [
     { view: 'customer-home' as const, icon: HomeIcon, label: t('home') },
     { view: 'customer-queue' as const, icon: TicketCheck, label: t('myQueue') },
     { view: 'customer-history' as const, icon: CalendarDays, label: t('history') },
-    { view: 'customer-favorites' as const, icon: Heart, label: t('favorites') },
     { view: 'customer-profile' as const, icon: User, label: t('profile') },
-    { view: 'customer-notifications' as const, icon: Bell, label: t('notifications') },
   ];
 
+  const handleMoreNav = (view: 'customer-favorites' | 'customer-notifications' | 'customer-profile') => {
+    setMoreOpen(false);
+    setView(view);
+  };
+
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl safe-area-bottom">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
-        {items.map((item) => {
-          const active = currentView === item.view;
-          const Icon = item.icon;
-          return (
-            <motion.button
-              key={item.view}
-              whileTap={{ scale: 0.9 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-              onClick={() => setView(item.view)}
-              className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
-            >
-              {active && (
-                <motion.div
-                  layoutId="customer-nav-dot"
-                  className="absolute -top-0 h-1 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400"
-                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                />
-              )}
-              <Icon className={`h-5 w-5 transition-all duration-200 ${active ? 'scale-110 text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
-              <span className={`text-[10px] font-medium transition-colors ${active ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-muted-foreground'}`}>
-                {item.label}
-              </span>
-            </motion.button>
-          );
-        })}
-      </div>
-    </nav>
+    <>
+      <nav className="fixed bottom-0 inset-x-0 z-50 bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl safe-area-bottom">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+        <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
+          {mainItems.map((item) => {
+            const active = currentView === item.view;
+            const Icon = item.icon;
+            return (
+              <motion.button
+                key={item.view}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                onClick={() => setView(item.view)}
+                className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
+              >
+                {active && (
+                  <motion.div
+                    layoutId="customer-nav-dot"
+                    className="absolute -top-0 h-1 w-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400"
+                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                  />
+                )}
+                <Icon className={`h-5 w-5 transition-all duration-200 ${active ? 'scale-110 text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`} />
+                <span className={`text-[10px] font-medium transition-colors ${active ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-muted-foreground'}`}>
+                  {item.label}
+                </span>
+              </motion.button>
+            );
+          })}
+
+          {/* More button with Sheet */}
+          <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+            <SheetTrigger asChild>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
+              >
+                <div className="relative">
+                  <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                  {unreadCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1.5 -end-2 h-4 min-w-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold"
+                    >
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </motion.span>
+                  )}
+                </div>
+                <span className="text-[10px] font-medium text-muted-foreground">{t('more' as unknown as TranslationKeys)}</span>
+              </motion.button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-3xl max-h-[65vh] overflow-y-auto">
+              {/* Drag handle */}
+              <div className="flex justify-center pt-2 pb-1">
+                <div className="h-1.5 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
+              </div>
+              <SheetHeader>
+                <SheetTitle className="sr-only">{t('more' as unknown as TranslationKeys)}</SheetTitle>
+              </SheetHeader>
+              {/* User header */}
+              <div className="flex items-center gap-3 px-5 pb-4">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                  <span className="text-lg font-bold text-white">
+                    {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground truncate">{user?.fullName}</p>
+                  <p className="text-xs text-muted-foreground truncate">@{user?.username}</p>
+                </div>
+              </div>
+              <div className="h-px bg-border mx-5" />
+              {/* Menu items */}
+              <div className="px-3 py-3 space-y-1">
+                <button
+                  onClick={() => handleMoreNav('customer-favorites')}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Heart className="h-5 w-5 text-rose-500" />
+                  <span className="text-sm font-medium text-foreground">{t('favorites')}</span>
+                </button>
+                <button
+                  onClick={() => handleMoreNav('customer-notifications')}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Bell className="h-5 w-5 text-amber-500" />
+                  <span className="text-sm font-medium text-foreground">{t('notifications')}</span>
+                  {unreadCount > 0 && (
+                    <span className="ms-auto h-5 min-w-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleMoreNav('customer-profile')}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Settings className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-foreground">{t('settings')}</span>
+                </button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </nav>
+    </>
   );
 }
 
@@ -423,7 +533,17 @@ export default function Home() {
   if (isAuthPage || !isAuthenticated) {
     return (
       <>
-        <ViewRouter />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentView}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ViewRouter />
+          </motion.div>
+        </AnimatePresence>
         <Toaster richColors position="top-center" />
       </>
     );
@@ -452,7 +572,17 @@ export default function Home() {
 
         {/* Page content */}
         <div className={isCustomer ? '' : ''}>
-          <ViewRouter />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentView}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ViewRouter />
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Customer bottom nav */}

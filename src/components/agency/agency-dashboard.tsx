@@ -23,6 +23,9 @@ import {
   TicketCheck,
   Calendar,
   Radio,
+  PieChart,
+  Layers,
+  Activity,
 } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
 import { toast } from 'sonner';
@@ -47,6 +50,18 @@ interface DashboardStats {
   avgWaitTime: number;
   currentQueueNumber: string;
   isPaused: boolean;
+  noShowCount?: number;
+  cancelledCount?: number;
+}
+
+interface ServiceStat {
+  id: string;
+  name: string;
+  nameAr?: string;
+  nameFr?: string;
+  waitingCount: number;
+  completedCount: number;
+  _count?: { waiting: number; completed: number };
 }
 
 function MiniSparkline({ data, color = 'bg-emerald-400' }: { data: number[]; color?: string }) {
@@ -66,11 +81,51 @@ function MiniSparkline({ data, color = 'bg-emerald-400' }: { data: number[]; col
   );
 }
 
+function CircularProgress({ value, size = 80, strokeWidth = 6 }: { value: number; size?: number; strokeWidth?: number }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (value / 100) * circumference;
+  const color = value > 80 ? '#10b981' : value > 50 ? '#f59e0b' : '#ef4444';
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          className="text-gray-200 dark:text-gray-700"
+        />
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1, ease: 'easeOut' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-lg font-bold text-foreground">{Math.round(value)}%</span>
+      </div>
+    </div>
+  );
+}
+
 export function AgencyDashboard() {
   const { user } = useAppStore();
   const { t, lang } = useLanguage();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [waitingList, setWaitingList] = useState<QueueEntry[]>([]);
+  const [serviceStats, setServiceStats] = useState<ServiceStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -80,9 +135,10 @@ export function AgencyDashboard() {
   const fetchData = useCallback(async () => {
     if (!agencyId) return;
     try {
-      const [statsRes, listRes] = await Promise.all([
+      const [statsRes, listRes, servicesRes] = await Promise.all([
         fetch(`/api/agency/stats?agencyId=${encodeURIComponent(agencyId)}`),
         fetch(`/api/agency/queue?agencyId=${encodeURIComponent(agencyId)}&status=WAITING,CALLED`),
+        fetch(`/api/agency/services?agencyId=${encodeURIComponent(agencyId)}`),
       ]);
       if (statsRes.ok) {
         const data = await statsRes.json();
@@ -91,6 +147,19 @@ export function AgencyDashboard() {
       if (listRes.ok) {
         const data = await listRes.json();
         setWaitingList(data.entries ?? []);
+      }
+      if (servicesRes.ok) {
+        const data = await servicesRes.json();
+        // Merge service counts with service info
+        if (data.services) {
+          setServiceStats(
+            data.services.map((s: ServiceStat) => ({
+              ...s,
+              waitingCount: s._count?.waiting ?? 0,
+              completedCount: s._count?.completed ?? 0,
+            }))
+          );
+        }
       }
     } catch {
       // silent
@@ -174,6 +243,12 @@ export function AgencyDashboard() {
     return entry.serviceName;
   };
 
+  const getServiceDisplayName = (s: ServiceStat) => {
+    if (lang === 'ar' && s.nameAr) return s.nameAr;
+    if (lang === 'fr' && s.nameFr) return s.nameFr;
+    return s.name;
+  };
+
   const formatTime = (dateStr: string) => {
     try {
       return new Date(dateStr).toLocaleTimeString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', {
@@ -185,6 +260,16 @@ export function AgencyDashboard() {
     }
   };
 
+  // Calculate completion rate
+  const served = stats?.servedToday ?? 0;
+  const noShows = stats?.noShowCount ?? 0;
+  const cancelled = stats?.cancelledCount ?? 0;
+  const totalProcessed = served + noShows + cancelled;
+  const completionRate = totalProcessed > 0 ? (served / totalProcessed) * 100 : 0;
+
+  // Max waiting count for service breakdown bars
+  const maxWaiting = serviceStats.length > 0 ? Math.max(...serviceStats.map(s => s.waitingCount), 1) : 1;
+
   if (loading) {
     return (
       <div className="p-4 lg:p-6 space-y-4">
@@ -194,6 +279,10 @@ export function AgencyDashboard() {
           ))}
         </div>
         <Skeleton className="h-32 rounded-2xl skeleton-shimmer" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Skeleton className="h-40 rounded-2xl skeleton-shimmer" />
+          <Skeleton className="h-40 rounded-2xl skeleton-shimmer" />
+        </div>
         <Skeleton className="h-64 rounded-2xl skeleton-shimmer" />
       </div>
     );
@@ -246,8 +335,22 @@ export function AgencyDashboard() {
 
   return (
     <div className="p-4 lg:p-6 space-y-5" ref={sectionRef}>
+      {/* Title with Live Indicator */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{t('agencyDashboard')}</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            {t('agencyDashboard')}
+            <motion.span
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400"
+            >
+              <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+              {t('live')}
+            </motion.span>
+          </h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('autoRefresh')}</p>
+        </div>
         <Button
           variant="ghost"
           size="icon"
@@ -357,6 +460,106 @@ export function AgencyDashboard() {
           </div>
         </div>
       </Card>
+
+      {/* Service Breakdown + Queue Efficiency */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Service Breakdown */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.15 }}
+        >
+          <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Layers className="h-4 w-4 text-emerald-600" />
+                {t('serviceBreakdown')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {serviceStats.length === 0 ? (
+                <div className="text-center py-6">
+                  <Layers className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">{t('noServiceData')}</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-48 overflow-y-auto custom-scrollbar">
+                  {serviceStats.map((service, idx) => {
+                    const barWidth = maxWaiting > 0 ? (service.waitingCount / maxWaiting) * 100 : 0;
+                    const completionPct = (service.waitingCount + service.completedCount) > 0
+                      ? (service.completedCount / (service.waitingCount + service.completedCount)) * 100
+                      : 0;
+                    return (
+                      <div key={service.id} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-foreground truncate max-w-[60%]">
+                            {getServiceDisplayName(service)}
+                          </span>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                              {service.waitingCount} {t('waiting')}
+                            </span>
+                            <span className="text-xs opacity-60">
+                              {Math.round(completionPct)}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="h-2.5 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.max(barWidth, 2)}%` }}
+                            transition={{ duration: 0.6, delay: idx * 0.08, ease: 'easeOut' }}
+                            className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Queue Efficiency */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="h-4 w-4 text-emerald-600" />
+                {t('queueEfficiency')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex flex-col items-center justify-center py-2">
+                <CircularProgress value={completionRate} size={90} strokeWidth={7} />
+                <p className="text-sm font-semibold text-foreground mt-3">{t('completionRate')}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t('servedToday')}: {served} · {t('noShowRate')}: {noShows} · {t('cancelled')}: {cancelled}
+                </p>
+                <div className="flex gap-3 mt-4">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    &gt; 80%
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                    50-80%
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                    &lt; 50%
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
 
       {/* Waiting List */}
       <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">

@@ -24,6 +24,8 @@ import {
   TicketCheck,
   Clock,
   Heart,
+  Building2,
+  Zap,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -404,6 +406,66 @@ export function CustomerHome() {
         <h1 className="text-2xl font-bold text-foreground mb-1">{t('home')}</h1>
         <p className="text-sm text-muted-foreground">{t('welcomeSubtitle')}</p>
       </div>
+
+      {/* Quick Stats Banner — Glass-morphism */}
+      {!loading && agencies.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-5"
+        >
+          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+            {(() => {
+              const openAgencies = agencies.filter((a) => a.isQueueOpen);
+              const totalServices = agencies.reduce((sum, a) => sum + a.serviceCount, 0);
+              const avgWait = openAgencies.length > 0
+                ? Math.round(openAgencies.reduce((sum, a) => sum + a.serviceCount, 0) / openAgencies.length * 8)
+                : 0;
+              return (
+                <>
+                  <div className="flex-shrink-0 min-w-[130px] rounded-2xl px-4 py-3 border border-white/40 dark:border-gray-700/40 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                        <Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <span className="text-xl font-bold text-foreground">{agencies.length}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1.5">{t('totalAgencies')}</p>
+                  </div>
+                  <div className="flex-shrink-0 min-w-[130px] rounded-2xl px-4 py-3 border border-white/40 dark:border-gray-700/40 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
+                        <Zap className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                      </div>
+                      <span className="text-xl font-bold text-foreground">{openAgencies.length}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1.5">{t('activeQueues')}</p>
+                  </div>
+                  <div className="flex-shrink-0 min-w-[130px] rounded-2xl px-4 py-3 border border-white/40 dark:border-gray-700/40 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <span className="text-xl font-bold text-foreground">~{avgWait}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1.5">{t('avgWaitTime')}</p>
+                  </div>
+                  <div className="flex-shrink-0 min-w-[130px] rounded-2xl px-4 py-3 border border-white/40 dark:border-gray-700/40 bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
+                        <TicketCheck className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                      </div>
+                      <span className="text-xl font-bold text-foreground">{totalServices}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1.5">{t('services')}</p>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </motion.div>
+      )}
 
       {/* Search Bar */}
       <div className="relative mb-4">

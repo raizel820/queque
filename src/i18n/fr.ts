@@ -333,8 +333,47 @@ const fr: Record<TranslationKeys, string> = {
   // ─── Agency Code ────────────────────────
   shareCodeText: "Partagez ce code avec vos clients",
 
+  // ─── Bottom Nav / More Menu ──────────────
+  more: "Plus",
+  moreMenuTitle: "Plus d'options",
+  quickStats: "Statistiques rapides",
+  agenciesNearby: "Agences à proximité",
+  activeQueuesCount: "Files actives",
+  avgWaitShort: "Att. Moy.",
+  totalServices: "Total Services",
+
+  // ─── Queue Progress ──────────────────────
+  yourPosition: "Votre position",
+  peopleAheadOf: "personnes devant vous",
+  estimatedTimeLeft: "Temps restant",
+  yourTurnAlert: "C'EST VOTRE TOUR!",
+  yourTurnDesc: "Veuillez vous rendre au comptoir",
+  turnCalledAt: "Appelé à",
+
+  // ─── Agency Dashboard Enhancements ───────
+  todayOverview: "Aperçu du jour",
+  queueEfficiency: "Efficacité de la file",
+  serviceBreakdown: "Répartition des services",
+  noServiceData: "Aucune donnée de service",
+  completionRate: "Taux d'achèvement",
+  noShowRate: "Taux d'absence",
+
+  // ─── Admin Enhancements ──────────────────
+  systemHealth: "Santé du système",
+  uptime: "Disponibilité",
+  responseTime: "Temps de réponse",
+  activeUsersToday: "Utilisateurs actifs aujourd'hui",
+  weeklyGrowth: "Croissance hebdomadaire",
+  platformVersion: "Version de la plateforme",
+  lastUpdated: "Dernière mise à jour",
+
+  // ─── Weekly Summary ──────────────────────
+  weeklySummary: "Résumé hebdomadaire",
+  thisWeek: "Cette semaine",
+  lastWeek: "La semaine dernière",
+  autoRefresh: "Actualisation automatique toutes les 10s",
+
   // ─── Customer Queue ─────────────────────
-  yourTurnAlert: "C'est votre tour !",
 
   // ─── Countdown Labels ───────────────────
   hours: "Heure",

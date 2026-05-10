@@ -333,8 +333,47 @@ const en: Record<TranslationKeys, string> = {
   // ─── Agency Code ────────────────────────
   shareCodeText: "Share this code with your customers",
 
+  // ─── Bottom Nav / More Menu ──────────────
+  more: "More",
+  moreMenuTitle: "More Options",
+  quickStats: "Quick Stats",
+  agenciesNearby: "Agencies Nearby",
+  activeQueuesCount: "Active Queues",
+  avgWaitShort: "Avg Wait",
+  totalServices: "Total Services",
+
+  // ─── Queue Progress ──────────────────────
+  yourPosition: "Your Position",
+  peopleAheadOf: "people ahead",
+  estimatedTimeLeft: "Time Left",
+  yourTurnAlert: "IT'S YOUR TURN!",
+  yourTurnDesc: "Please proceed to the service counter",
+  turnCalledAt: "Called at",
+
+  // ─── Agency Dashboard Enhancements ───────
+  todayOverview: "Today's Overview",
+  queueEfficiency: "Queue Efficiency",
+  serviceBreakdown: "Service Breakdown",
+  noServiceData: "No service data yet",
+  completionRate: "Completion Rate",
+  noShowRate: "No-Show Rate",
+
+  // ─── Admin Enhancements ──────────────────
+  systemHealth: "System Health",
+  uptime: "Uptime",
+  responseTime: "Response Time",
+  activeUsersToday: "Active Users Today",
+  weeklyGrowth: "Weekly Growth",
+  platformVersion: "Platform Version",
+  lastUpdated: "Last Updated",
+
+  // ─── Weekly Summary ──────────────────────
+  weeklySummary: "Weekly Summary",
+  thisWeek: "This Week",
+  lastWeek: "Last Week",
+  autoRefresh: "Auto-refreshing every 10s",
+
   // ─── Customer Queue ─────────────────────
-  yourTurnAlert: "Your Turn!",
 
   // ─── Countdown Labels ───────────────────
   hours: "Hours",

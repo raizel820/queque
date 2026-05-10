@@ -9,8 +9,11 @@ import {
   CalendarDays,
   Clock,
   TrendingUp,
+  TrendingDown,
   Building2,
   Activity,
+  ArrowUpRight,
+  ArrowDownRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -33,10 +36,7 @@ interface AnalyticsData {
     reservationCount: number;
   }[];
   peakHours: { hour: number; count: number }[];
-}
-
-function isRTL(lang: string) {
-  return lang === 'ar';
+  customerGrowth?: { date: string; total: number }[];
 }
 
 export function AdminAnalytics() {
@@ -74,13 +74,39 @@ export function AdminAnalytics() {
     return `${d.getMonth() + 1}/${d.getDate()}`;
   };
 
-  const maxRegistrations = data
-    ? Math.max(...data.registrationsTrend.slice(-14).map((d) => d.count), 1)
-    : 1;
+  // Ensure we always have 14 days
+  const allRegistrations = data?.registrationsTrend ?? [];
+  const last14Days = allRegistrations.slice(-14);
 
-  const maxPeakHour = data
-    ? Math.max(...data.peakHours.map((h) => h.count), 1)
-    : 1;
+  // Pad with empty days if needed
+  const now = new Date();
+  const paddedLast14Days: { date: string; count: number }[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const key = d.toISOString().split('T')[0];
+    const found = last14Days.find((r) => r.date === key);
+    paddedLast14Days.push({ date: key, count: found?.count ?? 0 });
+  }
+
+  const maxRegistrations = Math.max(...paddedLast14Days.map((d) => d.count), 1);
+
+  // Ensure all 24 hours are present
+  const allHours = Array.from({ length: 24 }, (_, i) => i);
+  const peakHoursData = data?.peakHours ?? [];
+  const fullPeakHours = allHours.map((hour) => {
+    const found = peakHoursData.find((h) => h.hour === hour);
+    return { hour, count: found?.count ?? 0 };
+  });
+  const maxPeakHour = Math.max(...fullPeakHours.map((h) => h.count), 1);
+
+  // Weekly summary: compare this week (last 7 days) vs last week (7-14 days ago)
+  const thisWeekTotal = paddedLast14Days.slice(-7).reduce((sum, d) => sum + d.count, 0);
+  const lastWeekTotal = paddedLast14Days.slice(0, 7).reduce((sum, d) => sum + d.count, 0);
+  const weeklyChange = lastWeekTotal > 0 ? ((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100 : 0;
+  const weeklyChangePositive = weeklyChange >= 0;
+
+  // Medal emojis for top 3 agencies
+  const medalEmojis = ['🥇', '🥈', '🥉'];
 
   if (loading) {
     return (
@@ -111,8 +137,6 @@ export function AdminAnalytics() {
     );
   }
 
-  const last14Days = data.registrationsTrend.slice(-14);
-
   return (
     <div className="p-4 lg:p-6 space-y-5">
       <h1 className="text-2xl font-bold text-foreground">{t('analytics')}</h1>
@@ -139,7 +163,7 @@ export function AdminAnalytics() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
             >
-              <Card className="border-0 shadow-sm overflow-hidden">
+              <Card className="border-0 shadow-sm overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
                 <CardContent className="p-4">
                   <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${colors[stat.color]} flex items-center justify-center mb-3 shadow-lg`}>
                     <Icon className="h-5 w-5 text-white" />
@@ -153,13 +177,57 @@ export function AdminAnalytics() {
         })}
       </div>
 
+      {/* Weekly Summary */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-emerald-600" />
+              {t('weeklySummary')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-2 gap-4">
+              {/* This Week */}
+              <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/10">
+                <p className="text-xs text-muted-foreground mb-1">{t('thisWeek')}</p>
+                <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{thisWeekTotal}</p>
+                <p className="text-xs text-muted-foreground">{t('registrations')}</p>
+              </div>
+              {/* Last Week */}
+              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50">
+                <p className="text-xs text-muted-foreground mb-1">{t('lastWeek')}</p>
+                <p className="text-2xl font-bold text-foreground">{lastWeekTotal}</p>
+                <p className="text-xs text-muted-foreground">{t('registrations')}</p>
+              </div>
+            </div>
+            {/* Change indicator */}
+            <div className="mt-3 flex items-center justify-center gap-1.5">
+              {weeklyChangePositive ? (
+                <ArrowUpRight className="h-4 w-4 text-emerald-600" />
+              ) : (
+                <ArrowDownRight className="h-4 w-4 text-red-500" />
+              )}
+              <span className={`text-sm font-semibold ${weeklyChangePositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                {weeklyChangePositive ? '+' : ''}{weeklyChange.toFixed(1)}%
+              </span>
+              <span className="text-xs text-muted-foreground">{t('weeklyGrowth')}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Registrations Trend */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-emerald-600" />
@@ -169,7 +237,7 @@ export function AdminAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-1 h-48">
-              {last14Days.map((d, i) => {
+              {paddedLast14Days.map((d, i) => {
                 const height = maxRegistrations > 0 ? (d.count / maxRegistrations) * 100 : 0;
                 return (
                   <div
@@ -203,7 +271,7 @@ export function AdminAnalytics() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
         >
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-emerald-600" />
@@ -219,11 +287,19 @@ export function AdminAnalytics() {
                     const maxCount = data.topAgencies[0]?.reservationCount || 1;
                     const barWidth = (agency.reservationCount / maxCount) * 100;
                     return (
-                      <div key={agency.agencyId} className="space-y-1.5">
+                      <motion.div
+                        key={agency.agencyId}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className="space-y-1.5"
+                      >
                         <div className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-xs font-bold text-muted-foreground w-5">
-                              {idx + 1}
+                            <span className="text-base flex-shrink-0">
+                              {idx < 3 ? medalEmojis[idx] : (
+                                <span className="text-xs font-bold text-muted-foreground w-5 inline-block text-center">{idx + 1}</span>
+                              )}
                             </span>
                             <span className="font-medium text-foreground truncate">
                               {getAgencyName(agency)}
@@ -238,10 +314,18 @@ export function AdminAnalytics() {
                             initial={{ width: 0 }}
                             animate={{ width: `${barWidth}%` }}
                             transition={{ duration: 0.6, delay: idx * 0.1, ease: 'easeOut' }}
-                            className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
+                            className={`h-full rounded-full ${
+                              idx === 0
+                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                                : idx === 1
+                                ? 'bg-gradient-to-r from-teal-400 to-teal-500'
+                                : idx === 2
+                                ? 'bg-gradient-to-r from-amber-400 to-amber-500'
+                                : 'bg-gradient-to-r from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-500'
+                            }`}
                           />
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
@@ -256,7 +340,7 @@ export function AdminAnalytics() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="border-0 shadow-sm">
+          <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Clock className="h-4 w-4 text-emerald-600" />
@@ -266,7 +350,7 @@ export function AdminAnalytics() {
             </CardHeader>
             <CardContent>
               <div className="flex items-end gap-[3px] h-48">
-                {data.peakHours.map((h, i) => {
+                {fullPeakHours.map((h, i) => {
                   const height = maxPeakHour > 0 ? (h.count / maxPeakHour) * 100 : 0;
                   const isCurrentHour = new Date().getHours() === h.hour;
                   return (
