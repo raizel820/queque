@@ -114,6 +114,9 @@ const en: Record<TranslationKeys, string> = {
   queueInfo: "Queue Info",
   min: "min",
   person: "person",
+  paused: "Paused",
+  waiting: "waiting",
+  services: "services",
 
   // ─── Categories ──────────────────────────
   catAll: "All",

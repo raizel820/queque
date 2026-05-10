@@ -15,10 +15,11 @@ import {
   XCircle,
   RefreshCw,
   Loader2,
+  AlertTriangle,
+  Timer,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { useAppStore as useStore } from '@/store/use-app-store';
 
 interface Reservation {
   id: string;
@@ -43,6 +44,8 @@ export function CustomerQueue() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
+  const [showTurnAlert, setShowTurnAlert] = useState(false);
+  const [countdown, setCountdown] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
   const fetchReservations = useCallback(async () => {
     if (!user?.id) return;
@@ -53,7 +56,6 @@ export function CustomerQueue() {
         const list = (data.reservations ?? []).map((r: Record<string, unknown>) => {
           const agency = r.agency as Record<string, string> | undefined;
           const service = r.service as Record<string, string> | undefined;
-          // Calculate position and people ahead
           return {
             id: r.id,
             queueNumber: r.displayNumber || `${r.queueNumber}`,
@@ -72,6 +74,12 @@ export function CustomerQueue() {
           };
         });
         setReservations(list);
+
+        // Check if any is CALLED and show alert
+        const hasCalled = list.some((r: Reservation) => r.status === 'CALLED');
+        if (hasCalled) {
+          setShowTurnAlert(true);
+        }
       }
     } catch {
       // silent
@@ -80,9 +88,32 @@ export function CustomerQueue() {
     }
   }, [user?.id]);
 
+  // Countdown timer based on estimated wait
+  useEffect(() => {
+    const activeRes = reservations.find(
+      (r) => r.status === 'WAITING' || r.status === 'CALLED'
+    );
+    if (!activeRes || activeRes.estimatedWait <= 0) return;
+
+    const totalSeconds = activeRes.estimatedWait * 60;
+    const endTime = Date.now() + totalSeconds * 1000;
+
+    const updateCountdown = () => {
+      const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+      setCountdown({
+        hours: Math.floor(remaining / 3600),
+        minutes: Math.floor((remaining % 3600) / 60),
+        seconds: remaining % 60,
+      });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [reservations]);
+
   useEffect(() => {
     fetchReservations();
-    // Poll every 5 seconds
     const interval = setInterval(fetchReservations, 5000);
     return () => clearInterval(interval);
   }, [fetchReservations]);
@@ -129,9 +160,14 @@ export function CustomerQueue() {
       <div className="px-4 py-4 pb-24">
         <h1 className="text-2xl font-bold text-foreground mb-1">{t('myQueue')}</h1>
         <div className="flex flex-col items-center justify-center py-20">
-          <div className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4"
+          >
             <TicketCheck className="h-10 w-10 text-emerald-500" />
-          </div>
+          </motion.div>
           <h2 className="text-lg font-semibold text-foreground mb-2">
             {t('noActiveReservations')}
           </h2>
@@ -139,7 +175,7 @@ export function CustomerQueue() {
             {t('welcomeSubtitle')}
           </p>
           <Button
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 rounded-xl h-11"
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 rounded-xl h-11 shadow-lg shadow-emerald-500/20"
             onClick={() => setView('customer-home')}
           >
             {t('joinQueue')}
@@ -161,6 +197,8 @@ export function CustomerQueue() {
     return r.serviceName;
   };
 
+  const padZero = (n: number) => String(n).padStart(2, '0');
+
   return (
     <div className="px-4 py-4 pb-24">
       <div className="flex items-center justify-between mb-5">
@@ -174,6 +212,55 @@ export function CustomerQueue() {
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* YOUR TURN! Alert Banner */}
+      <AnimatePresence>
+        {showTurnAlert && activeRes?.status === 'CALLED' && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="mb-4"
+          >
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 p-5 text-white shadow-2xl shadow-emerald-500/30">
+              {/* Animated background pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px)`,
+                  }}
+                />
+              </div>
+
+              <div className="relative flex items-center gap-4">
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="flex-shrink-0 h-14 w-14 rounded-full bg-white/20 flex items-center justify-center"
+                >
+                  <Volume2 className="h-7 w-7 text-white" />
+                </motion.div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-emerald-100">🔔 Your Turn!</p>
+                  <p className="text-2xl font-extrabold tracking-tight">
+                    {activeRes.queueNumber}
+                  </p>
+                  <p className="text-sm text-emerald-100 truncate">
+                    {getAgencyName(activeRes)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowTurnAlert(false)}
+                  className="flex-shrink-0 h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Active Reservation */}
       {reservations.map((res) => {
@@ -193,7 +280,7 @@ export function CustomerQueue() {
             <Card
               className={`mb-4 border-0 shadow-lg overflow-hidden ${
                 isCalled
-                  ? 'ring-2 ring-emerald-400 dark:ring-emerald-500'
+                  ? 'animate-[pulse-glow_2s_ease-in-out_infinite]'
                   : ''
               }`}
             >
@@ -207,25 +294,59 @@ export function CustomerQueue() {
               >
                 <div className="flex items-center gap-2">
                   {isCalled ? (
-                    <Volume2 className="h-5 w-5 animate-pulse" />
+                    <motion.div
+                      animate={{ scale: [1, 1.15, 1] }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      <Volume2 className="h-5 w-5" />
+                    </motion.div>
                   ) : (
                     <Clock className="h-5 w-5" />
                   )}
                   <span className="font-semibold text-sm">
                     {isCalled ? t('statusCalled') : t('statusWaiting')}
                   </span>
+                  {isCalled && (
+                    <motion.span
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="ms-auto text-xs font-medium bg-white/20 px-2.5 py-0.5 rounded-full"
+                    >
+                      ⚡ {t('statusCalled')}!
+                    </motion.span>
+                  )}
                 </div>
               </div>
 
               <CardContent className="p-5">
-                {/* Large Queue Number */}
+                {/* Large Queue Number with Circular Badge */}
                 <div className="text-center mb-5">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
                     {t('yourQueueNumber')}
                   </p>
-                  <div className="text-6xl md:text-7xl font-black text-foreground tracking-tight">
-                    {res.queueNumber}
-                  </div>
+                  <motion.div
+                    animate={
+                      isCalled
+                        ? {
+                            boxShadow: [
+                              '0 0 0 0 rgba(16, 185, 129, 0.3)',
+                              '0 0 0 20px rgba(16, 185, 129, 0)',
+                              '0 0 0 0 rgba(16, 185, 129, 0)',
+                            ],
+                          }
+                        : {}
+                    }
+                    transition={
+                      isCalled
+                        ? { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+                        : {}
+                    }
+                    className="inline-flex items-center justify-center h-28 w-28 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 ring-4 ring-emerald-200 dark:ring-emerald-800"
+                  >
+                    <span className="text-4xl md:text-5xl font-black text-foreground tracking-tight">
+                      {res.queueNumber}
+                    </span>
+                  </motion.div>
                 </div>
 
                 {/* Agency & Service */}
@@ -236,11 +357,11 @@ export function CustomerQueue() {
                   <p className="text-xs text-muted-foreground">{getServiceName(res)}</p>
                 </div>
 
-                {/* Stats Row */}
+                {/* Stats Row - Replaced blue with teal */}
                 <div className="grid grid-cols-3 gap-3 mb-5">
-                  <div className="text-center p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20">
-                    <Users className="h-4 w-4 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
-                    <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                  <div className="text-center p-3 rounded-xl bg-teal-50 dark:bg-teal-900/20">
+                    <Users className="h-4 w-4 text-teal-600 dark:text-teal-400 mx-auto mb-1" />
+                    <p className="text-lg font-bold text-teal-700 dark:text-teal-400">
                       {res.peopleAhead}
                     </p>
                     <p className="text-[10px] text-muted-foreground">{t('peopleAhead')}</p>
@@ -261,6 +382,48 @@ export function CustomerQueue() {
                   </div>
                 </div>
 
+                {/* Countdown Display */}
+                {!isCalled && res.estimatedWait > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-5"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Timer className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{t('estimatedWait') || 'الوقت المتبقي'}</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="flex flex-col items-center">
+                        <div className="h-12 w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <span className="text-xl font-bold tabular-nums text-foreground">
+                            {padZero(countdown.hours)}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground mt-1">ساعة</span>
+                      </div>
+                      <span className="text-lg font-bold text-muted-foreground mb-4">:</span>
+                      <div className="flex flex-col items-center">
+                        <div className="h-12 w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <span className="text-xl font-bold tabular-nums text-foreground">
+                            {padZero(countdown.minutes)}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground mt-1">دقيقة</span>
+                      </div>
+                      <span className="text-lg font-bold text-muted-foreground mb-4">:</span>
+                      <div className="flex flex-col items-center">
+                        <div className="h-12 w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <span className="text-xl font-bold tabular-nums text-foreground">
+                            {padZero(countdown.seconds)}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground mt-1">ثانية</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Progress Bar */}
                 <div className="mb-5">
                   <div className="flex items-center justify-between mb-2">
@@ -276,7 +439,7 @@ export function CustomerQueue() {
                 {res.status === 'WAITING' && (
                   <Button
                     variant="outline"
-                    className="w-full h-11 rounded-xl border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                    className="w-full h-11 rounded-xl border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 transition-all duration-300"
                     onClick={() => handleCancel(res.id)}
                     disabled={cancelling === res.id}
                   >
@@ -288,11 +451,36 @@ export function CustomerQueue() {
                     {t('cancelReservation')}
                   </Button>
                 )}
+
+                {/* CALLED - prominent button */}
+                {isCalled && (
+                  <motion.div
+                    animate={{ scale: [1, 1.02, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <div className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold flex items-center justify-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      {t('statusCalled')} — {getAgencyName(res)}
+                    </div>
+                  </motion.div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
         );
       })}
+
+      {/* Keyframes */}
+      <style jsx>{`
+        @keyframes pulse-glow {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.2);
+          }
+          50% {
+            box-shadow: 0 0 20px 4px rgba(16, 185, 129, 0.15);
+          }
+        }
+      `}</style>
     </div>
   );
 }

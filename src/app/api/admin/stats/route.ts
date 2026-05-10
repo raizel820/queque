@@ -29,7 +29,7 @@ export async function GET() {
       // Today's reservations
       db.reservation.count({
         where: {
-          createdAt: { gte: today },
+          joinedAt: { gte: today },
         },
       }),
 
@@ -54,9 +54,9 @@ export async function GET() {
     // Get recent reservations for today
     const recentReservations = await db.reservation.findMany({
       where: {
-        createdAt: { gte: today },
+        joinedAt: { gte: today },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { joinedAt: 'desc' },
       take: 5,
       include: {
         agency: {

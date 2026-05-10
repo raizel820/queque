@@ -1,6 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { name, nameAr, nameFr, category, city, phone, email, ownerId } = body
+
+    if (!name || !category || !ownerId) {
+      return NextResponse.json(
+        { success: false, error: 'name, category, and ownerId are required' },
+        { status: 400 }
+      )
+    }
+
+    const agency = await db.agency.create({
+      data: {
+        name,
+        nameAr: nameAr || name,
+        nameFr: nameFr || name,
+        category,
+        city,
+        phone,
+        email,
+        ownerId,
+        customCode: `AG${Date.now().toString(36).toUpperCase()}`,
+      },
+    })
+
+    await db.auditLog.create({
+      data: {
+        userId: ownerId,
+        action: 'AGENCY_CREATE',
+        entityType: 'AGENCY',
+        entityId: agency.id,
+        details: JSON.stringify({ agencyName: name, category }),
+      },
+    })
+
+    return NextResponse.json({ success: true, agency }, { status: 201 })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    )
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

@@ -28,21 +28,33 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import type { TranslationKeys } from '@/i18n';
 
-interface Agency {
+interface AgencyListItem {
   id: string;
   name: string;
   nameAr?: string;
   nameFr?: string;
   category: string;
   address: string;
-  addressAr?: string;
-  isOpen: boolean;
   isSponsored: boolean;
-  code: string;
-  currentQueueNumber: number;
-  waitingCount: number;
-  avgServiceTime: number;
-  services: { id: string; name: string; nameAr?: string; nameFr?: string }[];
+  customCode: string;
+  isQueueOpen: boolean;
+  serviceCount: number;
+}
+
+interface AgencyDetail {
+  id: string;
+  name: string;
+  nameAr?: string;
+  nameFr?: string;
+  category: string;
+  address: string;
+  isSponsored: boolean;
+  customCode: string;
+  isQueueOpen: boolean;
+  isPaused: boolean;
+  currentServingNumber: number;
+  lastIssuedNumber: number;
+  services: { id: string; name: string; nameAr?: string; nameFr?: string; waitingCount: number }[];
 }
 
 const categoryKeys: { key: TranslationKeys; value: string; icon: React.ElementType }[] = [
@@ -60,10 +72,11 @@ export function CustomerHome() {
   const { t, lang } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [agencies, setAgencies] = useState<AgencyListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [agencyCode, setAgencyCode] = useState('');
-  const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
+  const [selectedAgency, setSelectedAgency] = useState<AgencyDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
     fetchAgencies();
@@ -94,23 +107,52 @@ export function CustomerHome() {
         a.nameAr?.includes(query) ||
         a.nameFr?.toLowerCase().includes(query) ||
         a.address.toLowerCase().includes(query) ||
-        a.addressAr?.includes(query) ||
-        a.code.toLowerCase().includes(query);
+        a.customCode.toLowerCase().includes(query);
       return matchCategory && matchSearch;
     });
   }, [agencies, selectedCategory, searchQuery]);
 
+  const fetchAgencyDetail = async (code: string) => {
+    setLoadingDetail(true);
+    try {
+      const res = await fetch(`/api/agencies/code/${encodeURIComponent(code)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.agency) {
+          setSelectedAgency(data.agency as AgencyDetail);
+        } else {
+          toast.error(data.error || t('noData'));
+        }
+      } else {
+        toast.error(t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
   const handleJoinByCode = async () => {
     if (!agencyCode.trim()) return;
     const agency = agencies.find(
-      (a) => a.code.toLowerCase() === agencyCode.trim().toLowerCase()
+      (a) => a.customCode.toLowerCase() === agencyCode.trim().toLowerCase()
     );
     if (agency) {
-      setSelectedAgency(agency);
+      await fetchAgencyDetail(agency.customCode);
       setAgencyCode('');
     } else {
       toast.error(t('noData'));
     }
+  };
+
+  const handleSelectAgency = async (agency: AgencyListItem) => {
+    await fetchAgencyDetail(agency.customCode);
+  };
+
+  const getTotalWaiting = () => {
+    if (!selectedAgency) return 0;
+    return selectedAgency.services.reduce((sum, s) => sum + (s.waitingCount || 0), 0);
   };
 
   const handleJoinQueue = async (agencyId: string, serviceId?: string) => {
@@ -138,7 +180,7 @@ export function CustomerHome() {
     }
   };
 
-  const getAgencyName = (a: Agency) => {
+  const getAgencyName = (a: AgencyListItem | AgencyDetail) => {
     if (lang === 'ar' && a.nameAr) return a.nameAr;
     if (lang === 'fr' && a.nameFr) return a.nameFr;
     return a.name;
@@ -150,7 +192,17 @@ export function CustomerHome() {
   };
 
   // Agency Detail View
+  if (loadingDetail) {
+    return (
+      <div className="px-4 py-4 pb-24 flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
+      </div>
+    );
+  }
+
   if (selectedAgency) {
+    const totalWaiting = getTotalWaiting();
+    const estWait = totalWaiting * 10; // ~10 min avg per person
     return (
       <motion.div
         initial={{ opacity: 0, x: 20 }}
@@ -175,7 +227,7 @@ export function CustomerHome() {
             </h2>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
               <MapPin className="h-4 w-4" />
-              <span>{lang === 'ar' && selectedAgency.addressAr ? selectedAgency.addressAr : selectedAgency.address}</span>
+              <span>{selectedAgency.address}</span>
             </div>
             <div className="flex items-center gap-2 mb-4">
               <Badge variant="outline" className="text-xs">
@@ -184,12 +236,12 @@ export function CustomerHome() {
               <Badge
                 variant="outline"
                 className={
-                  selectedAgency.isOpen
+                  selectedAgency.isQueueOpen && !selectedAgency.isPaused
                     ? 'text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
                     : 'text-xs bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200'
                 }
               >
-                {selectedAgency.isOpen ? t('openNow') : t('closed')}
+                {selectedAgency.isPaused ? t('paused') : selectedAgency.isQueueOpen ? t('openNow') : t('closed')}
               </Badge>
             </div>
 
@@ -201,7 +253,7 @@ export function CustomerHome() {
                   <span className="text-xs text-muted-foreground">{t('currentlyWaiting')}</span>
                 </div>
                 <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">
-                  {selectedAgency.waitingCount}
+                  {totalWaiting}
                 </p>
               </div>
               <div className="bg-teal-50 dark:bg-teal-900/20 rounded-xl p-3 text-center">
@@ -210,7 +262,7 @@ export function CustomerHome() {
                   <span className="text-xs text-muted-foreground">{t('avgWaitTime')}</span>
                 </div>
                 <p className="text-2xl font-bold text-teal-700 dark:text-teal-400">
-                  ~{selectedAgency.avgServiceTime * Math.max(1, selectedAgency.waitingCount)} {t('min')}
+                  ~{estWait} {t('min')}
                 </p>
               </div>
             </div>
@@ -224,12 +276,19 @@ export function CustomerHome() {
                     <button
                       key={svc.id}
                       onClick={() => handleJoinQueue(selectedAgency.id, svc.id)}
-                      disabled={!selectedAgency.isOpen}
+                      disabled={selectedAgency.isPaused || !selectedAgency.isQueueOpen}
                       className="w-full flex items-center justify-between p-3 rounded-xl border border-border hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors disabled:opacity-50"
                     >
-                      <span className="text-sm font-medium">
-                        {lang === 'ar' && svc.nameAr ? svc.nameAr : lang === 'fr' && svc.nameFr ? svc.nameFr : svc.name}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-medium">
+                          {lang === 'ar' && svc.nameAr ? svc.nameAr : lang === 'fr' && svc.nameFr ? svc.nameFr : svc.name}
+                        </span>
+                        {svc.waitingCount > 0 && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            {svc.waitingCount} {t('waiting')}
+                          </Badge>
+                        )}
+                      </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
                     </button>
                   ))}
@@ -242,9 +301,9 @@ export function CustomerHome() {
               <Button
                 className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl"
                 onClick={() => handleJoinQueue(selectedAgency.id)}
-                disabled={!selectedAgency.isOpen}
+                disabled={selectedAgency.isPaused || !selectedAgency.isQueueOpen}
               >
-                {selectedAgency.isOpen ? t('joinQueue') : t('closed')}
+                {selectedAgency.isQueueOpen ? t('joinQueue') : t('closed')}
               </Button>
             )}
           </CardContent>
@@ -336,7 +395,7 @@ export function CustomerHome() {
             >
               <Card
                 className="h-full cursor-pointer hover:shadow-lg transition-all duration-300 border-0 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-800 group"
-                onClick={() => setSelectedAgency(agency)}
+                onClick={() => handleSelectAgency(agency)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
@@ -353,12 +412,12 @@ export function CustomerHome() {
                       <Badge
                         variant="outline"
                         className={
-                          agency.isOpen
+                          agency.isQueueOpen
                             ? 'text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
                             : 'text-[10px] bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
                         }
                       >
-                        {agency.isOpen ? t('openNow') : t('closed')}
+                        {agency.isQueueOpen ? t('openNow') : t('closed')}
                       </Badge>
                     </div>
                   </div>
@@ -369,7 +428,7 @@ export function CustomerHome() {
 
                   <p className="text-xs text-muted-foreground mb-2 line-clamp-1 flex items-center gap-1">
                     <MapPin className="h-3 w-3 flex-shrink-0" />
-                    {lang === 'ar' && agency.addressAr ? agency.addressAr : agency.address}
+                    {agency.address}
                   </p>
 
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
@@ -377,8 +436,7 @@ export function CustomerHome() {
                       {getCategoryLabel(agency.category)}
                     </Badge>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Users className="h-3 w-3" />
-                      <span>{agency.waitingCount}</span>
+                      <span className="text-[10px]">{agency.serviceCount} {t('services')}</span>
                     </div>
                   </div>
                 </CardContent>

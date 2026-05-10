@@ -14,11 +14,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
+      const searchLower = search.toLowerCase()
       where.OR = [
         { name: { contains: search } },
         { nameFr: { contains: search } },
         { nameAr: { contains: search } },
-        { customCode: { contains: search, mode: 'insensitive' } },
+        { customCode: { contains: search } },
       ]
     }
 

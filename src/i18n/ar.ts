@@ -112,6 +112,9 @@ const ar = {
   queueInfo: "معلومات الطابور",
   min: "دقيقة",
   person: "شخص",
+  paused: "متوقف مؤقتاً",
+  waiting: "في الانتظار",
+  services: "خدمات",
 
   // ─── Categories ──────────────────────────
   catAll: "الكل",

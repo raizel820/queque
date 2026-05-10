@@ -2,6 +2,7 @@
 
 import { useAppStore, updateDocumentDirection } from '@/store/use-app-store';
 import { languageNames, type Language } from '@/i18n';
+import { setLanguage as setLangExternal } from '@/hooks/use-language';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,27 +18,12 @@ export function LanguageSwitcher() {
 
   const handleLanguageChange = (lang: Language) => {
     updateDocumentDirection(lang);
+    // Notify the external language store (for pre-login state)
+    setLangExternal(lang);
     if (user) {
       setUser({ ...user, language: lang });
-    } else {
-      // Set a temporary language preference
-      updateDocumentDirection(lang);
-      // Store in localStorage for pre-login
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('queuewise-lang', lang);
-      }
     }
-    // Dispatch a custom event for non-authenticated state
-    window.dispatchEvent(new CustomEvent('language-change', { detail: lang }));
   };
-
-  // Listen for non-auth language changes
-  if (typeof window !== 'undefined' && !user) {
-    const stored = localStorage.getItem('queuewise-lang') as Language | null;
-    if (stored && stored !== currentLang) {
-      updateDocumentDirection(stored);
-    }
-  }
 
   return (
     <DropdownMenu>

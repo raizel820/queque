@@ -3,6 +3,7 @@ import fr from './fr';
 import en from './en';
 import type { TranslationKeys } from './ar';
 
+export type { TranslationKeys };
 export type Language = 'ar' | 'fr' | 'en';
 
 export const translations: Record<Language, Record<TranslationKeys, string>> = { ar, fr, en };

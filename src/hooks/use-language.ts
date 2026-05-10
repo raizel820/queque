@@ -2,33 +2,45 @@
 
 import { useAppStore } from '@/store/use-app-store';
 import { t as translate, type TranslationKeys, type Language } from '@/i18n';
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
+
+// Simple external store for language changes outside of Zustand (pre-login)
+let currentLang: Language = 'ar';
+const langListeners = new Set<() => void>();
+
+function getLangSnapshot(): Language {
+  return currentLang;
+}
+
+function subscribeToLang(callback: () => void): () => void {
+  langListeners.add(callback);
+  return () => langListeners.delete(callback);
+}
+
+export function setLanguage(lang: Language) {
+  currentLang = lang;
+  langListeners.forEach(l => l());
+}
+
+// Initialize from localStorage
+if (typeof window !== 'undefined') {
+  const stored = localStorage.getItem('queuewise-lang') as Language | null;
+  if (stored) currentLang = stored;
+}
 
 export function useLanguage() {
   const user = useAppStore((s) => s.user);
-  const [lang, setLang] = useState<Language>('ar');
-
-  useEffect(() => {
-    if (user?.language) {
-      setLang(user.language);
-    } else {
-      const stored = localStorage.getItem('queuewise-lang') as Language | null;
-      if (stored) {
-        setLang(stored);
-      }
-    }
-  }, [user?.language]);
-
-  const handleLanguageEvent = (e: Event) => {
-    setLang((e as CustomEvent).detail as Language);
+  
+  const getSnapshot = () => {
+    if (user?.language) return user.language;
+    return currentLang;
   };
 
-  useEffect(() => {
-    window.addEventListener('language-change', handleLanguageEvent);
-    return () => window.removeEventListener('language-change', handleLanguageEvent);
-  }, []);
+  const getServerSnapshot = () => 'ar' as Language;
 
-  const t = (key: TranslationKeys) => translate(key, lang);
+  const effectiveLang = useSyncExternalStore(subscribeToLang, getSnapshot, getServerSnapshot);
 
-  return { lang, t };
+  const t = (key: TranslationKeys) => translate(key, effectiveLang);
+
+  return { lang: effectiveLang, t };
 }

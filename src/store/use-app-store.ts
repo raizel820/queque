@@ -90,14 +90,20 @@ export const useAppStore = create<AppState>()(
       toggleSidebar: () =>
         set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
-      logout: () =>
+      logout: () => {
+        // Clear all persisted state
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('queuewise-app');
+          localStorage.removeItem('queuewise-lang');
+        }
         set({
           user: null,
           isAuthenticated: false,
           currentView: 'landing',
           previousView: null,
           sidebarOpen: false,
-        }),
+        });
+      },
     }),
     {
       name: 'queuewise-app',

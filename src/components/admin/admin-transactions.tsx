@@ -60,10 +60,23 @@ export function AdminTransactions() {
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/transactions?status=PENDING');
+      const res = await fetch('/api/transactions?status=PENDING');
       if (res.ok) {
         const data = await res.json();
-        setPayments(data.payments ?? []);
+        const mapped = (data.transactions ?? []).map((tx: Record<string, unknown>) => {
+          const agency = tx.agency as Record<string, string> | undefined;
+          return {
+            id: tx.id,
+            agencyName: agency?.name || 'Unknown Agency',
+            amount: tx.amount as number,
+            plan: tx.plan as string,
+            method: tx.paymentMethod as string,
+            status: tx.status as string,
+            receiptUrl: (tx.receiptUrl as string) || undefined,
+            createdAt: tx.createdAt as string,
+          };
+        });
+        setPayments(mapped);
       }
     } catch {
       // silent
@@ -75,7 +88,11 @@ export function AdminTransactions() {
   const handleApprove = async (id: string) => {
     setActionLoading(id);
     try {
-      const res = await fetch(`/api/admin/transactions/${id}/approve`, { method: 'POST' });
+      const res = await fetch(`/api/admin/transactions/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve' }),
+      });
       if (res.ok) {
         toast.success(t('approveTransaction'));
         fetchPayments();
@@ -97,10 +114,10 @@ export function AdminTransactions() {
     }
     setActionLoading(rejectId);
     try {
-      const res = await fetch(`/api/admin/transactions/${rejectId}/reject`, {
+      const res = await fetch(`/api/admin/transactions/${rejectId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: rejectReason }),
+        body: JSON.stringify({ action: 'reject', reason: rejectReason }),
       });
       if (res.ok) {
         toast.success(t('rejectTransaction'));

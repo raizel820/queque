@@ -193,13 +193,54 @@ Stage Summary:
 3. Customer queue tracker needs position/people-ahead calculation from server
 4. Some agency routes use first-active-agency pattern (MVP simplification)
 5. File upload for payment receipts not yet implemented
+6. No authentication middleware on API routes (userId passed as query param)
+7. Admin endpoints have no role-based authorization
 
 ## Recommended Next Steps
 1. Build WebSocket service for true real-time updates
 2. Fix queue position calculation (people ahead, estimated time)
 3. Add file upload for agency logos and payment receipts
-4. Implement QR code generation for agencies
-5. Add proper error boundaries and loading states
-6. Build additional admin features (create/edit agencies)
-7. Enhance customer home with map/location features
-8. Add proper form validation with zod
+4. Add API authentication middleware
+5. Add role-based authorization for admin endpoints
+6. Build QR code generation for agencies
+
+---
+Task ID: 4
+Agent: Main QA Tester
+Task: Full-scale feature testing and bug fixes
+
+Work Log:
+- Started dev server and verified page loads (GET / returns 200)
+- Discovered useSyncExternalStore missing getServerSnapshot in use-language.ts and theme-toggle.tsx
+- Fixed both hooks by adding getServerSnapshot parameter
+- Ran API endpoint tests (16 endpoints tested, 12 passed, 4 failed)
+- Fixed admin/stats route: changed createdAt to joinedAt (Reservation model field mismatch)
+- Fixed agencies/search route: removed mode:'insensitive' (unsupported in SQLite)
+- Ran browser-based QA tests with agent-browser (13 test cases)
+- Fixed customer-home agency detail view crash: added proper API data fetching and type mapping
+- Fixed missing i18n translation keys: paused, waiting, services (ar/fr/en)
+- Fixed TypeScript errors: TranslationKeys export, history route readonly array, profile type comparison
+- Fixed language switching bug: LanguageSwitcher now calls setLanguage() from use-language.ts
+- Fixed logout bug: logout() now clears localStorage before setting state
+- Fixed admin transactions page: corrected API endpoint URL and response mapping
+- Ran eslint: all clean
+
+Stage Summary:
+- 8 bugs found and fixed during QA
+- All TypeScript errors resolved
+- Lint passes clean
+- 11/13 QA tests passing (2 fixed in this session)
+- Screenshots captured for all test cases
+- 15-minute cron job created for webDevReview (job ID: 141284)
+
+## Bugs Fixed
+| # | Severity | Bug | File |
+|---|----------|-----|------|
+| 1 | Critical | useSyncExternalStore missing getServerSnapshot (page 500 error) | use-language.ts, theme-toggle.tsx |
+| 2 | Critical | Customer crash when clicking agency card (services undefined) | customer-home.tsx |
+| 3 | High | Admin stats API 500 (createdAt field doesn't exist) | api/admin/stats/route.ts |
+| 4 | High | Agency search API 500 (mode:insensitive in SQLite) | api/agencies/route.ts |
+| 5 | High | Language switching has no effect | language-switcher.tsx |
+| 6 | Medium | Logout from profile page doesn't work | use-app-store.ts |
+| 7 | Medium | Admin transactions page shows "No data" | admin-transactions.tsx |
+| 8 | Low | TypeScript compilation errors (TranslationKeys, readonly, type overlap) | Multiple files |

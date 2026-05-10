@@ -221,7 +221,7 @@ export function CustomerProfile() {
             <div className="flex items-center gap-2">
               <ThemeToggle />
               <span className="text-sm font-medium text-foreground">
-                {lang === 'dark' ? t('darkMode') : t('lightMode')}
+                {t('lightMode')}
               </span>
             </div>
           </CardContent>

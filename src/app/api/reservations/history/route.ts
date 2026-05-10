@@ -15,9 +15,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const completedStatuses = ['COMPLETED', 'CANCELLED', 'NO_SHOW', 'SERVED'] as string[];
+
     const where = {
       userId,
-      status: { in: ['COMPLETED', 'CANCELLED', 'NO_SHOW', 'SERVED'] as const },
+      status: { in: completedStatuses },
     }
 
     const [reservations, total] = await Promise.all([
