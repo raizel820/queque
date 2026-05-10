@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,8 @@ import {
   Pencil,
   Check,
   X,
+  Copy,
+  Download,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -61,6 +63,8 @@ export function AgencyProfile() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [qrSvg, setQrSvg] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -80,6 +84,28 @@ export function AgencyProfile() {
       setLoading(false);
     }
   };
+
+  const fetchQrCode = useCallback(async (code: string) => {
+    if (!code) return;
+    setQrLoading(true);
+    try {
+      const res = await fetch(`/api/agency/qr-code?code=${encodeURIComponent(code)}`);
+      if (res.ok) {
+        const svg = await res.text();
+        setQrSvg(svg);
+      }
+    } catch {
+      // silent
+    } finally {
+      setQrLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (profile?.code) {
+      fetchQrCode(profile.code);
+    }
+  }, [profile?.code, fetchQrCode]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -105,8 +131,41 @@ export function AgencyProfile() {
   };
 
   const getCategoryLabel = (cat: string) => {
-    const found = categoryOptions.find((c) => c.value === cat);
+    const found = categoryOptions.find((c) => c.value === cat.toUpperCase());
     return found ? t(found.key) : cat;
+  };
+
+  const agencyLink = profile?.code ? `https://queuewise.dz/join/${profile.code}` : '';
+
+  const handleCopyLink = async () => {
+    if (!agencyLink) return;
+    try {
+      await navigator.clipboard.writeText(agencyLink);
+      toast.success(t('linkCopied'));
+    } catch {
+      // Fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = agencyLink;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      toast.success(t('linkCopied'));
+    }
+  };
+
+  const handleDownloadQr = () => {
+    if (!qrSvg) return;
+    const svgBlob = new Blob([qrSvg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(svgBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `queuewise-${profile?.code || 'qr'}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success(t('downloaded'));
   };
 
   if (loading) {
@@ -311,18 +370,50 @@ export function AgencyProfile() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="h-24 w-24 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700">
-                <QrCode className="h-10 w-10 text-muted-foreground" />
+            <div className="flex flex-col sm:flex-row items-center gap-5">
+              {/* QR Code Image */}
+              <div className="h-32 w-32 rounded-xl bg-white dark:bg-gray-900 flex items-center justify-center border-2 border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0 overflow-hidden">
+                {qrLoading ? (
+                  <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
+                ) : qrSvg ? (
+                  <div
+                    className="h-full w-full flex items-center justify-center p-2"
+                    dangerouslySetInnerHTML={{ __html: qrSvg }}
+                  />
+                ) : (
+                  <QrCode className="h-10 w-10 text-muted-foreground" />
+                )}
               </div>
-              <div>
+
+              <div className="flex-1 text-center sm:text-start">
                 <p className="text-sm font-medium text-foreground mb-1">{t('agencyCode')}</p>
-                <p className="text-2xl font-mono font-bold text-emerald-700 dark:text-emerald-400" dir="ltr">
+                <p className="text-2xl font-mono font-bold text-emerald-700 dark:text-emerald-400 mb-1" dir="ltr">
                   {profile?.code || 'N/A'}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Share this code with your customers
+                <p className="text-xs text-muted-foreground mb-3">
+                  {t('shareCodeText')}
                 </p>
+                <div className="flex items-center gap-2 justify-center sm:justify-start">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 rounded-lg text-xs"
+                    onClick={handleCopyLink}
+                  >
+                    <Copy className="h-3.5 w-3.5 me-1.5" />
+                    {t('copyLink')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 rounded-lg text-xs"
+                    onClick={handleDownloadQr}
+                    disabled={!qrSvg}
+                  >
+                    <Download className="h-3.5 w-3.5 me-1.5" />
+                    {t('downloadQr')}
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>

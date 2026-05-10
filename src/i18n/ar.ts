@@ -284,6 +284,91 @@ const ar = {
   // ─── Themes ──────────────────────────────
   lightMode: "الوضع الفاتح",
   darkMode: "الوضع الداكن",
+
+  // ─── Testimonials ─────────────────────────
+  testimonialsTitle: "ماذا يقول عملاؤنا",
+  testimonial1: "لم أعد أحتاج للانتظار ساعات في العيادة. أنضم من البيت وأذهب فقط عندما يحين دوري!",
+  testimonial1Name: "كريم بوعلام",
+  testimonial1Role: "زبون",
+  testimonial2: "المنصة سهلة الاستخدام جداً. حتى كبار السن يمكنهم استخدامها بسهولة.",
+  testimonial2Name: "فاطمة الزهراء",
+  testimonial2Role: "زبونة",
+  testimonial3: "ساعدتني كيو وايز في تنظيم طابور العيادة بشكل أفضل. العملاء راضون جداً.",
+  testimonial3Name: "د. محمد",
+  testimonial3Role: "صاحب عيادة",
+  trustedBy: "موثوق من قبل",
+  trustedClinic: "عيادات",
+  trustedLab: "مختبرات",
+  trustedLaw: "محامون",
+  trustedGov: "حكوميات",
+
+  // ─── Queue Tracker ────────────────────────
+  live: "مباشر",
+  noHistoryYet: "لا يوجد سجل بعد",
+  noHistoryCompleted: "لا توجد حجوزات مكتملة",
+  noHistoryCancelled: "لا توجد حجوزات ملغاة",
+  noHistoryNoShow: "لا توجد تسجيلات غياب",
+  notificationTypeQueue: "طابور",
+  notificationTypeSystem: "نظام",
+  notificationTypeAlert: "تنبيه",
+  nowServing: "يُخدم الآن",
+  queueStatus: "حالة الطابور",
+  queueOpenStatus: "مفتوح",
+  queuePausedStatusLabel: "متوقف",
+  appearance: "المظهر",
+  appearanceDesc: "تخصيص مظهر التطبيق",
+
+  // ─── Roles ──────────────────────────────
+  agencyOwner: "مالك المؤسسة",
+  agencyStaff: "موظف المؤسسة",
+  platformAdmin: "مدير المنصة",
+  superAdmin: "المدير العام",
+
+  // ─── Accessibility ──────────────────────
+  changeLanguage: "تغيير اللغة",
+  toggleTheme: "تبديل المظهر",
+
+  // ─── Agency Code ────────────────────────
+  shareCodeText: "شارك هذا الكود مع عملائك",
+
+  // ─── Customer Queue ─────────────────────
+  yourTurnAlert: "!دورك الآن",
+
+  // ─── Countdown Labels ───────────────────
+  hours: "ساعة",
+  minutesLabel: "دقيقة",
+  secondsLabel: "ثانية",
+
+  // ─── Dashboard ──────────────────────────
+  dailyActivity: "النشاط اليومي",
+
+  // ─── Agency Profile Extras ──────────────
+  agencyCode: "كود المؤسسة",
+  copyLink: "نسخ الرابط",
+  downloadQr: "تحميل رمز QR",
+  linkCopied: "تم نسخ الرابط!",
+  downloaded: "تم التحميل!",
+
+  // ─── Admin Users ────────────────────────
+  userManagement: "إدارة المستخدمين",
+  totalUsers: "إجمالي المستخدمين",
+  suspendUser: "تعليق",
+  activateUser: "تفعيل",
+  adminRole: "مدير",
+  agencyOwnerRole: "مالك مؤسسة",
+  agencyStaffRole: "موظف مؤسسة",
+  customerRole: "زبون",
+  suspended: "معلّق",
+
+  // ─── Customer History ───────────────────
+  bookAgain: "حجز مرة أخرى",
+
+  // ─── QR & Notifications Extras ─────────
+  shareCodeWithCustomers: "شارك هذا الكود مع عملائك للانضمام السريع",
+  yourTurn: "!دورك الآن",
+  dismissAlert: "فهمت",
+  fileTooLarge: "حجم الملف يتجاوز 5 ميغابايت",
+  seconds: "ثانية",
 };
 
 export default ar;

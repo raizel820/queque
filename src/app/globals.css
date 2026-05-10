@@ -121,9 +121,24 @@
   }
 }
 
-/* ─── Custom Scrollbar ─────────────────────── */
-.custom-scrollbar::-webkit-scrollbar {
+/* ─── Custom Scrollbar (WebKit) ─────────────── */
+*::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: oklch(0.7 0 0 / 15%);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.7 0 0 / 30%);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
@@ -153,6 +168,22 @@
 /* ─── Smooth Scroll ────────────────────────── */
 html {
   scroll-behavior: smooth;
+}
+
+/* ─── Smooth Focus Ring Styles ──────────────── */
+*:focus-visible {
+  outline: 2px solid oklch(0.556 0.143 160.647 / 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+  transition: outline-color 0.2s ease, outline-offset 0.2s ease;
+}
+
+/* ─── Subtle Hover Transitions ──────────────── */
+button, a, [role="button"], .cursor-pointer, [onclick] {
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.15s ease;
+}
+button:active, a:active, [role="button"]:active {
+  transform: scale(0.98);
 }
 
 /* ─── Animated gradient for hero ───────────── */

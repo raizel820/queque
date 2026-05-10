@@ -1,0 +1,306 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useLanguage } from '@/hooks/use-language';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Users,
+  Search,
+  ShieldCheck,
+  UserCircle,
+  Loader2,
+  Ban,
+  CheckCircle2,
+  Filter,
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+
+interface UserItem {
+  id: string;
+  username: string;
+  fullName: string;
+  email?: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+const roleFilters = [
+  { value: '', labelKey: 'all' as const },
+  { value: 'CUSTOMER', labelKey: 'customerRole' as const },
+  { value: 'AGENCY_OWNER', labelKey: 'agencyOwnerRole' as const },
+  { value: 'AGENCY_STAFF', labelKey: 'agencyStaffRole' as const },
+  { value: 'SUPER_ADMIN', labelKey: 'adminRole' as const },
+];
+
+export function AdminUsers() {
+  const { t, lang } = useLanguage();
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
+
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      if (roleFilter) params.set('role', roleFilter);
+      if (statusFilter) params.set('status', statusFilter);
+
+      const res = await fetch(`/api/admin/users?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users ?? []);
+        setTotal(data.total ?? 0);
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }, [search, roleFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const handleToggleStatus = async (userId: string, currentActive: boolean) => {
+    setActionLoading(userId);
+    try {
+      const action = currentActive ? 'suspend' : 'activate';
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, action }),
+      });
+      if (res.ok) {
+        toast.success(
+          currentActive ? t('suspendUser') : t('activateUser')
+        );
+        fetchUsers();
+      } else {
+        toast.error(t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'SUPER_ADMIN':
+        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200';
+      case 'AGENCY_OWNER':
+        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200';
+      case 'AGENCY_STAFF':
+        return 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 border-gray-200';
+    }
+  };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'SUPER_ADMIN': return t('adminRole');
+      case 'AGENCY_OWNER': return t('agencyOwnerRole');
+      case 'AGENCY_STAFF': return t('agencyStaffRole');
+      case 'CUSTOMER': return t('customerRole');
+      default: return role;
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  return (
+    <div className="p-4 lg:p-6 space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t('userManagement')}</h1>
+          <p className="text-sm text-muted-foreground">
+            {t('totalUsers')}: {total}
+          </p>
+        </div>
+      </div>
+
+      {/* Search & Filters */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t('searchPlaceholder')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="ps-10 h-11"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {roleFilters.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setRoleFilter(f.value)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  roleFilter === f.value
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {t(f.labelKey)}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setStatusFilter('')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                statusFilter === ''
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {t('all')}
+            </button>
+            <button
+              onClick={() => setStatusFilter('active')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                statusFilter === 'active'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {t('active')}
+            </button>
+            <button
+              onClick={() => setStatusFilter('suspended')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                statusFilter === 'suspended'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              {t('suspended')}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Users List */}
+      {loading ? (
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-2xl" />
+          ))}
+        </div>
+      ) : users.length === 0 ? (
+        <div className="text-center py-16">
+          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground">{t('noData')}</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {users.map((user, idx) => (
+            <motion.div
+              key={user.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2, delay: idx * 0.02 }}
+            >
+              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-11 w-11 rounded-full flex items-center justify-center ${
+                        user.isActive
+                          ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                          : 'bg-red-100 dark:bg-red-900/30'
+                      }`}>
+                        <UserCircle className={`h-6 w-6 ${
+                          user.isActive
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-red-600 dark:text-red-400'
+                        }`} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          {user.fullName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          @{user.username}
+                          {user.email && ` · ${user.email}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] ${getRoleBadgeColor(user.role)}`}
+                      >
+                        {getRoleLabel(user.role)}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className={
+                          user.isActive
+                            ? 'text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
+                            : 'text-[10px] bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200'
+                        }
+                      >
+                        {user.isActive ? t('active') : t('suspended')}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                    <span className="text-xs text-muted-foreground">
+                      {t('date')}: {formatDate(user.createdAt)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`h-8 rounded-lg text-xs ${
+                        user.isActive
+                          ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                          : 'border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                      }`}
+                      onClick={() => handleToggleStatus(user.id, user.isActive)}
+                      disabled={actionLoading === user.id || user.role === 'SUPER_ADMIN'}
+                    >
+                      {actionLoading === user.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin me-1" />
+                      ) : user.isActive ? (
+                        <Ban className="h-3 w-3 me-1" />
+                      ) : (
+                        <CheckCircle2 className="h-3 w-3 me-1" />
+                      )}
+                      {user.isActive ? t('suspendUser') : t('activateUser')}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

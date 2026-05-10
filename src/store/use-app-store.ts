@@ -20,7 +20,8 @@ export type ViewName =
   | 'admin-dashboard'
   | 'admin-transactions'
   | 'admin-agencies'
-  | 'admin-audit';
+  | 'admin-audit'
+  | 'admin-users';
 
 interface UserState {
   id: string;
@@ -29,6 +30,7 @@ interface UserState {
   role: UserRole;
   language: Language;
   avatarUrl?: string;
+  agencyId?: string;
 }
 
 interface AppState {
@@ -92,7 +94,6 @@ export const useAppStore = create<AppState>()(
         set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
       logout: () => {
-        // Set state first (triggers persist to write new values)
         set({
           user: null,
           isAuthenticated: false,
@@ -100,14 +101,14 @@ export const useAppStore = create<AppState>()(
           previousView: null,
           sidebarOpen: false,
         });
-        // Then clear localStorage after state update
+        // Clear persisted storage AFTER set (persist middleware writes during set)
         setTimeout(() => {
           if (typeof window !== 'undefined') {
             localStorage.removeItem('queuewise-app');
             localStorage.removeItem('queuewise-lang');
-            window.location.reload();
+            window.location.href = '/';
           }
-        }, 50);
+        }, 100);
       },
     }),
     {
@@ -121,12 +122,14 @@ export const useAppStore = create<AppState>()(
 );
 
 // Helper to get the persist API for clearing storage
-useAppStore.persist.clearStorage = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('queuewise-app');
-    localStorage.removeItem('queuewise-lang');
-  }
-};
+if (useAppStore.persist) {
+  useAppStore.persist.clearStorage = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('queuewise-app');
+      localStorage.removeItem('queuewise-lang');
+    }
+  };
+}
 
 // Helper to set document direction
 export function updateDocumentDirection(lang: Language) {

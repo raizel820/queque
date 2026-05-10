@@ -10,9 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { TicketCheck, ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react';
+import { TicketCheck, ArrowLeft, Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { UserRole } from '@/store/use-app-store';
 
 export function LoginForm() {
@@ -24,6 +24,7 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -42,15 +43,19 @@ export function LoginForm() {
       const data = await res.json();
 
       if (res.ok && data.user) {
-        setUser(data.user);
-        toast.success(t('loginSuccess'));
+        setLoginSuccess(true);
+        setTimeout(() => {
+          setUser(data.user);
+          toast.success(t('loginSuccess'));
+          setLoginSuccess(false);
+        }, 600);
       } else {
         toast.error(data.error || t('invalidCredentials'));
       }
     } catch {
       toast.error(t('error'));
     } finally {
-      setLoading(false);
+      if (!loginSuccess) setLoading(false);
     }
   };
 
@@ -73,15 +78,29 @@ export function LoginForm() {
       {/* Background gradient + decorative pattern */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/20" />
+        {/* Subtle grid pattern */}
         <div
-          className="absolute inset-0 opacity-[0.025] dark:opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(16,185,129,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.1) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
+          }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
           style={{
             backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
             backgroundSize: '28px 28px',
           }}
         />
+        {/* Gradient orbs */}
         <div className="absolute top-1/4 start-0 w-72 h-72 bg-emerald-200/20 dark:bg-emerald-800/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 end-0 w-80 h-80 bg-teal-200/20 dark:bg-teal-800/10 rounded-full blur-3xl" />
+        <motion.div
+          animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-[40%] end-[20%] w-32 h-32 bg-emerald-300/10 dark:bg-emerald-700/5 rounded-full blur-2xl"
+        />
       </div>
 
       {/* Top Bar */}
@@ -136,18 +155,22 @@ export function LoginForm() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-5 pt-4">
-                {/* Role Tabs (demo) */}
+                {/* Role Tabs with animated indicator */}
                 <Tabs value={roleTab} onValueChange={setRoleTab} className="w-full">
-                  <TabsList className="w-full grid grid-cols-3 h-11">
-                    <TabsTrigger value="customer" className="text-xs sm:text-sm">
-                      {t('loginAsCustomer')}
-                    </TabsTrigger>
-                    <TabsTrigger value="agency" className="text-xs sm:text-sm">
-                      {t('loginAsAgency')}
-                    </TabsTrigger>
-                    <TabsTrigger value="admin" className="text-xs sm:text-sm">
-                      {t('loginAsAdmin')}
-                    </TabsTrigger>
+                  <TabsList className="w-full grid grid-cols-3 h-11 relative bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+                    {[
+                      { value: 'customer', label: t('loginAsCustomer') },
+                      { value: 'agency', label: t('loginAsAgency') },
+                      { value: 'admin', label: t('loginAsAdmin') },
+                    ].map((tab) => (
+                      <TabsTrigger
+                        key={tab.value}
+                        value={tab.value}
+                        className="text-xs sm:text-sm rounded-lg relative z-10 data-[state=active]:bg-white data-[state=active]:dark:bg-gray-700 data-[state=active]:shadow-sm transition-all duration-200 data-[state=active]:text-foreground"
+                      >
+                        {tab.label}
+                      </TabsTrigger>
+                    ))}
                   </TabsList>
                 </Tabs>
 
@@ -198,17 +221,51 @@ export function LoginForm() {
                 </div>
               </CardContent>
               <CardFooter className="flex-col gap-4 pt-2 pb-6">
-                <Button
-                  className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-base rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 hover:scale-[1.01]"
-                  onClick={handleLogin}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                <AnimatePresence mode="wait">
+                  {loginSuccess ? (
+                    <motion.div
+                      key="success"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="w-full h-12 rounded-xl bg-emerald-500 text-white font-semibold text-base flex items-center justify-center gap-2"
+                    >
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: 'spring', stiffness: 300 }}
+                      >
+                        <CheckCircle2 className="h-5 w-5" />
+                      </motion.div>
+                      {t('loginSuccess')}
+                    </motion.div>
                   ) : (
-                    t('login')
+                    <motion.div
+                      key="button"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="w-full"
+                    >
+                      <Button
+                        className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-base rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 hover:scale-[1.01]"
+                        onClick={handleLogin}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                          >
+                            <Loader2 className="h-5 w-5" />
+                          </motion.div>
+                        ) : (
+                          t('login')
+                        )}
+                      </Button>
+                    </motion.div>
                   )}
-                </Button>
+                </AnimatePresence>
                 <p className="text-sm text-muted-foreground">
                   {t('noAccount')}{' '}
                   <button

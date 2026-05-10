@@ -68,7 +68,25 @@ export async function POST(request: NextRequest) {
     // Return user data (exclude passwordHash)
     const { passwordHash: _, ...userData } = user
 
-    return NextResponse.json({ success: true, user: userData })
+    // Look up agencyId for agency owners and staff
+    let agencyId: string | undefined;
+    if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_STAFF') {
+      if (user.role === 'AGENCY_OWNER') {
+        const ownedAgency = await db.agency.findFirst({
+          where: { ownerId: user.id },
+          select: { id: true },
+        });
+        agencyId = ownedAgency?.id;
+      } else {
+        const staffAssignment = await db.agencyStaff.findFirst({
+          where: { userId: user.id, isActive: true },
+          select: { agencyId: true },
+        });
+        agencyId = staffAssignment?.agencyId;
+      }
+    }
+
+    return NextResponse.json({ success: true, user: { ...userData, agencyId } })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(

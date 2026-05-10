@@ -283,9 +283,94 @@ const fr: Record<TranslationKeys, string> = {
   rightsReserved: "Tous droits réservés",
   version: "Version 1.0",
 
-  // ─── Themes ──────────────────────────────
+  // ─── Themes �n─────────────────────────────
   lightMode: "Mode clair",
   darkMode: "Mode sombre",
+
+  // ─── Testimonials ─────────────────────────
+  testimonialsTitle: "Ce que disent nos clients",
+  testimonial1: "Je n'attends plus des heures à la clinique. Je me joins de chez moi et je vais quand c'est mon tour !",
+  testimonial1Name: "Karim Boualem",
+  testimonial1Role: "Client",
+  testimonial2: "La plateforme est très facile à utiliser. Même les personnes âgées peuvent l'utiliser facilement.",
+  testimonial2Name: "Fatima Zahra",
+  testimonial2Role: "Cliente",
+  testimonial3: "QueueWise m'a aidé à mieux organiser la file d'attente. Les clients sont très satisfaits.",
+  testimonial3Name: "Dr. Mohamed",
+  testimonial3Role: "Propriétaire de clinique",
+  trustedBy: "Approuvé par",
+  trustedClinic: "Cliniques",
+  trustedLab: "Laboratoires",
+  trustedLaw: "Avocats",
+  trustedGov: "Gouvernement",
+
+  // ─── Queue Tracker ────────────────────────
+  live: "En direct",
+  noHistoryYet: "Pas encore d'historique",
+  noHistoryCompleted: "Aucune réservation terminée",
+  noHistoryCancelled: "Aucune réservation annulée",
+  noHistoryNoShow: "Aucune absence enregistrée",
+  notificationTypeQueue: "File",
+  notificationTypeSystem: "Système",
+  notificationTypeAlert: "Alerte",
+  nowServing: "En cours de service",
+  queueStatus: "Statut de la file",
+  queueOpenStatus: "Ouverte",
+  queuePausedStatusLabel: "En pause",
+  appearance: "Apparence",
+  appearanceDesc: "Personnaliser l'apparence de l'application",
+
+  // ─── Roles ──────────────────────────────
+  agencyOwner: "Propriétaire",
+  agencyStaff: "Employé",
+  platformAdmin: "Administrateur Plateforme",
+  superAdmin: "Super Administrateur",
+
+  // ─── Accessibility ──────────────────────
+  changeLanguage: "Changer la langue",
+  toggleTheme: "Changer le thème",
+
+  // ─── Agency Code ────────────────────────
+  shareCodeText: "Partagez ce code avec vos clients",
+
+  // ─── Customer Queue ─────────────────────
+  yourTurnAlert: "C'est votre tour !",
+
+  // ─── Countdown Labels ───────────────────
+  hours: "Heure",
+  minutesLabel: "Minute",
+  secondsLabel: "Seconde",
+
+  // ─── Dashboard ──────────────────────────
+  dailyActivity: "Activité du jour",
+
+  // ─── Agency Profile Extras ──────────────
+  agencyCode: "Code de l'établissement",
+  copyLink: "Copier le lien",
+  downloadQr: "Télécharger le QR",
+  linkCopied: "Lien copié !",
+  downloaded: "Téléchargé !",
+
+  // ─── Admin Users ────────────────────────
+  userManagement: "Gestion des utilisateurs",
+  totalUsers: "Total utilisateurs",
+  suspendUser: "Suspendre",
+  activateUser: "Activer",
+  adminRole: "Admin",
+  agencyOwnerRole: "Propriétaire",
+  agencyStaffRole: "Employé",
+  customerRole: "Client",
+  suspended: "Suspendu",
+
+  // ─── Customer History ───────────────────
+  bookAgain: "Réserver à nouveau",
+
+  // ─── QR & Notifications Extras ─────────
+  shareCodeWithCustomers: "Partagez ce code avec vos clients pour un accès rapide",
+  yourTurn: "C'est votre tour !",
+  dismissAlert: "Compris",
+  fileTooLarge: "La taille du fichier dépasse 5 Mo",
+  seconds: "Seconde",
 };
 
 export default fr;

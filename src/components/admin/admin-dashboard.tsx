@@ -120,7 +120,7 @@ export function AdminDashboard() {
         <h1 className="text-2xl font-bold text-foreground">{t('adminDashboard')}</h1>
         <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200">
           <ShieldCheck className="h-3 w-3 me-1" />
-          Admin
+          {t('superAdmin')}
         </Badge>
       </div>
 

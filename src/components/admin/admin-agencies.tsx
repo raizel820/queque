@@ -152,7 +152,7 @@ export function AdminAgencies() {
   });
 
   const getCategoryLabel = (cat: string) => {
-    const found = categoryOptions.find((c) => c.value === cat);
+    const found = categoryOptions.find((c) => c.value === cat.toUpperCase());
     return found ? t(found.key) : cat;
   };
 

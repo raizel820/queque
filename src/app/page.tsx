@@ -28,6 +28,7 @@ import { AdminDashboard } from '@/components/admin/admin-dashboard';
 import { AdminTransactions } from '@/components/admin/admin-transactions';
 import { AdminAgencies } from '@/components/admin/admin-agencies';
 import { AdminAuditLogs } from '@/components/admin/admin-audit-logs';
+import { AdminUsers } from '@/components/admin/admin-users';
 
 // Shared
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
@@ -49,6 +50,7 @@ import {
   X,
   Bell,
   ClipboardList,
+  Users,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -89,6 +91,8 @@ function ViewRouter() {
       return <AdminAgencies />;
     case 'admin-audit':
       return <AdminAuditLogs />;
+    case 'admin-users':
+      return <AdminUsers />;
     default:
       return <LandingPage />;
   }
@@ -203,7 +207,7 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-foreground truncate">{user?.fullName}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.role}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.role === 'AGENCY_OWNER' ? t('agencyOwner') : t('agencyStaff')}</p>
           </div>
         </div>
         <button
@@ -264,6 +268,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
     { view: 'admin-transactions' as const, icon: CreditCard, label: t('transactions') },
     { view: 'admin-agencies' as const, icon: Building2, label: t('agencies') },
     { view: 'admin-audit' as const, icon: ClipboardList, label: t('auditLogsPage') },
+    { view: 'admin-users' as const, icon: Users, label: t('userManagement') },
   ];
 
   const sidebar = (
@@ -310,8 +315,8 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
             <ShieldCheck className="h-4 w-4 text-amber-700 dark:text-amber-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user?.fullName || 'Admin'}</p>
-            <p className="text-xs text-muted-foreground truncate">Super Admin</p>
+            <p className="text-sm font-medium text-foreground truncate">{user?.fullName}</p>
+            <p className="text-xs text-muted-foreground truncate">{t('superAdmin')}</p>
           </div>
         </div>
         <button

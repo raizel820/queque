@@ -6,12 +6,12 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const plan = formData.get('plan') as string;
     const method = formData.get('method') as string;
+    const receiptUrl = formData.get('receiptUrl') as string | null;
 
     const agency = await db.agency.findFirst({ where: { isActive: true } });
     if (!agency) return NextResponse.json({ error: 'No agency found' }, { status: 404 });
 
     const amount = plan === 'PREMIUM' ? 3000 : 2000;
-    const receiptUrl = null; // File upload not yet implemented
 
     const transaction = await db.transaction.create({
       data: {

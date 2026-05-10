@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
             category: true,
             address: true,
             logoUrl: true,
+            averageServiceTime: true,
           },
         },
         service: {
@@ -44,7 +45,48 @@ export async function GET(request: NextRequest) {
       orderBy: { joinedAt: 'desc' },
     })
 
-    return NextResponse.json({ success: true, reservations })
+    // Calculate position, peopleAhead, estimatedWait, currentServingNumber for each
+    const enriched = await Promise.all(
+      reservations.map(async (res) => {
+        // Count people ahead: WAITING reservations for same agency+service joined before this one
+        const peopleAhead = await db.reservation.count({
+          where: {
+            agencyId: res.agencyId,
+            status: 'WAITING',
+            joinedAt: { lt: res.joinedAt },
+            id: { not: res.id },
+          },
+        })
+
+        const position = res.status === 'CALLED' ? 1 : peopleAhead + 1
+
+        // Get current serving number for this agency (latest CALLED or SERVED reservation)
+        const currentServing = await db.reservation.findFirst({
+          where: {
+            agencyId: res.agencyId,
+            status: { in: ['CALLED', 'SERVED'] },
+          },
+          orderBy: { calledAt: 'desc' },
+          select: { displayNumber: true },
+        })
+
+        const currentServingNumber = currentServing?.displayNumber ?? '0'
+
+        // Calculate estimated wait
+        const avgServiceTime = res.agency.averageServiceTime || 10
+        const estimatedWait = res.status === 'CALLED' ? 0 : peopleAhead * avgServiceTime
+
+        return {
+          ...res,
+          peopleAhead,
+          position,
+          currentServingNumber,
+          estimatedWait,
+        }
+      })
+    )
+
+    return NextResponse.json({ success: true, reservations: enriched })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(

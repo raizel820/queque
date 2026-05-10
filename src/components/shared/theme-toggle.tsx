@@ -4,6 +4,7 @@ import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Sun, Moon } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
+import { useLanguage } from '@/hooks/use-language';
 
 function subscribe() { return () => {}; }
 function getSnapshot() { return true; }
@@ -11,6 +12,7 @@ function getServerSnapshot() { return false; }
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
   const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   if (!mounted) {
@@ -33,7 +35,7 @@ export function ThemeToggle() {
       ) : (
         <Moon className="h-5 w-5" />
       )}
-      <span className="sr-only">Toggle theme</span>
+      <span className="sr-only">{t('toggleTheme')}</span>
     </Button>
   );
 }

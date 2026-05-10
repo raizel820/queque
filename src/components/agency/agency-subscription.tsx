@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,9 +15,10 @@ import {
   Star,
   Upload,
   CreditCard,
-  Building2,
   Loader2,
-  ArrowRight,
+  X,
+  FileText,
+  ImageIcon,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -45,7 +46,9 @@ export function AgencySubscription() {
   const [selectedPlan, setSelectedPlan] = useState('BASIC');
   const [paymentMethod, setPaymentMethod] = useState('CCP');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchSubscription();
@@ -66,6 +69,38 @@ export function AgencySubscription() {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t('fileTooLarge'));
+      return;
+    }
+
+    setReceiptFile(file);
+
+    // Generate preview
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setReceiptPreview(null);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setReceiptFile(null);
+    setReceiptPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmitPayment = async () => {
     if (!receiptFile) {
       toast.error(t('uploadReceipt'));
@@ -74,20 +109,39 @@ export function AgencySubscription() {
 
     setSubmitting(true);
     try {
-      const formData = new FormData();
-      formData.append('plan', selectedPlan);
-      formData.append('method', paymentMethod);
-      formData.append('receipt', receiptFile);
+      // First upload the file
+      const uploadForm = new FormData();
+      uploadForm.append('file', receiptFile);
+
+      const uploadRes = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadForm,
+      });
+
+      if (!uploadRes.ok) {
+        const uploadData = await uploadRes.json();
+        toast.error(uploadData.error || t('error'));
+        return;
+      }
+
+      const uploadData = await uploadRes.json();
+      const receiptUrl = uploadData.url;
+
+      // Then submit payment with the receipt URL
+      const payForm = new FormData();
+      payForm.append('plan', selectedPlan);
+      payForm.append('method', paymentMethod);
+      payForm.append('receiptUrl', receiptUrl);
 
       const res = await fetch('/api/agency/subscription/pay', {
         method: 'POST',
-        body: formData,
+        body: payForm,
       });
 
       if (res.ok) {
         toast.success(t('submitPayment'));
         setSelectedPlan(data?.currentPlan || 'BASIC');
-        setReceiptFile(null);
+        handleRemoveFile();
         fetchSubscription();
       } else {
         const d = await res.json();
@@ -110,6 +164,21 @@ export function AgencySubscription() {
     } catch {
       return dateStr;
     }
+  };
+
+  const getFileIcon = () => {
+    if (!receiptFile) return null;
+    if (receiptFile.type.startsWith('image/')) return <ImageIcon className="h-5 w-5" />;
+    if (receiptFile.type === 'application/pdf') return <FileText className="h-5 w-5 text-red-500" />;
+    return <FileText className="h-5 w-5" />;
+  };
+
+  const getFileSize = () => {
+    if (!receiptFile) return '';
+    const size = receiptFile.size;
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   if (loading) {
@@ -261,15 +330,53 @@ export function AgencySubscription() {
             {/* Upload Receipt */}
             <div className="space-y-2">
               <Label>{t('uploadReceipt')}</Label>
-              <div className="relative">
-                <Input
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf"
-                  onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-                  className="h-11"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">{t('receiptNote')}</p>
+
+              {receiptFile && receiptPreview ? (
+                <div className="relative rounded-xl border border-border overflow-hidden">
+                  <img
+                    src={receiptPreview}
+                    alt="Receipt preview"
+                    className="max-h-48 w-full object-contain bg-gray-50 dark:bg-gray-900"
+                  />
+                  <button
+                    onClick={handleRemoveFile}
+                    className="absolute top-2 end-2 h-7 w-7 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : receiptFile ? (
+                <div className="flex items-center gap-3 p-4 rounded-xl border border-border bg-gray-50 dark:bg-gray-900">
+                  {getFileIcon()}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{receiptFile.name}</p>
+                    <p className="text-xs text-muted-foreground">{getFileSize()}</p>
+                  </div>
+                  <button
+                    onClick={handleRemoveFile}
+                    className="h-7 w-7 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 flex items-center justify-center transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-700 cursor-pointer hover:border-emerald-400 dark:hover:border-emerald-600 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors">
+                  <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                    <Upload className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-foreground">{t('uploadReceipt')}</p>
+                    <p className="text-xs text-muted-foreground">{t('receiptNote')}</p>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              )}
             </div>
 
             <Button

@@ -99,7 +99,7 @@ export function CustomerHome() {
 
   const filteredAgencies = useMemo(() => {
     return agencies.filter((a) => {
-      const matchCategory = selectedCategory === 'ALL' || a.category === selectedCategory;
+      const matchCategory = selectedCategory === 'ALL' || a.category.toUpperCase() === selectedCategory;
       const query = searchQuery.toLowerCase().trim();
       const matchSearch =
         !query ||
@@ -187,9 +187,11 @@ export function CustomerHome() {
   };
 
   const getCategoryLabel = (cat: string) => {
-    const found = categoryKeys.find((c) => c.value === cat);
+    const found = categoryKeys.find((c) => c.value === cat.toUpperCase());
     return found ? t(found.key) : cat;
   };
+
+  const getCategoryValue = (cat: string) => cat.toUpperCase();
 
   // Agency Detail View
   if (loadingDetail) {
@@ -202,7 +204,7 @@ export function CustomerHome() {
 
   if (selectedAgency) {
     const totalWaiting = getTotalWaiting();
-    const estWait = totalWaiting * 10; // ~10 min avg per person
+    const estWait = totalWaiting * 10;
     return (
       <motion.div
         initial={{ opacity: 0, x: 20 }}
@@ -273,8 +275,10 @@ export function CustomerHome() {
                 <h3 className="font-semibold text-sm text-foreground mb-3">{t('selectService')}</h3>
                 <div className="space-y-2">
                   {selectedAgency.services.map((svc) => (
-                    <button
+                    <motion.button
                       key={svc.id}
+                      whileHover={{ x: 4 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleJoinQueue(selectedAgency.id, svc.id)}
                       disabled={selectedAgency.isPaused || !selectedAgency.isQueueOpen}
                       className="w-full flex items-center justify-between p-3 rounded-xl border border-border hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors disabled:opacity-50"
@@ -290,7 +294,7 @@ export function CustomerHome() {
                         )}
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground rtl:rotate-180" />
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
@@ -359,9 +363,9 @@ export function CustomerHome() {
             <button
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors min-h-9 ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all min-h-9 ${
                 selectedCategory === cat.value
-                  ? 'bg-emerald-600 text-white shadow-sm'
+                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/25'
                   : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
@@ -376,7 +380,10 @@ export function CustomerHome() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-40 rounded-2xl" />
+            <div key={i} className="relative overflow-hidden rounded-2xl">
+              <Skeleton className="h-40 rounded-2xl" />
+              <div className="absolute inset-0 shimmer rounded-2xl" />
+            </div>
           ))}
         </div>
       ) : filteredAgencies.length === 0 ? (
@@ -392,14 +399,16 @@ export function CustomerHome() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: idx * 0.05 }}
+              whileHover={{ y: -4 }}
+              className="group"
             >
               <Card
-                className="h-full cursor-pointer hover:shadow-lg transition-all duration-300 border-0 shadow-sm hover:border-emerald-200 dark:hover:border-emerald-800 group"
+                className="h-full cursor-pointer border-0 shadow-sm hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 group-hover:border-emerald-200 dark:group-hover:border-emerald-800"
                 onClick={() => handleSelectAgency(agency)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                    <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800/50 transition-colors duration-300">
                       <TicketCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -435,8 +444,24 @@ export function CustomerHome() {
                     <Badge variant="secondary" className="text-[10px]">
                       {getCategoryLabel(agency.category)}
                     </Badge>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <span className="text-[10px]">{agency.serviceCount} {t('services')}</span>
+                    <div className="flex items-center gap-2">
+                      {/* Mini waiting count badge */}
+                      {agency.isQueueOpen && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: idx * 0.05 + 0.3 }}
+                          className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400"
+                        >
+                          <motion.div
+                            animate={{ scale: [1, 1.3, 1] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                            className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                          />
+                          {agency.serviceCount} {t('services')}
+                        </motion.div>
+                      )}
+                      <ChevronRight className="h-4 w-4 text-muted-foreground rtl:rotate-180 group-hover:text-emerald-500 transition-colors" />
                     </div>
                   </div>
                 </CardContent>

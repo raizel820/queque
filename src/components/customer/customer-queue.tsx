@@ -17,6 +17,7 @@ import {
   Loader2,
   AlertTriangle,
   Timer,
+  Radio,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -46,6 +47,7 @@ export function CustomerQueue() {
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [showTurnAlert, setShowTurnAlert] = useState(false);
   const [countdown, setCountdown] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [prevStatus, setPrevStatus] = useState<Record<string, string>>({});
 
   const fetchReservations = useCallback(async () => {
     if (!user?.id) return;
@@ -73,6 +75,20 @@ export function CustomerQueue() {
             joinedAt: r.joinedAt,
           };
         });
+
+        // Detect status changes
+        const currentStatuses: Record<string, string> = {};
+        list.forEach((r: Reservation) => { currentStatuses[r.id] = r.status; });
+        setPrevStatus((prev) => {
+          const next = { ...prev };
+          list.forEach((r: Reservation) => {
+            if (prev[r.id] && prev[r.id] !== r.status && r.status === 'CALLED') {
+              // Status changed to CALLED - will trigger shake
+            }
+          });
+          return next;
+        });
+
         setReservations(list);
 
         // Check if any is CALLED and show alert
@@ -154,32 +170,56 @@ export function CustomerQueue() {
     );
   }
 
-  // Empty State
+  // Empty State - improved with multiple overlapping icons
   if (!activeRes && reservations.length === 0) {
     return (
       <div className="px-4 py-4 pb-24">
         <h1 className="text-2xl font-bold text-foreground mb-1">{t('myQueue')}</h1>
         <div className="flex flex-col items-center justify-center py-20">
+          <div className="relative mb-6">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+              className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center absolute top-0 start-0"
+            >
+              <TicketCheck className="h-10 w-10 text-emerald-500" />
+            </motion.div>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
+              className="h-14 w-14 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center absolute -top-3 end-2"
+            >
+              <Clock className="h-7 w-7 text-teal-500" />
+            </motion.div>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.3 }}
+              className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center absolute bottom-0 start-6"
+            >
+              <Users className="h-6 w-6 text-amber-500" />
+            </motion.div>
+          </div>
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
           >
-            <TicketCheck className="h-10 w-10 text-emerald-500" />
+            <h2 className="text-lg font-semibold text-foreground mb-2">
+              {t('noActiveReservations')}
+            </h2>
+            <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
+              {t('welcomeSubtitle')}
+            </p>
+            <Button
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 rounded-xl h-11 shadow-lg shadow-emerald-500/20"
+              onClick={() => setView('customer-home')}
+            >
+              {t('joinQueue')}
+            </Button>
           </motion.div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">
-            {t('noActiveReservations')}
-          </h2>
-          <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
-            {t('welcomeSubtitle')}
-          </p>
-          <Button
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 rounded-xl h-11 shadow-lg shadow-emerald-500/20"
-            onClick={() => setView('customer-home')}
-          >
-            {t('joinQueue')}
-          </Button>
         </div>
       </div>
     );
@@ -242,7 +282,7 @@ export function CustomerQueue() {
                   <Volume2 className="h-7 w-7 text-white" />
                 </motion.div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-emerald-100">🔔 Your Turn!</p>
+                  <p className="text-sm font-medium text-emerald-100">{t('yourTurnAlert')}</p>
                   <p className="text-2xl font-extrabold tracking-tight">
                     {activeRes.queueNumber}
                   </p>
@@ -319,34 +359,54 @@ export function CustomerQueue() {
               </div>
 
               <CardContent className="p-5">
-                {/* Large Queue Number with Circular Badge */}
+                {/* Large Queue Number with Shake Animation + Pulsing Live Dot */}
                 <div className="text-center mb-5">
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
                     {t('yourQueueNumber')}
                   </p>
-                  <motion.div
-                    animate={
-                      isCalled
-                        ? {
-                            boxShadow: [
-                              '0 0 0 0 rgba(16, 185, 129, 0.3)',
-                              '0 0 0 20px rgba(16, 185, 129, 0)',
-                              '0 0 0 0 rgba(16, 185, 129, 0)',
-                            ],
-                          }
-                        : {}
-                    }
-                    transition={
-                      isCalled
-                        ? { duration: 2, repeat: Infinity, ease: 'easeInOut' }
-                        : {}
-                    }
-                    className="inline-flex items-center justify-center h-28 w-28 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 ring-4 ring-emerald-200 dark:ring-emerald-800"
-                  >
-                    <span className="text-4xl md:text-5xl font-black text-foreground tracking-tight">
-                      {res.queueNumber}
+                  <div className="inline-flex items-center justify-center relative">
+                    {/* Pulsing live dot */}
+                    <motion.div
+                      className="absolute -top-1 -end-1 z-10"
+                      animate={{ scale: [1, 1.3, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      <div className="h-3 w-3 rounded-full bg-red-500 flex items-center justify-center">
+                        <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                      </div>
+                    </motion.div>
+                    <motion.div
+                      animate={
+                        isCalled
+                          ? {
+                              x: [0, -3, 3, -3, 3, 0],
+                              boxShadow: [
+                                '0 0 0 0 rgba(16, 185, 129, 0.3)',
+                                '0 0 0 20px rgba(16, 185, 129, 0)',
+                                '0 0 0 0 rgba(16, 185, 129, 0)',
+                              ],
+                            }
+                          : {}
+                      }
+                      transition={
+                        isCalled
+                          ? { duration: 0.5, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }
+                          : {}
+                      }
+                      className="inline-flex items-center justify-center h-28 w-28 rounded-full bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 ring-4 ring-emerald-200 dark:ring-emerald-800"
+                    >
+                      <span className="text-4xl md:text-5xl font-black text-foreground tracking-tight">
+                        {res.queueNumber}
+                      </span>
+                    </motion.div>
+                  </div>
+                  {/* Live indicator label */}
+                  <div className="flex items-center justify-center gap-1.5 mt-2">
+                    <Radio className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                      {t('live')}
                     </span>
-                  </motion.div>
+                  </div>
                 </div>
 
                 {/* Agency & Service */}
@@ -357,7 +417,7 @@ export function CustomerQueue() {
                   <p className="text-xs text-muted-foreground">{getServiceName(res)}</p>
                 </div>
 
-                {/* Stats Row - Replaced blue with teal */}
+                {/* Stats Row */}
                 <div className="grid grid-cols-3 gap-3 mb-5">
                   <div className="text-center p-3 rounded-xl bg-teal-50 dark:bg-teal-900/20">
                     <Users className="h-4 w-4 text-teal-600 dark:text-teal-400 mx-auto mb-1" />
@@ -391,7 +451,7 @@ export function CustomerQueue() {
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <Timer className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">{t('estimatedWait') || 'الوقت المتبقي'}</span>
+                      <span className="text-xs text-muted-foreground">{t('estimatedWait') || ''}</span>
                     </div>
                     <div className="flex items-center justify-center gap-3">
                       <div className="flex flex-col items-center">
@@ -400,7 +460,7 @@ export function CustomerQueue() {
                             {padZero(countdown.hours)}
                           </span>
                         </div>
-                        <span className="text-[10px] text-muted-foreground mt-1">ساعة</span>
+                        <span className="text-[10px] text-muted-foreground mt-1">{t('hours')}</span>
                       </div>
                       <span className="text-lg font-bold text-muted-foreground mb-4">:</span>
                       <div className="flex flex-col items-center">
@@ -409,7 +469,7 @@ export function CustomerQueue() {
                             {padZero(countdown.minutes)}
                           </span>
                         </div>
-                        <span className="text-[10px] text-muted-foreground mt-1">دقيقة</span>
+                        <span className="text-[10px] text-muted-foreground mt-1">{t('minutesLabel')}</span>
                       </div>
                       <span className="text-lg font-bold text-muted-foreground mb-4">:</span>
                       <div className="flex flex-col items-center">
@@ -418,13 +478,13 @@ export function CustomerQueue() {
                             {padZero(countdown.seconds)}
                           </span>
                         </div>
-                        <span className="text-[10px] text-muted-foreground mt-1">ثانية</span>
+                        <span className="text-[10px] text-muted-foreground mt-1">{t('secondsLabel')}</span>
                       </div>
                     </div>
                   </motion.div>
                 )}
 
-                {/* Progress Bar */}
+                {/* Progress Bar - Emerald to Teal gradient */}
                 <div className="mb-5">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-muted-foreground">{t('queuePosition')}</span>
@@ -432,7 +492,16 @@ export function CustomerQueue() {
                       #{res.position}
                     </span>
                   </div>
-                  <Progress value={progressValue} className="h-2.5" />
+                  <div className="relative">
+                    <div className="h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressValue}%` }}
+                        transition={{ duration: 0.8, ease: 'easeOut' }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Cancel Button */}

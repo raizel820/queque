@@ -3,18 +3,22 @@
 import { useState, useEffect } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { QueueStatusBadge } from '@/components/shared/queue-status-badge';
-import { TicketCheck, Calendar, MapPin, Filter } from 'lucide-react';
+import { TicketCheck, Calendar, MapPin, Filter, RotateCcw, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import type { TranslationKeys } from '@/i18n';
 
 interface HistoryItem {
   id: string;
   queueNumber: string;
   status: string;
+  agencyId: string;
+  serviceId: string;
   agencyName: string;
   agencyNameAr?: string;
   agencyNameFr?: string;
@@ -33,11 +37,12 @@ const statusFilters: { key: TranslationKeys; value: string }[] = [
 ];
 
 export function CustomerHistory() {
-  const { user } = useAppStore();
+  const { user, setView } = useAppStore();
   const { t, lang } = useLanguage();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
+  const [rejoining, setRejoining] = useState<string | null>(null);
 
   useEffect(() => {
     fetchHistory();
@@ -57,6 +62,8 @@ export function CustomerHistory() {
             id: r.id,
             queueNumber: r.displayNumber || `${r.queueNumber}`,
             status: r.status,
+            agencyId: (r as Record<string, unknown>).agencyId || agency?.id || '',
+            serviceId: (r as Record<string, unknown>).serviceId || service?.id || '',
             agencyName: agency?.name || 'Agency',
             agencyNameAr: agency?.nameAr,
             agencyNameFr: agency?.nameFr,
@@ -73,6 +80,33 @@ export function CustomerHistory() {
       // silent
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRejoin = async (item: HistoryItem) => {
+    if (!user?.id) return;
+    setRejoining(item.id);
+    try {
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          agencyId: item.agencyId,
+          serviceId: item.serviceId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(t('joinSuccess'));
+        setView('customer-queue');
+      } else {
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setRejoining(null);
     }
   };
 
@@ -101,6 +135,10 @@ export function CustomerHistory() {
     } catch {
       return dateStr;
     }
+  };
+
+  const canRejoin = (status: string) => {
+    return ['COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(status);
   };
 
   return (
@@ -166,9 +204,27 @@ export function CustomerHistory() {
                     </div>
                     <QueueStatusBadge status={item.status} />
                   </div>
-                  <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <span>{formatDate(item.joinedAt)}</span>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <span>{formatDate(item.joinedAt)}</span>
+                    </div>
+                    {canRejoin(item.status) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 rounded-lg text-xs border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                        onClick={() => handleRejoin(item)}
+                        disabled={!!rejoining}
+                      >
+                        {rejoining === item.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin me-1" />
+                        ) : (
+                          <RotateCcw className="h-3 w-3 me-1" />
+                        )}
+                        {t('bookAgain')}
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -1,12 +1,13 @@
 'use client';
 
+import { useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { motion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import {
   Clock,
   Wifi,
@@ -20,11 +21,51 @@ import {
   Users,
   MapPin,
   Zap,
+  Briefcase,
+  FlaskConical,
+  Scale,
+  Landmark,
+  Star,
+  Quote,
 } from 'lucide-react';
+
+function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
+
+  const numericTarget = target;
+  const prefix = suffix === '+' ? '' : '';
+  const displaySuffix = suffix;
+
+  return (
+    <motion.span
+      ref={ref}
+      className="tabular-nums"
+      initial={{ opacity: 0, y: 10 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5 }}
+    >
+      {isInView ? (
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          {prefix}{numericTarget}{displaySuffix}
+        </motion.span>
+      ) : (
+        '0'
+      )}
+    </motion.span>
+  );
+}
 
 export function LandingPage() {
   const { setView } = useAppStore();
   const { t } = useLanguage();
+  const statsRef = useRef<HTMLDivElement>(null);
+  const testimonialsRef = useRef<HTMLDivElement>(null);
+  const trustedRef = useRef<HTMLDivElement>(null);
 
   const features = [
     { icon: Clock, titleKey: 'feature1Title' as const, descKey: 'feature1Desc' as const },
@@ -40,9 +81,22 @@ export function LandingPage() {
   ];
 
   const stats = [
-    { icon: Building2, value: '10+', labelKey: 'landingStatAgencies' as const },
-    { icon: Users, value: '1,000+', labelKey: 'landingStatUsers' as const },
-    { icon: MapPin, value: 'M\'Sila', labelKey: 'landingStatLocation' as const },
+    { icon: Building2, value: 10, suffix: '+', labelKey: 'landingStatAgencies' as const },
+    { icon: Users, value: 1000, suffix: '+', labelKey: 'landingStatUsers' as const },
+    { icon: MapPin, value: 1, suffix: '', displayValue: "M'Sila", labelKey: 'landingStatLocation' as const },
+  ];
+
+  const testimonials = [
+    { textKey: 'testimonial1' as const, nameKey: 'testimonial1Name' as const, roleKey: 'testimonial1Role' as const },
+    { textKey: 'testimonial2' as const, nameKey: 'testimonial2Name' as const, roleKey: 'testimonial2Role' as const },
+    { textKey: 'testimonial3' as const, nameKey: 'testimonial3Name' as const, roleKey: 'testimonial3Role' as const },
+  ];
+
+  const trustedCategories = [
+    { icon: Briefcase, labelKey: 'trustedClinic' as const },
+    { icon: FlaskConical, labelKey: 'trustedLab' as const },
+    { icon: Scale, labelKey: 'trustedLaw' as const },
+    { icon: Landmark, labelKey: 'trustedGov' as const },
   ];
 
   return (
@@ -59,6 +113,50 @@ export function LandingPage() {
         />
         <div className="absolute top-0 start-1/4 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-800/10 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 end-1/4 w-80 h-80 bg-teal-200/30 dark:bg-teal-800/10 rounded-full blur-3xl" />
+      </div>
+
+      {/* Floating decorative elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <motion.div
+          animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-[15%] start-[8%] w-3 h-3 rounded-full bg-emerald-300/40 dark:bg-emerald-600/20"
+        />
+        <motion.div
+          animate={{ y: [0, 15, 0], x: [0, -8, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          className="absolute top-[25%] end-[12%] w-4 h-4 rounded-full bg-teal-300/30 dark:bg-teal-600/15"
+        />
+        <motion.div
+          animate={{ y: [0, -12, 0] }}
+          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          className="absolute top-[40%] start-[15%] w-2 h-2 rounded-full bg-emerald-400/30 dark:bg-emerald-500/20"
+        />
+        <motion.div
+          animate={{ y: [0, 18, 0], x: [0, 5, 0] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+          className="absolute top-[60%] end-[8%] w-5 h-5 rounded-full bg-teal-200/30 dark:bg-teal-700/15"
+        />
+        <motion.div
+          animate={{ y: [0, -10, 0], rotate: [0, 180, 360] }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'linear', delay: 3 }}
+          className="absolute top-[20%] end-[25%] w-6 h-6 rounded-md border border-emerald-300/30 dark:border-emerald-700/20 rotate-45"
+        />
+        <motion.div
+          animate={{ y: [0, 14, 0], rotate: [0, -180, -360] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'linear', delay: 1.5 }}
+          className="absolute top-[50%] start-[5%] w-4 h-4 rounded-md border border-teal-300/25 dark:border-teal-700/15 rotate-12"
+        />
+        <motion.div
+          animate={{ y: [0, -8, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
+          className="absolute top-[70%] start-[20%] w-2.5 h-2.5 rounded-full bg-emerald-200/40 dark:bg-emerald-600/15"
+        />
+        <motion.div
+          animate={{ y: [0, 12, 0], x: [0, -6, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+          className="absolute top-[35%] start-[30%] w-1.5 h-1.5 rounded-full bg-teal-400/25 dark:bg-teal-500/10"
+        />
       </div>
 
       {/* Top Bar */}
@@ -103,7 +201,7 @@ export function LandingPage() {
 
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-sm font-medium mb-6 border border-emerald-200/50 dark:border-emerald-800/50">
             <TicketCheck className="h-4 w-4" />
-            إدارة طوابير ذكية للمؤسسات في الجزائر
+            {t('appTagline')}
           </div>
 
           {/* Animated gradient title */}
@@ -173,11 +271,13 @@ export function LandingPage() {
         </motion.div>
       </section>
 
-      {/* Statistics Banner */}
+      {/* Statistics Banner with Animated Counters */}
       <motion.section
+        ref={statsRef}
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ duration: 0.5 }}
         className="w-full px-4 py-8 relative z-10"
       >
         <div className="max-w-3xl mx-auto">
@@ -189,14 +289,21 @@ export function LandingPage() {
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.4, delay: 0.7 + idx * 0.1 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: idx * 0.1 }}
                     className="flex flex-col items-center gap-2"
                   >
                     <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
                       <Icon className="h-5 w-5 text-white" />
                     </div>
-                    <p className="text-2xl md:text-3xl font-extrabold text-white">{stat.value}</p>
+                    <p className="text-2xl md:text-3xl font-extrabold text-white">
+                      {stat.displayValue ? (
+                        stat.displayValue
+                      ) : (
+                        <AnimatedCounter target={stat.value} suffix={stat.suffix} />
+                      )}
+                    </p>
                     <p className="text-xs text-emerald-100 font-medium">{t(stat.labelKey)}</p>
                   </motion.div>
                 );
@@ -262,11 +369,104 @@ export function LandingPage() {
         </motion.div>
       </section>
 
+      {/* Testimonials Section */}
+      <section className="w-full px-4 py-16 relative z-10">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 text-foreground">
+              {t('testimonialsTitle')}
+            </h2>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {testimonials.map((testimonial, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-30px' }}
+                transition={{ duration: 0.4, delay: idx * 0.12 }}
+              >
+                <Card className="h-full border-0 shadow-sm hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900">
+                  <CardContent className="p-5 flex flex-col h-full">
+                    <Quote className="h-8 w-8 text-emerald-200 dark:text-emerald-800 mb-3 flex-shrink-0" />
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">
+                      &ldquo;{t(testimonial.textKey)}&rdquo;
+                    </p>
+                    <div className="flex items-center gap-3 pt-3 border-t border-border">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        {t(testimonial.nameKey).charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          {t(testimonial.nameKey)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t(testimonial.roleKey)}
+                        </p>
+                      </div>
+                      <div className="ms-auto flex gap-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="h-3 w-3 text-amber-400 fill-amber-400" />
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trusted By Section */}
+      <section ref={trustedRef} className="w-full px-4 py-12 relative z-10">
+        <div className="max-w-3xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center"
+          >
+            <p className="text-sm font-medium text-muted-foreground mb-6 uppercase tracking-wider">
+              {t('trustedBy')}
+            </p>
+            <div className="flex items-center justify-center gap-6 md:gap-10 flex-wrap">
+              {trustedCategories.map((cat, idx) => {
+                const Icon = cat.icon;
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.3, delay: idx * 0.08 }}
+                    className="flex flex-col items-center gap-2"
+                  >
+                    <div className="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center border border-emerald-100 dark:border-emerald-800/30">
+                      <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t(cat.labelKey)}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Wave decoration + Footer */}
       <div className="relative z-10 mt-auto">
         <div className="w-full overflow-hidden">
           <div className="h-16 md:h-24 bg-gradient-to-b from-transparent to-emerald-50 dark:to-emerald-950/20 relative">
-            {/* CSS wave using pseudo-elements approach with multiple divs */}
             <svg
               viewBox="0 0 1440 80"
               fill="none"

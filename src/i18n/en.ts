@@ -286,6 +286,91 @@ const en: Record<TranslationKeys, string> = {
   // ─── Themes ──────────────────────────────
   lightMode: "Light Mode",
   darkMode: "Dark Mode",
+
+  // ─── Testimonials ─────────────────────────
+  testimonialsTitle: "What Our Customers Say",
+  testimonial1: "No more waiting hours at the clinic. I join from home and go when it's my turn!",
+  testimonial1Name: "Karim B.",
+  testimonial1Role: "Customer",
+  testimonial2: "The platform is very easy to use. Even elderly people can use it easily.",
+  testimonial2Name: "Fatima Z.",
+  testimonial2Role: "Customer",
+  testimonial3: "QueueWise helped me organize the clinic queue better. Customers are very satisfied.",
+  testimonial3Name: "Dr. Mohamed",
+  testimonial3Role: "Clinic Owner",
+  trustedBy: "Trusted By",
+  trustedClinic: "Clinics",
+  trustedLab: "Labs",
+  trustedLaw: "Lawyers",
+  trustedGov: "Government",
+
+  // ─── Queue Tracker ────────────────────────
+  live: "Live",
+  noHistoryYet: "No history yet",
+  noHistoryCompleted: "No completed reservations",
+  noHistoryCancelled: "No cancelled reservations",
+  noHistoryNoShow: "No no-show records",
+  notificationTypeQueue: "Queue",
+  notificationTypeSystem: "System",
+  notificationTypeAlert: "Alert",
+  nowServing: "Now Serving",
+  queueStatus: "Queue Status",
+  queueOpenStatus: "Open",
+  queuePausedStatusLabel: "Paused",
+  appearance: "Appearance",
+  appearanceDesc: "Customize the app appearance",
+
+  // ─── Roles ──────────────────────────────
+  agencyOwner: "Agency Owner",
+  agencyStaff: "Agency Staff",
+  platformAdmin: "Platform Admin",
+  superAdmin: "Super Admin",
+
+  // ─── Accessibility ──────────────────────
+  changeLanguage: "Change language",
+  toggleTheme: "Toggle theme",
+
+  // ─── Agency Code ────────────────────────
+  shareCodeText: "Share this code with your customers",
+
+  // ─── Customer Queue ─────────────────────
+  yourTurnAlert: "Your Turn!",
+
+  // ─── Countdown Labels ───────────────────
+  hours: "Hours",
+  minutesLabel: "Minutes",
+  secondsLabel: "Seconds",
+
+  // ─── Dashboard ──────────────────────────
+  dailyActivity: "Daily Activity",
+
+  // ─── Agency Profile Extras ──────────────
+  agencyCode: "Agency Code",
+  copyLink: "Copy Link",
+  downloadQr: "Download QR",
+  linkCopied: "Link copied!",
+  downloaded: "Downloaded!",
+
+  // ─── Admin Users ────────────────────────
+  userManagement: "User Management",
+  totalUsers: "Total Users",
+  suspendUser: "Suspend",
+  activateUser: "Activate",
+  adminRole: "Admin",
+  agencyOwnerRole: "Agency Owner",
+  agencyStaffRole: "Agency Staff",
+  customerRole: "Customer",
+  suspended: "Suspended",
+
+  // ─── Customer History ───────────────────
+  bookAgain: "Book Again",
+
+  // ─── QR & Notifications Extras ─────────
+  shareCodeWithCustomers: "Share this code with your customers for quick access",
+  yourTurn: "Your Turn!",
+  dismissAlert: "Got it",
+  fileTooLarge: "File size exceeds 5 MB limit",
+  seconds: "Seconds",
 };
 
 export default en;
