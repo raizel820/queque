@@ -1,0 +1,91 @@
+import { NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+
+export async function GET() {
+  try {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Run all queries in parallel for performance
+    const [
+      totalAgencies,
+      activeQueues,
+      todayReservations,
+      totalRevenue,
+      pendingTransactions,
+      totalUsers,
+      totalReservations,
+    ] = await Promise.all([
+      // Total agencies
+      db.agency.count({
+        where: { isActive: true },
+      }),
+
+      // Active queues (agencies with isQueueOpen and not paused)
+      db.queueSettings.count({
+        where: { isPaused: false },
+      }),
+
+      // Today's reservations
+      db.reservation.count({
+        where: {
+          createdAt: { gte: today },
+        },
+      }),
+
+      // Total revenue (approved transactions)
+      db.transaction.aggregate({
+        where: { status: 'APPROVED' },
+        _sum: { amount: true },
+      }),
+
+      // Pending transactions count
+      db.transaction.count({
+        where: { status: 'PENDING' },
+      }),
+
+      // Total users
+      db.user.count(),
+
+      // Total reservations
+      db.reservation.count(),
+    ])
+
+    // Get recent reservations for today
+    const recentReservations = await db.reservation.findMany({
+      where: {
+        createdAt: { gte: today },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: {
+        agency: {
+          select: { name: true },
+        },
+        service: {
+          select: { name: true },
+        },
+      },
+    })
+
+    return NextResponse.json({
+      success: true,
+      stats: {
+        totalAgencies,
+        activeQueues,
+        todayReservations,
+        totalRevenue: totalRevenue._sum.amount || 0,
+        pendingTransactions,
+        totalUsers,
+        totalReservations,
+        recentReservations,
+      },
+    })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    )
+  }
+}
