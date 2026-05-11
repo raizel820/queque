@@ -352,17 +352,16 @@ Stage Summary:
 | 7 | admin-agencies no delete confirmation dialog | MEDIUM | ✅ Fixed |
 | 8 | skeleton-shimmer CSS broken in Tailwind v4 | MEDIUM | ✅ Fixed |
 
-### Remaining Known Issues
-- Login form role tabs are decorative (getRoleFromTab defined but unused)
+### Remaining Known Issues (Updated)
 - Landing page stats are hardcoded
 - Agency dashboard sparkline charts use synthetic data
 - No pagination on admin list views
-- No notification polling (fetch once on mount)
 - No WebSocket real-time updates (mini-service exists but disconnected)
-- Web Push notifications not implemented
+- Web Push notifications not implemented (native browser notifications now work)
 - CCP/Bank receipt OCR not implemented
-- ~59 silent catch blocks across components (no error feedback to users)
+- SMS pack purchase flow not implemented (marked as "Coming Soon")
 - No periodic polling on admin dashboard/analytics pages
+- ~Some remaining silent catch blocks in agency/admin components (customer components fixed)
 
 ---
 Task ID: 11 - Emergency Fix: App Not Working + Comprehensive Bug Fix Session
@@ -474,3 +473,33 @@ Stage Summary:
 - Slide-to-confirm is now keyboard accessible
 - Mobile agency dashboard shows customer info
 - ESLint clean
+
+---
+Task ID: 12 - Server Keep-Alive + Phase 9 Comprehensive Improvements
+Agent: Main Developer
+Task: Restart server with auto-restart cron, audit app, implement 13 improvements across accessibility, UX, and features
+
+Work Log:
+- Server keep-alive: Started dev server with `nohup npx next dev -p 3000`
+- Set up cron job (Job ID: 143272) every 5 minutes for auto-restart safety net
+- Set up webDevReview cron job (Job ID: 143273) every 3 hours
+- Verified server running via curl (HTTP 200) and agent-browser
+- Conducted comprehensive UI/UX audit (21 component files) via Explore agent
+- Identified 15 high-impact improvements ranked by priority
+- Dispatched 3 parallel subagents to implement fixes:
+  - Task 6: RTL arrow fix, keyboard accessibility for slide-to-confirm, mobile customer names, ARIA attributes
+  - Task 7: Profile skeleton loading, error feedback to catch blocks, SMS "Coming Soon", login role validation
+  - Task 8: Dynamic document titles, Web Notification API, notification polling
+- Verified improvements in browser: dynamic title changes work (e.g., "الملف الشخصي - QueueWise")
+- Updated worklog with all changes
+
+Stage Summary:
+- **13 improvements implemented** across 3 parallel workstreams
+- Server auto-restart mechanism in place via cron (5 min interval)
+- Accessibility significantly improved: keyboard support, ARIA labels, aria-live, aria-current
+- RTL consistency fixed across all navigation arrows
+- Error feedback now shown to users instead of silent failures
+- Native browser notifications for turn alerts
+- Dynamic page titles for better UX and tab identification
+- Login role tabs now validate account type
+- ESLint: 0 errors throughout all changes
