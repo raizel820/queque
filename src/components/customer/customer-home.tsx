@@ -294,12 +294,83 @@ export function CustomerHome() {
     return cur >= sh * 60 + sm && cur < eh * 60 + em;
   };
 
+  const dateDialogContent = (
+    <Dialog open={dateDialogOpen} onOpenChange={(open) => { setDateDialogOpen(open); if (!open) { setPendingJoin(null); setSelectedDate(undefined); } }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-emerald-600" />
+            {t('reserveForDate')}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="py-2">
+          <p className="text-sm text-muted-foreground mb-4">{t('selectDate')}</p>
+          <div className="flex justify-center">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+              className="rounded-xl border"
+            />
+          </div>
+          {/* Quick date buttons */}
+          <div className="flex gap-2 mt-4 justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-lg h-9"
+              onClick={() => setSelectedDate(undefined)}
+            >
+              {t('today')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-lg h-9"
+              onClick={() => {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                setSelectedDate(tomorrow);
+              }}
+            >
+              {t('tomorrow')}
+            </Button>
+          </div>
+          {selectedDate && (
+            <div className="mt-3 text-center">
+              <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                📅 {t('reservedFor')} {selectedDate.toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
+          )}
+        </div>
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <Button variant="outline" onClick={() => { setDateDialogOpen(false); setPendingJoin(null); setSelectedDate(undefined); }} className="rounded-xl h-10">
+            {t('cancel')}
+          </Button>
+          <Button
+            onClick={confirmJoinQueue}
+            disabled={joining}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10"
+          >
+            {joining ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <TicketCheck className="h-4 w-4 me-2" />}
+            {t('joinQueue')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   // Agency Detail View
   if (loadingDetail) {
     return (
-      <div className="px-4 py-4 pb-24 flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
-      </div>
+      <>
+        <div className="px-4 py-4 pb-24 flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
+        </div>
+        {dateDialogContent}
+      </>
     );
   }
 
@@ -307,6 +378,7 @@ export function CustomerHome() {
     const totalWaiting = getTotalWaiting();
     const estWait = totalWaiting * (selectedAgency.avgServiceTime || 10);
     return (
+      <>
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -435,6 +507,8 @@ export function CustomerHome() {
           </CardContent>
         </Card>
       </motion.div>
+      {dateDialogContent}
+      </>
     );
   }
 
@@ -668,71 +742,7 @@ export function CustomerHome() {
       )}
 
       {/* Date Picker Dialog */}
-      <Dialog open={dateDialogOpen} onOpenChange={(open) => { setDateDialogOpen(open); if (!open) { setPendingJoin(null); setSelectedDate(undefined); } }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5 text-emerald-600" />
-              {t('reserveForDate')}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-2">
-            <p className="text-sm text-muted-foreground mb-4">{t('selectDate')}</p>
-            <div className="flex justify-center">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                className="rounded-xl border"
-              />
-            </div>
-            {/* Quick date buttons */}
-            <div className="flex gap-2 mt-4 justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-lg h-9"
-                onClick={() => setSelectedDate(undefined)}
-              >
-                {t('today')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-lg h-9"
-                onClick={() => {
-                  const tomorrow = new Date();
-                  tomorrow.setDate(tomorrow.getDate() + 1);
-                  setSelectedDate(tomorrow);
-                }}
-              >
-                {t('tomorrow')}
-              </Button>
-            </div>
-            {selectedDate && (
-              <div className="mt-3 text-center">
-                <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
-                  📅 {t('reservedFor')} {selectedDate.toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </p>
-              </div>
-            )}
-          </div>
-          <DialogFooter className="flex-col gap-2 sm:flex-row">
-            <Button variant="outline" onClick={() => { setDateDialogOpen(false); setPendingJoin(null); setSelectedDate(undefined); }} className="rounded-xl h-10">
-              {t('cancel')}
-            </Button>
-            <Button
-              onClick={confirmJoinQueue}
-              disabled={joining}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10"
-            >
-              {joining ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <TicketCheck className="h-4 w-4 me-2" />}
-              {t('joinQueue')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {dateDialogContent}
     </div>
   );
 }
