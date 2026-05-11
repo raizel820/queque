@@ -159,6 +159,7 @@ const fr: Record<TranslationKeys, string> = {
   markCompleted: "Terminer",
   markNoShow: "Absent",
   cancelRes: "Annuler",
+  markCancelled: "Marquer comme annulé",
   pauseQueue: "Pause",
   resumeQueue: "Reprendre",
   queuePaused: "File en pause",
@@ -466,6 +467,7 @@ const fr: Record<TranslationKeys, string> = {
 
   // ─── Slide to Confirm ──────────────
   slideToConfirm: "Glissez pour confirmer",
+  pressEnterToConfirm: "Appuyez sur Entrée pour confirmer",
   confirmed: "Confirmé",
   notificationSoundOn: "Son de notification activé",
   notificationSoundOff: "Son de notification désactivé",

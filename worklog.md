@@ -452,3 +452,24 @@ Stage Summary:
 - SMS packs clearly marked as upcoming feature
 - Login role tabs now validate account type (prevents confusing wrong-role logins)
 - ESLint clean
+
+---
+Task ID: 6
+Agent: UI/UX Fix Agent
+Task: Fix RTL arrow, keyboard accessibility, mobile responsive, ARIA attributes
+
+Work Log:
+- Fixed RTL back arrow in customer-home.tsx (← → ArrowLeft with rtl:rotate-180)
+- Added keyboard support to slide-to-confirm.tsx (ArrowRight, Enter/Space, role=slider, aria attributes)
+- Show customer name on mobile in agency dashboard waiting list (condensed layout)
+- Added aria-label to agency dashboard action buttons (complete/no-show/cancel)
+- Added aria-current="page" to active nav buttons in CustomerBottomNav, AgencySidebar, AdminSidebar
+- Added aria-live="polite" to customer queue position display
+- Added 4 new i18n keys: pressEnterToConfirm, markCancelled (ar/fr/en)
+
+Stage Summary:
+- 6 accessibility and UX fixes applied
+- RTL layout now consistent across all arrow icons
+- Slide-to-confirm is now keyboard accessible
+- Mobile agency dashboard shows customer info
+- ESLint clean

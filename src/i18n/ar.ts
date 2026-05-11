@@ -157,6 +157,7 @@ const ar = {
   markCompleted: "تمت الخدمة",
   markNoShow: "لم يحضر",
   cancelRes: "إلغاء الحجز",
+  markCancelled: "تحديد كملغي",
   pauseQueue: "إيقاف مؤقت",
   resumeQueue: "استئناف",
   queuePaused: "الطابور متوقف مؤقتاً",
@@ -464,6 +465,7 @@ const ar = {
 
   // ─── Slide to Confirm ──────────────
   slideToConfirm: "اسحب للتأكيد",
+  pressEnterToConfirm: "اضغط Enter للتأكيد",
   confirmed: "تم التأكيد",
   notificationSoundOn: "تشغيل صوت الإشعار",
   notificationSoundOff: "إيقاف صوت الإشعار",
