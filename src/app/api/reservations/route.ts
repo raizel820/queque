@@ -36,12 +36,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Check user exists
+    // Check user exists and is a customer
     const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
+      )
+    }
+
+    if (user.role !== 'CUSTOMER') {
+      return NextResponse.json(
+        { success: false, error: 'Only customers can join queues' },
+        { status: 403 }
       )
     }
 

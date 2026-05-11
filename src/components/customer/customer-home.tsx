@@ -206,7 +206,12 @@ export function CustomerHome() {
     return selectedAgency.services.reduce((sum, s) => sum + (s.waitingCount || 0), 0);
   };
 
-  const handleJoinQueue = async (agencyId: string, serviceId?: string) => {
+  const handleJoinQueue = (agencyId: string, serviceId?: string) => {
+    // Auth guard — must be logged in as a customer
+    if (!user?.id) {
+      toast.error(t('error'));
+      return;
+    }
     // Open date picker dialog instead of joining directly
     setPendingJoin({ agencyId, serviceId });
     setSelectedDate(undefined); // Reset to default (today)
@@ -214,7 +219,13 @@ export function CustomerHome() {
   };
 
   const confirmJoinQueue = async () => {
-    if (!user?.id || !pendingJoin) return;
+    if (!user?.id) {
+      toast.error(t('error'));
+      setDateDialogOpen(false);
+      setPendingJoin(null);
+      return;
+    }
+    if (!pendingJoin) return;
     setJoining(true);
     try {
       const body: Record<string, string> = { userId: user.id, agencyId: pendingJoin.agencyId };
