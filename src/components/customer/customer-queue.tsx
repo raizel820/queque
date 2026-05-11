@@ -1,22 +1,26 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SlideToConfirm } from '@/components/shared/slide-to-confirm';
+import { startNotificationSound, stopNotificationSound, playConfirmSound } from '@/lib/sounds';
 import {
   Users,
   Clock,
   TicketCheck,
   Volume2,
+  VolumeX,
   XCircle,
   RefreshCw,
   Loader2,
   AlertTriangle,
   Timer,
   Radio,
+  BellRing,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -36,6 +40,7 @@ interface Reservation {
   serviceNameAr?: string;
   serviceNameFr?: string;
   joinedAt: string;
+  reservedDate?: string;
 }
 
 export function CustomerQueue() {
@@ -45,8 +50,10 @@ export function CustomerQueue() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [showTurnAlert, setShowTurnAlert] = useState(false);
+  const [soundMuted, setSoundMuted] = useState(false);
   const [countdown, setCountdown] = useState({ hours: 0, minutes: 0, seconds: 0 });
-  const [prevStatus, setPrevStatus] = useState<Record<string, string>>({});
+  const prevStatusRef = useRef<Record<string, string>>({});
+  const soundStartedRef = useRef(false);
 
   const fetchReservations = useCallback(async () => {
     if (!user?.id) return;
@@ -72,27 +79,37 @@ export function CustomerQueue() {
             serviceNameAr: service?.nameAr,
             serviceNameFr: service?.nameFr,
             joinedAt: r.joinedAt,
+            reservedDate: (r.reservedDate as string) || undefined,
           };
         });
 
-        // Detect status changes
+        // Detect status changes to CALLED - trigger sound
+        list.forEach((r: Reservation) => {
+          if (prevStatusRef.current[r.id] && prevStatusRef.current[r.id] !== r.status && r.status === 'CALLED') {
+            if (!soundStartedRef.current) {
+              soundStartedRef.current = true;
+              if (!soundMuted) {
+                startNotificationSound();
+              }
+              setShowTurnAlert(true);
+            }
+          }
+        });
+
+        // Update prev status map
         const currentStatuses: Record<string, string> = {};
         list.forEach((r: Reservation) => { currentStatuses[r.id] = r.status; });
-        setPrevStatus((prev) => {
-          const next = { ...prev };
-          list.forEach((r: Reservation) => {
-            if (prev[r.id] && prev[r.id] !== r.status && r.status === 'CALLED') {
-              // Status changed to CALLED - will trigger shake
-            }
-          });
-          return next;
-        });
+        prevStatusRef.current = currentStatuses;
 
         setReservations(list);
 
-        // Check if any is CALLED and show alert
+        // Check if any is CALLED
         const hasCalled = list.some((r: Reservation) => r.status === 'CALLED');
-        if (hasCalled) {
+        if (hasCalled && !soundStartedRef.current) {
+          soundStartedRef.current = true;
+          if (!soundMuted) {
+            startNotificationSound();
+          }
           setShowTurnAlert(true);
         }
       }
@@ -101,7 +118,7 @@ export function CustomerQueue() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, soundMuted]);
 
   // Countdown timer based on estimated wait
   useEffect(() => {
@@ -127,12 +144,42 @@ export function CustomerQueue() {
     return () => clearInterval(interval);
   }, [reservations]);
 
+  // Cleanup sound on unmount
+  useEffect(() => {
+    return () => {
+      stopNotificationSound();
+    };
+  }, []);
+
   // Auto-refresh every 10 seconds
   useEffect(() => {
     fetchReservations();
     const interval = setInterval(fetchReservations, 10000);
     return () => clearInterval(interval);
   }, [fetchReservations]);
+
+  const handleConfirmTurn = () => {
+    stopNotificationSound();
+    playConfirmSound();
+    setShowTurnAlert(false);
+    soundStartedRef.current = false;
+    toast.success(t('confirmed'));
+  };
+
+  const handleMuteSound = () => {
+    setSoundMuted(true);
+    stopNotificationSound();
+    toast.success(t('notificationSoundOff'));
+  };
+
+  const handleUnmuteSound = () => {
+    setSoundMuted(false);
+    const hasCalled = reservations.some((r) => r.status === 'CALLED');
+    if (hasCalled) {
+      startNotificationSound();
+    }
+    toast.success(t('notificationSoundOn'));
+  };
 
   const handleCancel = async (id: string) => {
     setCancelling(id);
@@ -257,7 +304,7 @@ export function CustomerQueue() {
         </Button>
       </div>
 
-      {/* YOUR TURN! Alert Banner — Prominent */}
+      {/* YOUR TURN! Alert Banner — Prominent with Slide to Confirm */}
       <AnimatePresence>
         {showTurnAlert && activeRes?.status === 'CALLED' && (
           <motion.div
@@ -283,33 +330,44 @@ export function CustomerQueue() {
                 className="absolute inset-0 rounded-2xl ring-2 ring-white/30"
               />
 
-              <div className="relative flex items-center gap-4">
-                <motion.div
-                  animate={{ scale: [1, 1.25, 1] }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                  className="flex-shrink-0 h-14 w-14 rounded-full bg-white/20 flex items-center justify-center"
-                >
-                  <Volume2 className="h-7 w-7 text-white" />
-                </motion.div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-emerald-100">{t('yourTurnAlert')}</p>
-                  <motion.p
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-                    className="text-3xl font-black tracking-tight"
+              <div className="relative">
+                <div className="flex items-center gap-4 mb-4">
+                  <motion.div
+                    animate={{ scale: [1, 1.25, 1], rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                    className="flex-shrink-0 h-14 w-14 rounded-full bg-white/20 flex items-center justify-center"
                   >
-                    {activeRes.queueNumber}
-                  </motion.p>
-                  <p className="text-sm text-emerald-100 truncate">
-                    {getAgencyName(activeRes)}
-                  </p>
+                    <BellRing className="h-7 w-7 text-white" />
+                  </motion.div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-emerald-100">{t('yourTurnAlert')}</p>
+                    <motion.p
+                      animate={{ scale: [1, 1.05, 1] }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+                      className="text-3xl font-black tracking-tight"
+                    >
+                      {activeRes.queueNumber}
+                    </motion.p>
+                    <p className="text-sm text-emerald-100 truncate">
+                      {getAgencyName(activeRes)}
+                    </p>
+                  </div>
+                  {/* Sound toggle */}
+                  <button
+                    onClick={soundMuted ? handleUnmuteSound : handleMuteSound}
+                    className="flex-shrink-0 h-10 w-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                    title={soundMuted ? t('notificationSoundOn') : t('notificationSoundOff')}
+                  >
+                    {soundMuted ? (
+                      <VolumeX className="h-5 w-5 text-white/70" />
+                    ) : (
+                      <Volume2 className="h-5 w-5 text-white" />
+                    )}
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowTurnAlert(false)}
-                  className="flex-shrink-0 h-8 w-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-                >
-                  ✕
-                </button>
+
+                {/* Slide to Confirm */}
+                <SlideToConfirm onConfirm={handleConfirmTurn} />
               </div>
             </div>
           </motion.div>
@@ -374,6 +432,12 @@ export function CustomerQueue() {
                       >
                         ⚡ {t('statusCalled')}!
                       </motion.span>
+                    )}
+                    {/* Reserved date badge */}
+                    {res.reservedDate && (
+                      <span className="ms-auto text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                        📅 {res.reservedDate}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -468,11 +532,16 @@ export function CustomerQueue() {
                       {getAgencyName(res)}
                     </p>
                     <p className="text-xs text-muted-foreground">{getServiceName(res)}</p>
+                    {res.reservedDate && (
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                        📅 {t('reservedFor')} {res.reservedDate}
+                      </p>
+                    )}
                   </div>
 
                   {/* Stats Row */}
                   <div className="grid grid-cols-3 gap-3 mb-5">
-                    {/* People Ahead — with pulsing animation */}
+                    {/* People Ahead */}
                     <div className="text-center p-3 rounded-xl bg-teal-50 dark:bg-teal-900/20">
                       <div className="relative inline-block">
                         <Users className="h-4 w-4 text-teal-600 dark:text-teal-400 mx-auto mb-1" />
@@ -582,7 +651,7 @@ export function CustomerQueue() {
                     </Button>
                   )}
 
-                  {/* CALLED — prominent button */}
+                  {/* CALLED — prominent info */}
                   {isCalled && (
                     <motion.div
                       animate={{ scale: [1, 1.02, 1] }}

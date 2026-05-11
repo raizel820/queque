@@ -460,6 +460,29 @@ const ar = {
   invalidAdminCode: "رمز المدير غير صحيح",
   passwordMinLength: "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
   justNow: "الآن",
+
+  // ─── Slide to Confirm ──────────────
+  slideToConfirm: "اسحب للتأكيد",
+  confirmed: "تم التأكيد",
+  notificationSoundOn: "تشغيل صوت الإشعار",
+  notificationSoundOff: "إيقاف صوت الإشعار",
+
+  // ─── Delete Account ────────────────
+  deleteAccount: "حذف الحساب",
+  deleteAccountDesc: "سيتم حذف حسابك وجميع بياناتك نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+  deleteAccountWarning: "تحذير: هذا الإجراء لا يمكن التراجع عنه!",
+  typeDeleteToConfirm: "اكتب \"حذف\" للتأكيد",
+  accountDeleted: "تم حذف الحساب بنجاح",
+  deleteAccountError: "لا يمكن حذف الحساب",
+
+  // ─── Date Selection ────────────────
+  selectDate: "اختر التاريخ",
+  reserveForDate: "احجز لتاريخ",
+  today: "اليوم",
+  tomorrow: "غداً",
+  pickDate: "اختر تاريخاً",
+  reservedFor: "محجوز لـ",
+  noDateSelected: "لم يتم اختيار تاريخ",
 };
 
 export default ar;

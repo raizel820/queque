@@ -244,10 +244,63 @@ Stage Summary:
 | 11 | Agency Profile missing workingHours in API response | MEDIUM | ✅ Fixed |
 | 12 | Agency Subscription payment method mismatch (BANK vs BANK_TRANSFER) | MEDIUM | ✅ Fixed |
 | 13 | Admin Dashboard missing totalUsers in API | MEDIUM | ✅ Fixed |
+| 14 | Reservation system only supports today (no future dates) | HIGH | ✅ Fixed |
+| 15 | Customer notification has no sound when turn arrives | MEDIUM | ✅ Fixed |
+| 16 | Customer notification has no confirmation interaction | MEDIUM | ✅ Fixed |
+| 17 | No delete account option for customers | MEDIUM | ✅ Fixed |
+| 18 | No delete account option for agencies | MEDIUM | ✅ Fixed |
+
+### Task ID: 9-a - Feature Updates (3 Features)
+Agent: Main Developer
+Task: Three feature updates - notification sounds + slide confirm, delete account, date-specific reservations
+
+Work Log:
+- Created `/src/lib/sounds.ts` — Web Audio API notification sounds (urgent 3-tone chime, looping every 4s)
+- Created `/src/components/shared/slide-to-confirm.tsx` — Touch-friendly slide-to-confirm component with lock icon
+- Updated `customer-queue.tsx`:
+  - Added sound detection: plays looping chime when status changes to CALLED
+  - Added SlideToConfirm component in turn alert banner
+  - Added sound mute/unmute toggle button
+  - Confirmation sound plays on confirm, stops looping
+  - Displays reservedDate badge when applicable
+- Created `/api/user/delete-account/route.ts` (DELETE) — Cascading delete with proper FK handling
+- Updated `customer-profile.tsx`:
+  - Added delete account button with AlertDialog
+  - Type-to-confirm pattern (type "delete" / "حذف" / "supprimer")
+  - Confirmation triggers API call, then logout
+- Updated `agency-settings.tsx`:
+  - Added "Danger Zone" card with delete account
+  - Same type-to-confirm pattern
+  - Protected: SUPER_ADMIN cannot self-delete
+- Updated `prisma/schema.prisma`:
+  - Added `reservedDate String?` field to Reservation model
+  - Nullable: null = today, "YYYY-MM-DD" = specific date
+- Updated `/api/reservations/route.ts` (POST):
+  - Accepts optional `reservedDate` parameter
+  - Validates date format and prevents past dates
+  - Duplicate check scoped to same date
+  - Queue count scoped to same date
+  - Queue number sequential per date per service
+- Updated `customer-home.tsx`:
+  - handleJoinQueue now opens Date Picker Dialog instead of joining directly
+  - New confirmJoinQueue function sends reservedDate to API
+  - Calendar component with disabled past dates
+  - Quick buttons: "Today" and "Tomorrow"
+  - Localized date display when date selected
+- Added 22 new i18n keys (ar/fr/en) for: slideToConfirm, confirmed, deleteAccount, deleteAccountDesc, etc.
+- Fixed duplicate imports (Badge, Input, Button, useAppStore) across customer-home.tsx, customer-profile.tsx, agency-settings.tsx
+- Removed invalid `entityId` field from notification POST
+- ESLint clean (0 errors), db:push successful, dev server running
+
+Stage Summary:
+- **3 major features implemented**
+- Customer notification now has looping audio + slide-to-confirm interaction
+- Both customer and agency users can delete their accounts (with safety confirmation)
+- Reservation system supports future date booking via calendar picker
+- All 3 user types (customer, agency, admin) verified via ESLint
 
 ### Unresolved Issues / Risks
 - WebSocket real-time updates not yet integrated (queue-ws mini-service exists but disconnected)
 - Web Push notifications not implemented
 - CCP/Bank receipt OCR verification not implemented
 - No PWA support yet
-- SMS sending not implemented (just wallet tracking)

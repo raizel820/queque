@@ -32,12 +32,25 @@ import {
   Palette,
   Bell,
   Loader2,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import type { Language } from '@/i18n';
 import { updateDocumentDirection } from '@/store/use-app-store';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export function CustomerProfile() {
   const { user, setUser, logout, setView } = useAppStore();
@@ -55,6 +68,9 @@ export function CustomerProfile() {
   });
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifSaving, setNotifSaving] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleLanguageChange = (newLang: string) => {
     const langTyped = newLang as Language;
@@ -134,6 +150,31 @@ export function CustomerProfile() {
       toast.error(t('error'));
     } finally {
       setSavingPhone(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch('/api/user/delete-account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      if (res.ok) {
+        toast.success(t('accountDeleted'));
+        setDeleteDialogOpen(false);
+        logout();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('deleteAccountError'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setDeleteLoading(false);
+      setDeleteConfirmText('');
     }
   };
 
@@ -427,7 +468,7 @@ export function CustomerProfile() {
       >
         <Button
           variant="outline"
-          className="w-full h-12 rounded-xl border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 font-semibold transition-all duration-200 hover:scale-[1.01]"
+          className="w-full h-12 rounded-xl border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 font-semibold transition-all duration-200 hover:scale-[1.01] mb-3"
           onClick={() => {
             logout();
             toast.success(t('logout'));
@@ -436,6 +477,64 @@ export function CustomerProfile() {
           <LogOut className="h-4 w-4 me-2" />
           {t('logout')}
         </Button>
+      </motion.div>
+
+      {/* Delete Account */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteConfirmText(''); }}>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full h-11 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 font-medium text-sm transition-all duration-200"
+            >
+              <Trash2 className="h-4 w-4 me-2" />
+              {t('deleteAccount')}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+                {t('deleteAccount')}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-3">
+                <p>{t('deleteAccountDesc')}</p>
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+                  <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                    ⚠️ {t('deleteAccountWarning')}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">{t('typeDeleteToConfirm')}</p>
+                  <Input
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder={lang === 'ar' ? 'حذف' : lang === 'fr' ? 'supprimer' : 'delete'}
+                    className="h-10"
+                    dir="ltr"
+                  />
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+              <AlertDialogCancel className="w-full rounded-xl h-10">
+                {t('cancel')}
+              </AlertDialogCancel>
+              <Button
+                onClick={handleDeleteAccount}
+                disabled={deleteLoading || deleteConfirmText !== (lang === 'ar' ? 'حذف' : lang === 'fr' ? 'supprimer' : 'delete')}
+                className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-10"
+              >
+                {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Trash2 className="h-4 w-4 me-2" />}
+                {t('deleteAccount')}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </motion.div>
     </div>
   );

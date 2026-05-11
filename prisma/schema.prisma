@@ -136,6 +136,7 @@ model Reservation {
   displayNumber   String                   // e.g. "A-042"
   status          String    @default("WAITING") // WAITING | CALLED | SERVED | COMPLETED | CANCELLED | NO_SHOW
   estimatedWait   Int?                        // minutes
+  reservedDate    String?                     // ISO date string YYYY-MM-DD, null = today
   joinedAt        DateTime  @default(now())
   calledAt        DateTime?
   completedAt     DateTime?

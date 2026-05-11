@@ -462,6 +462,29 @@ const en: Record<TranslationKeys, string> = {
   invalidAdminCode: "Invalid admin code",
   passwordMinLength: "Password must be at least 6 characters",
   justNow: "just now",
+
+  // ─── Slide to Confirm ──────────────
+  slideToConfirm: "Slide to confirm",
+  confirmed: "Confirmed",
+  notificationSoundOn: "Notification sound on",
+  notificationSoundOff: "Notification sound off",
+
+  // ─── Delete Account ────────────────
+  deleteAccount: "Delete Account",
+  deleteAccountDesc: "Your account and all data will be permanently deleted. This action cannot be undone.",
+  deleteAccountWarning: "Warning: This action cannot be undone!",
+  typeDeleteToConfirm: 'Type "delete" to confirm',
+  accountDeleted: "Account deleted successfully",
+  deleteAccountError: "Cannot delete account",
+
+  // ─── Date Selection ────────────────
+  selectDate: "Select Date",
+  reserveForDate: "Reserve for Date",
+  today: "Today",
+  tomorrow: "Tomorrow",
+  pickDate: "Pick a date",
+  reservedFor: "Reserved for",
+  noDateSelected: "No date selected",
 };
 
 export default en;

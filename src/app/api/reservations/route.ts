@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, agencyId, serviceId } = body
+    const { userId, agencyId, serviceId, reservedDate } = body
 
     // Validate required fields
     if (!userId || !agencyId) {
@@ -12,6 +12,28 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'userId and agencyId are required' },
         { status: 400 }
       )
+    }
+
+    // Validate date if provided
+    let targetDate: string | null = null
+    if (reservedDate) {
+      const parsed = new Date(reservedDate)
+      if (isNaN(parsed.getTime())) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid date format' },
+          { status: 400 }
+        )
+      }
+      // Format as YYYY-MM-DD
+      targetDate = parsed.toISOString().split('T')[0]
+      // Don't allow past dates
+      const today = new Date().toISOString().split('T')[0]
+      if (targetDate < today) {
+        return NextResponse.json(
+          { success: false, error: 'Cannot reserve for a past date' },
+          { status: 400 }
+        )
+      }
     }
 
     // Check user exists
@@ -83,14 +105,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for duplicate active reservation
+    // Check for duplicate active reservation (same user, agency, service, date)
+    const duplicateWhere: Record<string, unknown> = {
+      userId,
+      agencyId,
+      serviceId: resolvedServiceId,
+      status: { in: ['WAITING', 'CALLED'] },
+    }
+    if (targetDate) {
+      duplicateWhere.reservedDate = targetDate;
+    } else {
+      duplicateWhere.reservedDate = null;
+    }
     const activeReservation = await db.reservation.findFirst({
-      where: {
-        userId,
-        agencyId,
-        serviceId: resolvedServiceId,
-        status: { in: ['WAITING', 'CALLED'] },
-      },
+      where: duplicateWhere,
     })
     if (activeReservation) {
       return NextResponse.json(
@@ -99,13 +127,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Count current active reservations for the agency
-    const activeCount = await db.reservation.count({
-      where: {
-        agencyId,
-        status: { in: ['WAITING', 'CALLED'] },
-      },
-    })
+    // Count current active reservations for the agency (same date)
+    const countWhere: Record<string, unknown> = {
+      agencyId,
+      status: { in: ['WAITING', 'CALLED'] },
+    }
+    if (targetDate) {
+      countWhere.reservedDate = targetDate;
+    } else {
+      countWhere.reservedDate = null;
+    }
+    const activeCount = await db.reservation.count({ where: countWhere })
     if (activeCount >= agency.maxActiveReservations) {
       return NextResponse.json(
         { success: false, error: 'Queue is full. Please try again later' },
@@ -113,18 +145,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate next queue number per service
+    // Generate next queue number per service (for the specific date or null=today)
+    const lastWhere: Record<string, unknown> = { serviceId: resolvedServiceId }
+    if (targetDate) {
+      lastWhere.reservedDate = targetDate;
+    } else {
+      lastWhere.reservedDate = null;
+    }
     const lastReservation = await db.reservation.findFirst({
-      where: { serviceId: resolvedServiceId },
+      where: lastWhere,
       orderBy: { queueNumber: 'desc' },
     })
     const nextNumber = (lastReservation?.queueNumber || 0) + 1
     const displayNumber = `${service.prefix}-${String(nextNumber).padStart(3, '0')}`
 
     // Calculate estimated wait time
-    const waitingCount = await db.reservation.count({
-      where: { serviceId: resolvedServiceId, status: 'WAITING' },
-    })
+    const waitWhere: Record<string, unknown> = { serviceId: resolvedServiceId, status: 'WAITING' }
+    if (targetDate) {
+      waitWhere.reservedDate = targetDate;
+    } else {
+      waitWhere.reservedDate = null;
+    }
+    const waitingCount = await db.reservation.count({ where: waitWhere })
     const estimatedWait = waitingCount * agency.averageServiceTime
 
     // Create reservation
@@ -137,6 +179,7 @@ export async function POST(request: NextRequest) {
         displayNumber,
         status: 'WAITING',
         estimatedWait,
+        reservedDate: targetDate,
       },
       include: {
         agency: {
@@ -157,12 +200,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Create notification
+    const dateLabel = targetDate ? ` (${targetDate})` : ''
     await db.notification.create({
       data: {
         userId,
         type: 'QUEUE_JOINED',
         title: 'Reservation Confirmed',
-        message: `Your ticket ${displayNumber} for ${agency.name} - ${service.name}. Estimated wait: ${estimatedWait} minutes.`,
+        message: `Your ticket ${displayNumber} for ${agency.name} - ${service.name}${dateLabel}. Estimated wait: ${estimatedWait} minutes.`,
       },
     })
 
@@ -178,6 +222,7 @@ export async function POST(request: NextRequest) {
           serviceId,
           displayNumber,
           estimatedWait,
+          reservedDate: targetDate,
         }),
       },
     })

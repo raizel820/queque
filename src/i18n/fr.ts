@@ -462,6 +462,29 @@ const fr: Record<TranslationKeys, string> = {
   invalidAdminCode: "Code admin invalide",
   passwordMinLength: "Le mot de passe doit contenir au moins 6 caractères",
   justNow: "à l'instant",
+
+  // ─── Slide to Confirm ──────────────
+  slideToConfirm: "Glissez pour confirmer",
+  confirmed: "Confirmé",
+  notificationSoundOn: "Son de notification activé",
+  notificationSoundOff: "Son de notification désactivé",
+
+  // ─── Delete Account ────────────────
+  deleteAccount: "Supprimer le compte",
+  deleteAccountDesc: "Votre compte et toutes vos données seront supprimés définitivement. Cette action est irréversible.",
+  deleteAccountWarning: "Attention : cette action est irréversible !",
+  typeDeleteToConfirm: 'Tapez "supprimer" pour confirmer',
+  accountDeleted: "Compte supprimé avec succès",
+  deleteAccountError: "Impossible de supprimer le compte",
+
+  // ─── Date Selection ────────────────
+  selectDate: "Sélectionner la date",
+  reserveForDate: "Réserver pour une date",
+  today: "Aujourd'hui",
+  tomorrow: "Demain",
+  pickDate: "Choisir une date",
+  reservedFor: "Réservé pour le",
+  noDateSelected: "Aucune date sélectionnée",
 };
 
 export default fr;

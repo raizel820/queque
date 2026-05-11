@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
         title,
         message: message || '',
         isRead: false,
-        entityId: entityId || null,
       },
     })
 
