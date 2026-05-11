@@ -35,6 +35,7 @@ interface UserState {
   agencyId?: string;
   phoneNumber?: string;
   freeSmsCount?: number;
+  createdAt?: string;
 }
 
 interface AppState {

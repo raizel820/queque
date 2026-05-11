@@ -16,6 +16,12 @@ import {
   Ban,
   CheckCircle2,
   Filter,
+  Eye,
+  Phone,
+  Building2,
+  ChevronDown,
+  ChevronUp,
+  Mail,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -28,6 +34,8 @@ interface UserItem {
   role: string;
   isActive: boolean;
   createdAt: string;
+  phoneNumber?: string;
+  agencyName?: string;
 }
 
 const roleFilters = [
@@ -47,6 +55,8 @@ export function AdminUsers() {
   const [statusFilter, setStatusFilter] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [roleDropdown, setRoleDropdown] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -226,7 +236,11 @@ export function AdminUsers() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: idx * 0.02 }}
             >
-              <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+              <Card className={`border-0 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 ${
+                idx % 2 === 0
+                  ? 'bg-white dark:bg-gray-900/80'
+                  : 'bg-gray-50/50 dark:bg-gray-900/50'
+              } dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50`}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -241,14 +255,20 @@ export function AdminUsers() {
                             : 'text-red-600 dark:text-red-400'
                         }`} />
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
                           {user.fullName}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground truncate">
                           @{user.username}
                           {user.email && ` · ${user.email}`}
                         </p>
+                        {user.agencyName && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Building2 className="h-3 w-3 text-emerald-500 flex-shrink-0" />
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 truncate">{user.agencyName}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -274,27 +294,108 @@ export function AdminUsers() {
                     <span className="text-xs text-muted-foreground">
                       {t('date')}: {formatDate(user.createdAt)}
                     </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`h-8 rounded-lg text-xs ${
-                        user.isActive
-                          ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                          : 'border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
-                      }`}
-                      onClick={() => handleToggleStatus(user.id, user.isActive)}
-                      disabled={actionLoading === user.id || user.role === 'SUPER_ADMIN'}
-                    >
-                      {actionLoading === user.id ? (
-                        <Loader2 className="h-3 w-3 animate-spin me-1" />
-                      ) : user.isActive ? (
-                        <Ban className="h-3 w-3 me-1" />
-                      ) : (
-                        <CheckCircle2 className="h-3 w-3 me-1" />
-                      )}
-                      {user.isActive ? t('suspendUser') : t('activateUser')}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 rounded-lg text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => setExpandedUserId(expandedUserId === user.id ? null : user.id)}
+                      >
+                        <Eye className="h-3 w-3 me-1" />
+                        {expandedUserId === user.id ? t('close') : t('viewProfile')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`h-8 rounded-lg text-xs ${
+                          user.isActive
+                            ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                            : 'border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+                        }`}
+                        onClick={() => handleToggleStatus(user.id, user.isActive)}
+                        disabled={actionLoading === user.id || user.role === 'SUPER_ADMIN'}
+                      >
+                        {actionLoading === user.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin me-1" />
+                        ) : user.isActive ? (
+                          <Ban className="h-3 w-3 me-1" />
+                        ) : (
+                          <CheckCircle2 className="h-3 w-3 me-1" />
+                        )}
+                        {user.isActive ? t('suspendUserFull') : t('reactivateUserFull')}
+                      </Button>
+                    </div>
                   </div>
+
+                  {/* Expanded Profile Panel */}
+                  {expandedUserId === user.id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-3 pt-3 border-t border-border"
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex items-center gap-2">
+                          <UserCircle className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('username')}</p>
+                            <p className="text-sm font-medium text-foreground">@{user.username}</p>
+                          </div>
+                        </div>
+                        {user.fullName && (
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('fullName')}</p>
+                              <p className="text-sm font-medium text-foreground">{user.fullName}</p>
+                            </div>
+                          </div>
+                        )}
+                        {user.email && (
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('email')}</p>
+                              <p className="text-sm font-medium text-foreground">{user.email}</p>
+                            </div>
+                          </div>
+                        )}
+                        {user.phoneNumber && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('phoneNumber')}</p>
+                              <p className="text-sm font-medium text-foreground" dir="ltr">{user.phoneNumber}</p>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('agencyCol')}</p>
+                            <p className="text-sm font-medium text-foreground">{user.agencyName || t('noAgency')}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{t('status')}</p>
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] ${
+                                user.isActive
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
+                                  : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200'
+                              }`}
+                            >
+                              {user.isActive ? t('active') : t('suspended')}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>

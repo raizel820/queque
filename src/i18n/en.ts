@@ -96,6 +96,8 @@ const en: Record<TranslationKeys, string> = {
   agencyCodePlaceholder: "e.g. CLINIC01",
   scanQR: "Scan QR Code",
   yourQueueNumber: "Your Queue Number",
+  queueNumber: "Queue Number",
+  memberSince: "Member Since",
   peopleAhead: "people ahead",
   estimatedWait: "Estimated Wait Time",
   currentlyServing: "Currently Serving",
@@ -289,6 +291,7 @@ const en: Record<TranslationKeys, string> = {
   // ─── Themes ──────────────────────────────
   lightMode: "Light Mode",
   darkMode: "Dark Mode",
+  systemTheme: "System",
 
   // ─── Testimonials ─────────────────────────
   testimonialsTitle: "What Our Customers Say",
@@ -373,6 +376,7 @@ const en: Record<TranslationKeys, string> = {
   // ─── Weekly Summary ──────────────────────
   weeklySummary: "Weekly Summary",
   thisWeek: "This Week",
+  thisYear: "This Year",
   lastWeek: "Last Week",
   autoRefresh: "Auto-refreshing every 10s",
 
@@ -391,6 +395,7 @@ const en: Record<TranslationKeys, string> = {
   copyLink: "Copy Link",
   downloadQr: "Download QR",
   linkCopied: "Link copied!",
+  copied: "Copied!",
   downloaded: "Downloaded!",
 
   // ─── Admin Users ────────────────────────
@@ -428,6 +433,8 @@ const en: Record<TranslationKeys, string> = {
   peakHours: "Peak Hours",
   hourly: "Hourly",
   noAnalyticsData: "No analytics data available",
+  downloadReport: "Download Report",
+  leaderboard: "Leaderboard",
 
   // ─── Customer Favorites ──────────────
   favorites: "Favorites",
@@ -448,8 +455,11 @@ const en: Record<TranslationKeys, string> = {
   notifPrefs: "Notification Preferences",
   notifPrefsDesc: "Choose which notifications you want to receive",
   queueCalledNotif: "Called Notification",
+  queueCalledNotifDesc: "Get notified when your queue number is called",
   turnApproachingNotif: "Turn Approaching",
+  turnApproachingNotifDesc: "Alert before your turn (3 positions away)",
   completedNotif: "Completed",
+  completedNotifDesc: "Notification when service is completed",
 
   // ─── Enhanced Register ──────────────
   algeriaPrefix: "+213",
@@ -479,9 +489,14 @@ const en: Record<TranslationKeys, string> = {
   deleteAccount: "Delete Account",
   deleteAccountDesc: "Your account and all data will be permanently deleted. This action cannot be undone.",
   deleteAccountWarning: "Warning: This action cannot be undone!",
+  irreversibleActions: "Irreversible Actions",
   typeDeleteToConfirm: 'Type "delete" to confirm',
   accountDeleted: "Account deleted successfully",
   deleteAccountError: "Cannot delete account",
+
+  unsavedChanges: "You have unsaved changes",
+  account: "Account",
+  reviewInfo: "Review Information",
 
   // ─── Date Selection ────────────────
   selectDate: "Select Date",
@@ -544,6 +559,49 @@ const en: Record<TranslationKeys, string> = {
   avgWaitTimeExperienced: "Avg. Wait Time",
   favoriteAgencyStat: "Favorite Agency",
   thisMonth: "This Month",
+
+  // ─── Feature 1: Turn Overlay ────────────
+  itsYourTurn: "IT'S YOUR TURN!",
+  tapToDismiss: "Tap to dismiss",
+  proceedToCounter: "Please proceed to the service counter",
+  vibrationEffect: "Vibrate",
+
+  // ─── Feature 2: Activity Feed ───────────
+  liveFeed: "Live Feed",
+  customerJoinedQueue: "{name} joined the queue",
+  customerWasCalled: "{name} was called",
+  customerCompletedService: "{name} completed service",
+  customerCancelledRes: "{name} cancelled",
+  noRecentActivity: "No recent activity",
+
+  // ─── Feature 3: Search Suggestions ──────
+  recentSearches: "Recent Searches",
+  clearAll: "Clear All",
+  clearSearch: "Clear",
+  suggestions: "Suggestions",
+  noSuggestions: "No suggestions found",
+
+  // ─── Feature 4: Enhanced User Mgmt ──────
+  viewProfile: "View Profile",
+  phone: "Phone",
+  agencyCol: "Agency",
+  noAgency: "No agency",
+  suspendUserFull: "Suspend User",
+  reactivateUserFull: "Reactivate User",
+  roleFilter: "Role Filter",
+
+  // ─── Feature 5: Mark All Read ───────────
+  allRead: "All read ✓",
+  markAllReadSuccess: "All notifications marked as read",
+
+  // ─── Feature 6: Social Sharing ──────────
+  shareOnWhatsApp: "Share on WhatsApp",
+  shareOnTelegram: "Share on Telegram",
+  shareOnFacebook: "Share on Facebook",
+  downloadQrComingSoon: "Download QR Code",
+  copyLinkToast: "Link copied to clipboard!",
+  shareAgency: "Share Agency",
+  sharePosition: "Share My Position",
 };
 
 export default en;

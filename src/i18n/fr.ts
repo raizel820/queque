@@ -96,6 +96,8 @@ const fr: Record<TranslationKeys, string> = {
   agencyCodePlaceholder: "Ex: CLINIC01",
   scanQR: "Scanner le code QR",
   yourQueueNumber: "Votre numéro",
+  queueNumber: "Numéro de file",
+  memberSince: "Membre depuis",
   peopleAhead: "personnes devant vous",
   estimatedWait: "Temps d'attente estimé",
   currentlyServing: "En cours de service",
@@ -289,6 +291,7 @@ const fr: Record<TranslationKeys, string> = {
   // ─── Themes �n─────────────────────────────
   lightMode: "Mode clair",
   darkMode: "Mode sombre",
+  systemTheme: "Système",
 
   // ─── Testimonials ─────────────────────────
   testimonialsTitle: "Ce que disent nos clients",
@@ -373,6 +376,7 @@ const fr: Record<TranslationKeys, string> = {
   // ─── Weekly Summary ──────────────────────
   weeklySummary: "Résumé hebdomadaire",
   thisWeek: "Cette semaine",
+  thisYear: "Cette année",
   lastWeek: "La semaine dernière",
   autoRefresh: "Actualisation automatique toutes les 10s",
 
@@ -391,6 +395,7 @@ const fr: Record<TranslationKeys, string> = {
   copyLink: "Copier le lien",
   downloadQr: "Télécharger le QR",
   linkCopied: "Lien copié !",
+  copied: "Copié !",
   downloaded: "Téléchargé !",
 
   // ─── Admin Users ────────────────────────
@@ -428,6 +433,8 @@ const fr: Record<TranslationKeys, string> = {
   peakHours: "Heures de pointe",
   hourly: "Par heure",
   noAnalyticsData: "Aucune donnée analytique",
+  downloadReport: "Télécharger le rapport",
+  leaderboard: "Classement",
 
   // ─── Customer Favorites ──────────────
   favorites: "Favoris",
@@ -448,8 +455,11 @@ const fr: Record<TranslationKeys, string> = {
   notifPrefs: "Préférences de notification",
   notifPrefsDesc: "Choisissez les notifications que vous souhaitez recevoir",
   queueCalledNotif: "Notification d'appel",
+  queueCalledNotifDesc: "Soyez notifié quand votre numéro est appelé",
   turnApproachingNotif: "Tour approchant",
+  turnApproachingNotifDesc: "Alerte avant votre tour (3 positions)",
   completedNotif: "Service terminé",
+  completedNotifDesc: "Notification quand le service est terminé",
 
   // ─── Enhanced Register ──────────────
   algeriaPrefix: "+213",
@@ -479,9 +489,14 @@ const fr: Record<TranslationKeys, string> = {
   deleteAccount: "Supprimer le compte",
   deleteAccountDesc: "Votre compte et toutes vos données seront supprimés définitivement. Cette action est irréversible.",
   deleteAccountWarning: "Attention : cette action est irréversible !",
+  irreversibleActions: "Actions irréversibles",
   typeDeleteToConfirm: 'Tapez "supprimer" pour confirmer',
   accountDeleted: "Compte supprimé avec succès",
   deleteAccountError: "Impossible de supprimer le compte",
+
+  unsavedChanges: "Vous avez des modifications non enregistrées",
+  account: "Compte",
+  reviewInfo: "Vérifier les informations",
 
   // ─── Date Selection ────────────────
   selectDate: "Sélectionner la date",
@@ -544,6 +559,49 @@ const fr: Record<TranslationKeys, string> = {
   avgWaitTimeExperienced: "Temps d'attente moyen",
   favoriteAgencyStat: "Établissement préféré",
   thisMonth: "Ce mois-ci",
+
+  // ─── Feature 1: Turn Overlay ────────────
+  itsYourTurn: "C'EST VOTRE TOUR !",
+  tapToDismiss: "Appuyez pour fermer",
+  proceedToCounter: "Veuillez vous rendre au comptoir",
+  vibrationEffect: "Vibrer",
+
+  // ─── Feature 2: Activity Feed ───────────
+  liveFeed: "Flux en direct",
+  customerJoinedQueue: "{name} a rejoint la file",
+  customerWasCalled: "{name} a été appelé",
+  customerCompletedService: "{name} a terminé le service",
+  customerCancelledRes: "{name} a annulé",
+  noRecentActivity: "Aucune activité récente",
+
+  // ─── Feature 3: Search Suggestions ──────
+  recentSearches: "Recherches récentes",
+  clearAll: "Tout effacer",
+  clearSearch: "Effacer",
+  suggestions: "Suggestions",
+  noSuggestions: "Aucune suggestion trouvée",
+
+  // ─── Feature 4: Enhanced User Mgmt ──────
+  viewProfile: "Voir le profil",
+  phone: "Téléphone",
+  agencyCol: "Établissement",
+  noAgency: "Aucun établissement",
+  suspendUserFull: "Suspendre l'utilisateur",
+  reactivateUserFull: "Réactiver l'utilisateur",
+  roleFilter: "Filtrer par rôle",
+
+  // ─── Feature 5: Mark All Read ───────────
+  allRead: "Tout lu ✓",
+  markAllReadSuccess: "Toutes les notifications ont été marquées comme lues",
+
+  // ─── Feature 6: Social Sharing ──────────
+  shareOnWhatsApp: "Partager sur WhatsApp",
+  shareOnTelegram: "Partager sur Telegram",
+  shareOnFacebook: "Partager sur Facebook",
+  downloadQrComingSoon: "Télécharger le code QR",
+  copyLinkToast: "Lien copié dans le presse-papiers !",
+  shareAgency: "Partager l'établissement",
+  sharePosition: "Partager ma position",
 };
 
 export default fr;

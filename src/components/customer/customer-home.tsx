@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,8 @@ import {
   CalendarDays,
   ArrowLeft,
   Navigation,
+  X,
+  History,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -100,6 +102,10 @@ export function CustomerHome() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [togglingFav, setTogglingFav] = useState<string | null>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Date picker state
   const [dateDialogOpen, setDateDialogOpen] = useState(false);
@@ -109,6 +115,11 @@ export function CustomerHome() {
 
   useEffect(() => {
     fetchAgencies();
+    // Load recent searches from localStorage
+    try {
+      const stored = localStorage.getItem('queuewise-recent-searches');
+      if (stored) setRecentSearches(JSON.parse(stored));
+    } catch { /* silent */ }
   }, []);
 
   const fetchFavorites = async () => {
@@ -157,6 +168,66 @@ export function CustomerHome() {
       return matchCategory && matchSearch;
     });
   }, [agencies, selectedCategory, searchQuery]);
+
+  // Autocomplete suggestions
+  const searchSuggestions = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return [];
+    const seen = new Set<string>();
+ return agencies
+      .filter((a) => {
+        const name = getAgencyName(a).toLowerCase();
+        if (seen.has(name)) return false;
+        if (name.includes(query) || a.name.toLowerCase().includes(query) || a.nameFr?.toLowerCase().includes(query) || a.nameAr?.includes(query)) {
+          seen.add(name);
+          return true;
+        }
+        return false;
+      })
+      .slice(0, 5);
+  }, [searchQuery, agencies, lang]);
+
+  const addRecentSearch = (term: string) => {
+    if (!term.trim()) return;
+    const updated = [term, ...recentSearches.filter((s) => s.toLowerCase() !== term.toLowerCase())].slice(0, 5);
+    setRecentSearches(updated);
+    try { localStorage.setItem('queuewise-recent-searches', JSON.stringify(updated)); } catch { /* silent */ }
+  };
+
+  const removeRecentSearch = (term: string) => {
+    const updated = recentSearches.filter((s) => s !== term);
+    setRecentSearches(updated);
+    try { localStorage.setItem('queuewise-recent-searches', JSON.stringify(updated)); } catch { /* silent */ }
+  };
+
+  const clearAllRecentSearches = () => {
+    setRecentSearches([]);
+    try { localStorage.removeItem('queuewise-recent-searches'); } catch { /* silent */ }
+  };
+
+  const handleSearchSelect = (term: string) => {
+    setSearchQuery(term);
+    addRecentSearch(term);
+    setShowSuggestions(false);
+    setSearchFocused(false);
+    searchInputRef.current?.blur();
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      addRecentSearch(searchQuery.trim());
+      setShowSuggestions(false);
+      setSearchFocused(false);
+    }
+  };
+
+  const handleSearchBlur = () => {
+    // Delay to allow click on suggestion
+    setTimeout(() => {
+      setSearchFocused(false);
+      setShowSuggestions(false);
+    }, 200);
+  };
 
   const fetchAgencyDetail = async (code: string) => {
     setLoadingDetail(true);
@@ -604,11 +675,81 @@ export function CustomerHome() {
       <div className="relative mb-4">
         <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input
+          ref={searchInputRef}
           placeholder={t('searchAgency')}
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setShowSuggestions(true);
+          }}
+          onFocus={() => {
+            setSearchFocused(true);
+            setShowSuggestions(true);
+          }}
+          onBlur={handleSearchBlur}
+          onKeyDown={handleSearchKeyDown}
           className="ps-11 h-12 text-base rounded-xl bg-white dark:bg-gray-900/80 shadow-sm border-gray-200 dark:border-gray-800 dark:backdrop-blur-sm"
         />
+        {/* Search Suggestions Dropdown */}
+        {(searchFocused || showSuggestions) && (searchSuggestions.length > 0 || (searchQuery === '' && recentSearches.length > 0)) && (
+          <div className="absolute top-full mt-1 start-0 end-0 z-50 bg-white dark:bg-gray-900 border border-border rounded-xl shadow-lg overflow-hidden">
+            {searchQuery === '' && recentSearches.length > 0 ? (
+              <>
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                  <div className="flex items-center gap-1.5">
+                    <History className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-semibold text-muted-foreground">{t('recentSearches')}</span>
+                  </div>
+                  <button
+                    onClick={clearAllRecentSearches}
+                    className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline font-medium"
+                  >
+                    {t('clearAll')}
+                  </button>
+                </div>
+                {recentSearches.map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => handleSearchSelect(term)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-start"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Search className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm text-foreground truncate">{term}</span>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeRecentSearch(term); }}
+                      className="h-5 w-5 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 flex-shrink-0"
+                    >
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </button>
+                ))}
+              </>
+            ) : searchSuggestions.length > 0 ? (
+              <>
+                <div className="px-3 py-2 border-b border-border">
+                  <span className="text-xs font-semibold text-muted-foreground">{t('suggestions')}</span>
+                </div>
+                {searchSuggestions.map((agency) => (
+                  <button
+                    key={agency.id}
+                    onClick={() => handleSearchSelect(getAgencyName(agency))}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors text-start"
+                  >
+                    <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                      <TicketCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{getAgencyName(agency)}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{agency.address}</p>
+                    </div>
+                  </button>
+                ))}
+              </>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Agency Code Input */}

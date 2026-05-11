@@ -12,6 +12,7 @@ import {
   BellOff,
   BellRing,
   Check,
+  CheckCheck,
   Trash2,
   Volume2,
   TicketCheck,
@@ -55,6 +56,7 @@ export function CustomerNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [allMarkedRead, setAllMarkedRead] = useState(false);
 
   useEffect(() => {
     fetchNotifications();
@@ -79,13 +81,16 @@ export function CustomerNotifications() {
   const handleMarkAllRead = async () => {
     setActionLoading('all');
     try {
-      const res = await fetch(`/api/notifications/mark-read`, {
-        method: 'POST',
+      const res = await fetch(`/api/notifications/read-all`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id }),
       });
       if (res.ok) {
-        toast.success(t('markAllRead'));
+        setAllMarkedRead(true);
+        toast.success(t('markAllReadSuccess'));
+        // Trigger parent badge update via custom event
+        window.dispatchEvent(new CustomEvent('queuewise:notifications-read'));
         fetchNotifications();
       }
     } catch {
@@ -141,16 +146,20 @@ export function CustomerNotifications() {
           )}
         </div>
         {unreadCount > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs"
+          <motion.button
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            className="h-8 text-xs font-medium text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-800 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg gap-1.5"
             onClick={handleMarkAllRead}
-            disabled={!!actionLoading}
+            disabled={!!actionLoading || allMarkedRead}
           >
-            <Check className="h-3 w-3 me-1" />
-            {t('markAllRead')}
-          </Button>
+            {allMarkedRead ? (
+              <CheckCheck className="h-3.5 w-3.5 me-1" />
+            ) : (
+              <Check className="h-3.5 w-3.5 me-1" />
+            )}
+            {allMarkedRead ? t('allRead') : t('markAllRead')}
+          </motion.button>
         )}
       </div>
 

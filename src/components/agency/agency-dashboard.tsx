@@ -27,6 +27,11 @@ import {
   Layers,
   Activity,
   TrendingUp,
+  UserPlus,
+  Volume2,
+  CircleCheckBig,
+  Ban,
+  Rss,
 } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
 import { toast } from 'sonner';
@@ -83,6 +88,31 @@ function MiniSparkline({ data, color = 'bg-emerald-400' }: { data: number[]; col
   );
 }
 
+interface ActivityEvent {
+  id: string;
+  eventType: string;
+  eventKey: string;
+  customerName: string;
+  queueNumber: string;
+  timestamp: string;
+  serviceName?: string;
+}
+
+function getEventConfig(eventType: string) {
+  switch (eventType) {
+    case 'joined':
+      return { icon: UserPlus, color: 'bg-emerald-500', dotColor: 'bg-emerald-500' };
+    case 'called':
+      return { icon: Volume2, color: 'bg-blue-500', dotColor: 'bg-blue-500' };
+    case 'completed':
+      return { icon: CircleCheckBig, color: 'bg-gray-400', dotColor: 'bg-gray-400' };
+    case 'cancelled':
+      return { icon: Ban, color: 'bg-red-500', dotColor: 'bg-red-500' };
+    default:
+      return { icon: Activity, color: 'bg-gray-400', dotColor: 'bg-gray-400' };
+  }
+}
+
 function CircularProgress({ value, size = 80, strokeWidth = 6 }: { value: number; size?: number; strokeWidth?: number }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -130,6 +160,7 @@ export function AgencyDashboard() {
   const [serviceStats, setServiceStats] = useState<ServiceStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true });
   const agencyId = user?.agencyId || '';
@@ -137,10 +168,11 @@ export function AgencyDashboard() {
   const fetchData = useCallback(async () => {
     if (!agencyId) return;
     try {
-      const [statsRes, listRes, servicesRes] = await Promise.all([
+      const [statsRes, listRes, servicesRes, activityRes] = await Promise.all([
         fetch(`/api/agency/stats?agencyId=${encodeURIComponent(agencyId)}`),
         fetch(`/api/agency/queue?agencyId=${encodeURIComponent(agencyId)}&status=WAITING,CALLED`),
         fetch(`/api/agency/services?agencyId=${encodeURIComponent(agencyId)}`),
+        fetch(`/api/agency/activity?agencyId=${encodeURIComponent(agencyId)}`),
       ]);
       if (statsRes.ok) {
         const data = await statsRes.json();
@@ -162,6 +194,10 @@ export function AgencyDashboard() {
             }))
           );
         }
+      }
+      if (activityRes.ok) {
+        const data = await activityRes.json();
+        setActivityEvents(data.events ?? []);
       }
     } catch {
       toast.error(t('error'));
@@ -716,6 +752,80 @@ export function AgencyDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Recent Activity Feed */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ delay: 0.35 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Rss className="h-4 w-4 text-emerald-600" />
+              {t('liveFeed')}
+              <motion.span
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 ms-auto"
+              >
+                <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+                {t('live')}
+              </motion.span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {activityEvents.length === 0 ? (
+              <div className="text-center py-6">
+                <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">{t('noRecentActivity')}</p>
+              </div>
+            ) : (
+              <div className="relative space-y-0">
+                {/* Timeline line */}
+                <div className="absolute start-[9px] top-2 bottom-2 w-px bg-border" />
+                {activityEvents.map((event, idx) => {
+                  const config = getEventConfig(event.eventType);
+                  const Icon = config.icon;
+                  const timeAgoStr = (() => {
+                    const diff = Math.floor((Date.now() - new Date(event.timestamp).getTime()) / 1000);
+                    if (diff < 60) return t('justNow');
+                    if (diff < 3600) return `${Math.floor(diff / 60)} ${t('min')}`;
+                    if (diff < 86400) return `${Math.floor(diff / 3600)} ${t('hours')}`;
+                    return `${Math.floor(diff / 86400)} ${t('date')}`;
+                  })();
+                  const label = (t(event.eventKey as 'customerJoinedQueue') || event.eventKey).replace('{name}', event.customerName);
+
+                  return (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="relative flex items-start gap-3 pb-4 last:pb-0"
+                    >
+                      {/* Timeline dot */}
+                      <div className={`relative z-10 mt-1 h-5 w-5 rounded-full ${config.dotColor} flex items-center justify-center flex-shrink-0`}>
+                        <div className="h-2 w-2 rounded-full bg-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground leading-snug">{label}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-muted-foreground">#{event.queueNumber}</span>
+                          {event.serviceName && (
+                            <span className="text-[10px] text-muted-foreground">· {event.serviceName}</span>
+                          )}
+                          <span className="text-[10px] text-muted-foreground">· {timeAgoStr}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Quick Actions Floating Area */}
       <motion.div

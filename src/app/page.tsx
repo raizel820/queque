@@ -137,7 +137,17 @@ function CustomerBottomNav() {
     };
     fetchUnread();
     const interval = setInterval(fetchUnread, 30000);
-    return () => clearInterval(interval);
+    
+    // Listen for mark-all-read events from notifications component
+    const handleNotificationsRead = () => {
+      fetchUnread();
+    };
+    window.addEventListener('queuewise:notifications-read', handleNotificationsRead);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('queuewise:notifications-read', handleNotificationsRead);
+    };
   }, [user?.id]);
 
   const mainItems = [

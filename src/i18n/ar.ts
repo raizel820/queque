@@ -94,6 +94,8 @@ const ar = {
   agencyCodePlaceholder: "مثال: CLINIC01",
   scanQR: "امسح رمز QR",
   yourQueueNumber: "رقمك في الطابور",
+  queueNumber: "رقم الدور",
+  memberSince: "عضو منذ",
   peopleAhead: "أمامك",
   estimatedWait: "الوقت المتوقع للانتظار",
   currentlyServing: "يُخدم حالياً",
@@ -287,6 +289,7 @@ const ar = {
   // ─── Themes ──────────────────────────────
   lightMode: "الوضع الفاتح",
   darkMode: "الوضع الداكن",
+  systemTheme: "النظام",
 
   // ─── Testimonials ─────────────────────────
   testimonialsTitle: "ماذا يقول عملاؤنا",
@@ -371,6 +374,7 @@ const ar = {
   // ─── Weekly Summary ──────────────────────
   weeklySummary: "الملخص الأسبوعي",
   thisWeek: "هذا الأسبوع",
+  thisYear: "هذه السنة",
   lastWeek: "الأسبوع الماضي",
   autoRefresh: "تحديث تلقائي كل 10 ثوانٍ",
 
@@ -389,6 +393,7 @@ const ar = {
   copyLink: "نسخ الرابط",
   downloadQr: "تحميل رمز QR",
   linkCopied: "تم نسخ الرابط!",
+  copied: "تم النسخ!",
   downloaded: "تم التحميل!",
 
   // ─── Admin Users ────────────────────────
@@ -426,6 +431,8 @@ const ar = {
   peakHours: "ساعات الذروة",
   hourly: "بالساعة",
   noAnalyticsData: "لا توجد بيانات تحليلية",
+  downloadReport: "تحميل التقرير",
+  leaderboard: "لوحة المتصدرين",
 
   // ─── Customer Favorites ──────────────
   favorites: "المفضلات",
@@ -446,8 +453,11 @@ const ar = {
   notifPrefs: "إعدادات الإشعارات",
   notifPrefsDesc: "اختر الإشعارات التي تريد تلقيها",
   queueCalledNotif: "إشعار الاستدعاء",
+  queueCalledNotifDesc: "احصل على إشعار عندما يتم استدعاء رقمك",
   turnApproachingNotif: "اقتراب الدور",
+  turnApproachingNotifDesc: "تنبيه قبل دورك (3 مراكز)",
   completedNotif: "إتمام الخدمة",
+  completedNotifDesc: "إشعار عند اكتمال الخدمة",
 
   // ─── Enhanced Register ──────────────
   algeriaPrefix: "+213",
@@ -477,9 +487,14 @@ const ar = {
   deleteAccount: "حذف الحساب",
   deleteAccountDesc: "سيتم حذف حسابك وجميع بياناتك نهائياً. لا يمكن التراجع عن هذا الإجراء.",
   deleteAccountWarning: "تحذير: هذا الإجراء لا يمكن التراجع عنه!",
+  irreversibleActions: "إجراءات لا رجعة فيها",
   typeDeleteToConfirm: "اكتب \"حذف\" للتأكيد",
   accountDeleted: "تم حذف الحساب بنجاح",
   deleteAccountError: "لا يمكن حذف الحساب",
+
+  unsavedChanges: "لديك تغييرات غير محفوظة",
+  account: "الحساب",
+  reviewInfo: "مراجعة المعلومات",
 
   // ─── Date Selection ────────────────
   selectDate: "اختر التاريخ",
@@ -542,6 +557,49 @@ const ar = {
   avgWaitTimeExperienced: 'متوسط الانتظار',
   favoriteAgencyStat: 'المؤسسة المفضلة',
   thisMonth: 'هذا الشهر',
+
+  // ─── Feature 1: Turn Overlay ────────────
+  itsYourTurn: '!دورك الآن',
+  tapToDismiss: 'اضغط للإغلاق',
+  proceedToCounter: 'يرجى التوجه إلى مكتب الخدمة',
+  vibrationEffect: 'اهتزاز',
+
+  // ─── Feature 2: Activity Feed ───────────
+  liveFeed: 'البث المباشر',
+  customerJoinedQueue: '{name} انضم للطابور',
+  customerWasCalled: '{name} تم استدعاؤه',
+  customerCompletedService: '{name} أكمل الخدمة',
+  customerCancelledRes: '{name} ألغى الحجز',
+  noRecentActivity: 'لا يوجد نشاط حديث',
+
+  // ─── Feature 3: Search Suggestions ──────
+  recentSearches: 'عمليات البحث الأخيرة',
+  clearAll: 'مسح الكل',
+  clearSearch: 'مسح',
+  suggestions: 'اقتراحات',
+  noSuggestions: 'لا توجد اقتراحات',
+
+  // ─── Feature 4: Enhanced User Mgmt ──────
+  viewProfile: 'عرض الملف الشخصي',
+  phone: 'الهاتف',
+  agencyCol: 'المؤسسة',
+  noAgency: 'لا توجد مؤسسة',
+  suspendUserFull: 'تعليق المستخدم',
+  reactivateUserFull: 'إعادة تفعيل المستخدم',
+  roleFilter: 'تصفية حسب الدور',
+
+  // ─── Feature 5: Mark All Read ───────────
+  allRead: '✓ الكل مقروء',
+  markAllReadSuccess: 'تم تحديد جميع الإشعارات كمقروءة',
+
+  // ─── Feature 6: Social Sharing ──────────
+  shareOnWhatsApp: 'مشاركة عبر واتساب',
+  shareOnTelegram: 'مشاركة عبر تيليغرام',
+  shareOnFacebook: 'مشاركة عبر فيسبوك',
+  downloadQrComingSoon: 'تحميل رمز QR',
+  copyLinkToast: '!تم نسخ الرابط',
+  shareAgency: 'مشاركة المؤسسة',
+  sharePosition: 'مشاركة موقعي',
 };
 
 export default ar;

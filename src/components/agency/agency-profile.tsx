@@ -31,6 +31,10 @@ import {
   Copy,
   Download,
   Clock,
+  Share2,
+  MessageCircle,
+  Send,
+  BadgeCheck,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -176,6 +180,28 @@ export function AgencyProfile() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success(t('downloaded'));
+  };
+
+  const getAgencyNameForShare = () => {
+    if (lang === 'ar' && profile?.nameAr) return profile.nameAr;
+    if (lang === 'fr' && profile?.nameFr) return profile.nameFr;
+    return profile?.name || 'QueueWise Agency';
+  };
+
+  const shareText = `Join the queue at ${getAgencyNameForShare()}`;
+  const currentUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const agencyShareUrl = profile?.code ? `${currentUrl}/?code=${profile.code}` : currentUrl;
+
+  const handleShareWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}%20${encodeURIComponent(agencyShareUrl)}`, '_blank');
+  };
+
+  const handleShareTelegram = () => {
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(agencyShareUrl)}&text=${encodeURIComponent(shareText)}`, '_blank');
+  };
+
+  const handleShareFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(agencyShareUrl)}&quote=${encodeURIComponent(shareText)}`, '_blank');
   };
 
   if (loading) {
@@ -460,6 +486,67 @@ export function AgencyProfile() {
                   </Button>
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Share & Social Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Share2 className="h-4 w-4 text-emerald-600" />
+              {t('shareAgency')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center gap-4">
+              {/* WhatsApp */}
+              <motion.button
+                whileHover={{ scale: 1.1, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleShareWhatsApp}
+                className="h-12 w-12 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center shadow-md shadow-green-500/25 transition-colors"
+                title={t('shareOnWhatsApp')}
+              >
+                <MessageCircle className="h-5 w-5" />
+              </motion.button>
+              {/* Telegram */}
+              <motion.button
+                whileHover={{ scale: 1.1, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleShareTelegram}
+                className="h-12 w-12 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25 transition-colors"
+                title={t('shareOnTelegram')}
+              >
+                <Send className="h-5 w-5" />
+              </motion.button>
+              {/* Facebook */}
+              <motion.button
+                whileHover={{ scale: 1.1, y: -2 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleShareFacebook}
+                className="h-12 w-12 rounded-full bg-blue-700 hover:bg-blue-800 text-white flex items-center justify-center shadow-md shadow-blue-700/25 transition-colors"
+                title={t('shareOnFacebook')}
+              >
+                <BadgeCheck className="h-5 w-5" />
+              </motion.button>
+            </div>
+            {/* Copy Link Button */}
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <Button
+                variant="outline"
+                className="h-10 rounded-xl text-sm font-medium border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 gap-2"
+                onClick={handleCopyLink}
+              >
+                <Copy className="h-4 w-4" />
+                {t('copyLink')}
+              </Button>
             </div>
           </CardContent>
         </Card>

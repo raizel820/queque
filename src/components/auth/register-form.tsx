@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -17,14 +17,36 @@ import {
 } from '@/components/ui/select';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { TicketCheck, ArrowLeft, Loader2, Eye, EyeOff, UserPlus, Shield } from 'lucide-react';
+import { TicketCheck, ArrowLeft, ArrowRight, Loader2, Eye, EyeOff, UserPlus, Shield, Camera, Check, CircleDot } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { UserRole } from '@/store/use-app-store';
+
+const STEPS = [
+  { id: 1, label: 'account', labelKey: 'account' as const },
+  { id: 2, label: 'profile', labelKey: 'fullName' as const },
+  { id: 3, label: 'confirm', labelKey: 'confirm' as const },
+];
+
+function getPasswordStrength(password: string): { score: number; label: string; color: string; bgColor: string } {
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 10) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  if (score <= 1) return { score: 20, label: 'Weak', color: 'bg-red-500', bgColor: 'bg-red-100 dark:bg-red-900/30' };
+  if (score <= 2) return { score: 40, label: 'Fair', color: 'bg-amber-500', bgColor: 'bg-amber-100 dark:bg-amber-900/30' };
+  if (score <= 3) return { score: 60, label: 'Good', color: 'bg-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' };
+  if (score <= 4) return { score: 80, label: 'Strong', color: 'bg-emerald-500', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' };
+  return { score: 100, label: 'Very Strong', color: 'bg-emerald-600', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' };
+}
 
 export function RegisterForm() {
   const { setUser, setView, goBack } = useAppStore();
   const { t } = useLanguage();
+  const [step, setStep] = useState(1);
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
@@ -38,6 +60,8 @@ export function RegisterForm() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+
+  const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
   const handleRegister = async () => {
     // Validation
@@ -111,7 +135,104 @@ export function RegisterForm() {
     }
   };
 
+  const goToNext = () => {
+    if (step === 1) {
+      if (!username.trim() || username.trim().length < 3) {
+        toast.error(t('username') + ' - min 3');
+        return;
+      }
+      if (!password.trim() || password.length < 6) {
+        toast.error(t('passwordMinLength'));
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast.error(t('passwordMismatch'));
+        return;
+      }
+    }
+    if (step < 3) setStep(step + 1);
+  };
+
+  const goToPrev = () => {
+    if (step > 1) setStep(step - 1);
+  };
+
   const isFocused = focusedField !== null;
+
+  // Floating label component
+  const FloatingInput = ({ id, label, type = 'text', value, onChange, onFocus, onBlur, placeholder, dir, prefix, suffix, children, hasToggle, toggleVisible, onToggle }: {
+    id: string;
+    label: string;
+    type?: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onFocus: () => void;
+    onBlur: () => void;
+    placeholder?: string;
+    dir?: string;
+    prefix?: React.ReactNode;
+    suffix?: React.ReactNode;
+    children?: React.ReactNode;
+    hasToggle?: boolean;
+    toggleVisible?: boolean;
+    onToggle?: () => void;
+  }) => {
+    const isActive = focusedField === id || value.length > 0;
+    return (
+      <div className="relative space-y-1">
+        <div className={`relative flex items-center rounded-xl border transition-all duration-300 ${
+          focusedField === id
+            ? 'border-emerald-400 ring-2 ring-emerald-500/20 dark:ring-emerald-400/20 bg-white dark:bg-gray-900 shadow-sm'
+            : 'border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50'
+        }`}>
+          {prefix && <div className="ps-3.5 flex-shrink-0">{prefix}</div>}
+          <div className="relative flex-1">
+            <input
+              id={id}
+              type={type}
+              value={value}
+              onChange={onChange}
+              onFocus={onFocus}
+              onBlur={onBlur}
+              placeholder={isActive ? placeholder : ' '}
+              dir={dir}
+              className={`peer h-12 w-full bg-transparent px-3.5 text-base text-foreground outline-none placeholder:text-muted-foreground/60 ${prefix ? 'ps-0' : ''} ${hasToggle ? 'pe-10' : ''}`}
+              autoComplete={type === 'password' ? 'new-password' : id === 'reg-username' ? 'username' : undefined}
+            />
+            <label
+              htmlFor={id}
+              className={`pointer-events-none absolute transition-all duration-200 ease-out ${
+                isActive
+                  ? 'top-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400'
+                  : 'top-1/2 -translate-y-1/2 text-sm text-muted-foreground'
+              } ${prefix ? 'start-3.5' : 'start-3.5'}`}
+            >
+              {label}
+            </label>
+          </div>
+          {hasToggle && toggleVisible !== undefined && onToggle && (
+            <button
+              type="button"
+              onClick={onToggle}
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+              tabIndex={-1}
+            >
+              {toggleVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          )}
+          {suffix && <div className="pe-3.5 flex-shrink-0">{suffix}</div>}
+        </div>
+      </div>
+    );
+  };
+
+  const slideVariants = {
+    enter: (direction: number) => ({ x: direction > 0 ? 300 : -300, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (direction: number) => ({ x: direction > 0 ? -300 : 300, opacity: 0 }),
+  };
+
+  const [direction, setDirection] = useState(0);
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
@@ -131,7 +252,7 @@ export function RegisterForm() {
 
       {/* Top Bar */}
       <header className="w-full px-4 py-3 flex items-center justify-between relative z-10">
-        <Button variant="ghost" size="icon" onClick={goBack} className="h-10 w-10">
+        <Button variant="ghost" size="icon" onClick={step === 1 ? goBack : goToPrev} className="h-10 w-10">
           <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
         </Button>
         <div className="flex items-center gap-2">
@@ -154,7 +275,7 @@ export function RegisterForm() {
       </header>
 
       {/* Register Form */}
-      <div className="flex-1 flex items-center justify-center px-4 py-6 relative z-10">
+      <div className="flex-1 flex items-center justify-center px-4 py-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -179,191 +300,388 @@ export function RegisterForm() {
                   {t('register')}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                {/* Role Selector */}
-                <div className="space-y-2">
-                  <Label>{t('selectRole')}</Label>
-                  <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
-                    <SelectTrigger className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CUSTOMER">{t('loginAsCustomer')}</SelectItem>
-                      <SelectItem value="AGENCY_STAFF">{t('loginAsAgency')} ({t('staffRole')})</SelectItem>
-                      <SelectItem value="AGENCY_OWNER">{t('loginAsAgency')} ({t('ownerRole')})</SelectItem>
-                      <SelectItem value="SUPER_ADMIN">
-                        <span className="flex items-center gap-2">
-                          <Shield className="h-3.5 w-3.5" />
-                          {t('loginAsAdmin')}
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+
+              {/* Step Progress Indicator */}
+              <div className="px-6 pb-2">
+                <div className="flex items-center justify-between">
+                  {STEPS.map((s, idx) => {
+                    const stepState = s.id < step ? 'completed' : s.id === step ? 'active' : 'pending';
+                    return (
+                      <div key={s.id} className="flex items-center flex-1 last:flex-none">
+                        <div className="flex flex-col items-center">
+                          <motion.div
+                            animate={{
+                              scale: stepState === 'active' ? [1, 1.08, 1] : 1,
+                              backgroundColor: stepState === 'completed' ? '#10b981' : stepState === 'active' ? '#10b981' : 'transparent',
+                            }}
+                            transition={stepState === 'active' ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
+                            className={`h-8 w-8 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${
+                              stepState === 'completed'
+                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                : stepState === 'active'
+                                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                                  : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500'
+                            }`}
+                          >
+                            {stepState === 'completed' ? (
+                              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 15 }}>
+                                <Check className="h-4 w-4" />
+                              </motion.div>
+                            ) : (
+                              <span className="text-xs font-bold">{s.id}</span>
+                            )}
+                          </motion.div>
+                          <span className={`text-[10px] mt-1 font-medium transition-colors duration-300 ${
+                            stepState === 'active' ? 'text-emerald-600 dark:text-emerald-400' : stepState === 'completed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
+                          }`}>
+                            {step === 1 && s.id === 1 ? t('account') || 'Account' :
+                             step === 1 && s.id === 2 ? t('fullName') || 'Profile' :
+                             step === 1 && s.id === 3 ? t('confirm') || 'Confirm' :
+                             step === 2 && s.id === 1 ? t('account') || 'Account' :
+                             step === 2 && s.id === 2 ? t('fullName') || 'Profile' :
+                             step === 2 && s.id === 3 ? t('confirm') || 'Confirm' :
+                             step === 3 && s.id === 1 ? t('account') || 'Account' :
+                             step === 3 && s.id === 2 ? t('fullName') || 'Profile' :
+                             t('confirm') || 'Confirm'}
+                          </span>
+                        </div>
+                        {idx < STEPS.length - 1 && (
+                          <div className="flex-1 mx-2 mb-4">
+                            <div className={`h-0.5 rounded-full transition-all duration-500 ${
+                              s.id < step ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'
+                            }`} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="reg-username">{t('username')}</Label>
-                  <Input
-                    id="reg-username"
-                    placeholder={t('username')}
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    onFocus={() => setFocusedField('username')}
-                    onBlur={() => setFocusedField(null)}
-                    className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                    autoComplete="username"
-                  />
-                </div>
+              <CardContent className="space-y-4 pt-2 max-h-[55vh] overflow-y-auto custom-scrollbar relative overflow-hidden">
+                <AnimatePresence mode="wait" custom={direction}>
+                  <motion.div
+                    key={step}
+                    custom={direction}
+                    variants={slideVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="space-y-4"
+                  >
+                    {/* Step 1: Account */}
+                    {step === 1 && (
+                      <>
+                        {/* Avatar Upload Placeholder */}
+                        <div className="flex justify-center">
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="relative h-20 w-20 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center border-2 border-dashed border-emerald-300 dark:border-emerald-700 group cursor-pointer"
+                          >
+                            <Camera className="h-6 w-6 text-emerald-500 group-hover:text-emerald-600 transition-colors" />
+                            <div className="absolute -bottom-1 -end-1 h-7 w-7 rounded-full bg-emerald-500 flex items-center justify-center shadow-md">
+                              <span className="text-[10px] text-white font-bold">+</span>
+                            </div>
+                          </motion.button>
+                        </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="reg-fullname">{t('fullName')}</Label>
-                  <Input
-                    id="reg-fullname"
-                    placeholder={t('fullName')}
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    onFocus={() => setFocusedField('fullname')}
-                    onBlur={() => setFocusedField(null)}
-                    className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                  />
-                </div>
+                        {/* Role Selector */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('selectRole')}</Label>
+                          <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
+                            <SelectTrigger className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="CUSTOMER">{t('loginAsCustomer')}</SelectItem>
+                              <SelectItem value="AGENCY_STAFF">{t('loginAsAgency')} ({t('staffRole')})</SelectItem>
+                              <SelectItem value="AGENCY_OWNER">{t('loginAsAgency')} ({t('ownerRole')})</SelectItem>
+                              <SelectItem value="SUPER_ADMIN">
+                                <span className="flex items-center gap-2">
+                                  <Shield className="h-3.5 w-3.5" />
+                                  {t('loginAsAdmin')}
+                                </span>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                {/* Phone with Algeria prefix */}
-                <div className="space-y-2">
-                  <Label htmlFor="reg-phone">{t('phoneWithPrefix')}</Label>
-                  <div className="flex gap-2">
-                    <div className="flex items-center h-12 px-3 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-muted-foreground flex-shrink-0" dir="ltr">
-                      {t('algeriaPrefix')}
-                    </div>
-                    <Input
-                      id="reg-phone"
-                      type="tel"
-                      placeholder="05XX XXX XXX"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      onFocus={() => setFocusedField('phone')}
-                      onBlur={() => setFocusedField(null)}
-                      className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                      dir="ltr"
-                    />
-                  </div>
-                </div>
+                        <FloatingInput
+                          id="reg-username"
+                          label={t('username')}
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          onFocus={() => setFocusedField('username')}
+                          onBlur={() => setFocusedField(null)}
+                          placeholder={t('username')}
+                        />
 
-                <div className="space-y-2">
-                  <Label htmlFor="reg-password">{t('password')}</Label>
-                  <div className="relative">
-                    <Input
-                      id="reg-password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder={t('password')}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      onFocus={() => setFocusedField('password')}
-                      onBlur={() => setFocusedField(null)}
-                      className="h-12 text-base pe-12 transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
-                    </button>
-                  </div>
-                </div>
+                        <div className="space-y-1.5">
+                          <FloatingInput
+                            id="reg-password"
+                            label={t('password')}
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onFocus={() => setFocusedField('password')}
+                            onBlur={() => setFocusedField(null)}
+                            placeholder={t('password')}
+                            hasToggle
+                            toggleVisible={showPassword}
+                            onToggle={() => setShowPassword(!showPassword)}
+                          />
+                          {/* Password Strength Indicator */}
+                          {password.length > 0 && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              className="space-y-1.5 pt-1"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${passwordStrength.score}%` }}
+                                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                                    className={`h-full rounded-full ${passwordStrength.color}`}
+                                  />
+                                </div>
+                                <span className={`text-[10px] font-semibold min-w-[70px] text-end ${
+                                  passwordStrength.score <= 40 ? 'text-red-500' :
+                                  passwordStrength.score <= 60 ? 'text-amber-500' :
+                                  'text-emerald-500'
+                                }`}>
+                                  {passwordStrength.label}
+                                </span>
+                              </div>
+                              <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map((level) => (
+                                  <motion.div
+                                    key={level}
+                                    initial={{ scaleX: 0 }}
+                                    animate={{ scaleX: 1 }}
+                                    transition={{ delay: level * 0.05 }}
+                                    className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                                      level <= passwordStrength.score / 20 ? passwordStrength.color : 'bg-gray-200 dark:bg-gray-700'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="reg-confirm">{t('confirmPassword')}</Label>
-                  <div className="relative">
-                    <Input
-                      id="reg-confirm"
-                      type={showConfirm ? 'text' : 'password'}
-                      placeholder={t('confirmPassword')}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      onFocus={() => setFocusedField('confirm')}
-                      onBlur={() => setFocusedField(null)}
-                      className="h-12 text-base pe-12 transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
-                      tabIndex={-1}
-                    >
-                      {showConfirm ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
-                    </button>
-                  </div>
-                </div>
+                        <FloatingInput
+                          id="reg-confirm"
+                          label={t('confirmPassword')}
+                          type={showConfirm ? 'text' : 'password'}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          onFocus={() => setFocusedField('confirm')}
+                          onBlur={() => setFocusedField(null)}
+                          placeholder={t('confirmPassword')}
+                          hasToggle
+                          toggleVisible={showConfirm}
+                          onToggle={() => setShowConfirm(!showConfirm)}
+                        />
+                      </>
+                    )}
 
-                {/* Agency code (for staff/owner) */}
-                {(role === 'AGENCY_STAFF' || role === 'AGENCY_OWNER') && (
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-agency-code">{t('agencyCodeField')}</Label>
-                    <Input
-                      id="reg-agency-code"
-                      placeholder={t('agencyCodePlaceholder')}
-                      value={agencyCode}
-                      onChange={(e) => setAgencyCode(e.target.value)}
-                      onFocus={() => setFocusedField('agency-code')}
-                      onBlur={() => setFocusedField(null)}
-                      className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                      dir="ltr"
-                    />
-                    <p className="text-xs text-muted-foreground">{t('agencyCodeFieldDesc')}</p>
-                  </div>
-                )}
+                    {/* Step 2: Profile */}
+                    {step === 2 && (
+                      <>
+                        <FloatingInput
+                          id="reg-fullname"
+                          label={t('fullName')}
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          onFocus={() => setFocusedField('fullname')}
+                          onBlur={() => setFocusedField(null)}
+                          placeholder={t('fullName')}
+                        />
 
-                {/* Admin secret code */}
-                {role === 'SUPER_ADMIN' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="reg-admin-code">{t('adminSecretCode')}</Label>
-                    <Input
-                      id="reg-admin-code"
-                      type="password"
-                      placeholder="••••••••"
-                      value={adminCode}
-                      onChange={(e) => setAdminCode(e.target.value)}
-                      onFocus={() => setFocusedField('admin-code')}
-                      onBlur={() => setFocusedField(null)}
-                      className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                      dir="ltr"
-                    />
-                    <p className="text-xs text-muted-foreground">{t('adminCodeDesc')}</p>
-                  </div>
-                )}
+                        {/* Phone with Algeria prefix */}
+                        <div className="space-y-1.5">
+                          <div className="relative flex items-center rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 transition-all duration-300 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-500/20 dark:focus-within:ring-emerald-400/20 focus-within:bg-white dark:focus-within:bg-gray-900">
+                            <div className="ps-3.5 flex-shrink-0">
+                              <div className="flex items-center h-12 px-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200/50 dark:border-gray-700/50 text-xs text-muted-foreground font-medium" dir="ltr">
+                                {t('algeriaPrefix')}
+                              </div>
+                            </div>
+                            <div className="relative flex-1">
+                              <input
+                                id="reg-phone"
+                                type="tel"
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
+                                onFocus={() => setFocusedField('phone')}
+                                onBlur={() => setFocusedField(null)}
+                                placeholder={focusedField === 'phone' || phoneNumber ? '05XX XXX XXX' : ' '}
+                                dir="ltr"
+                                className="peer h-12 w-full bg-transparent px-3.5 text-base text-foreground outline-none placeholder:text-muted-foreground/60"
+                              />
+                              <label
+                                htmlFor="reg-phone"
+                                className={`pointer-events-none absolute transition-all duration-200 ease-out ${
+                                  focusedField === 'phone' || phoneNumber.length > 0
+                                    ? 'top-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400'
+                                    : 'top-1/2 -translate-y-1/2 text-sm text-muted-foreground'
+                                } start-0`}
+                              >
+                                {t('phoneWithPrefix')}
+                              </label>
+                            </div>
+                          </div>
+                        </div>
 
-                {/* Terms checkbox */}
-                <div className="flex items-start gap-3 pt-1">
-                  <Checkbox
-                    id="reg-terms"
-                    checked={agreeTerms}
-                    onCheckedChange={(checked) => setAgreeTerms(checked === true)}
-                    className="mt-0.5"
-                  />
-                  <label htmlFor="reg-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
-                    {t('agreeTerms')}{' '}
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t('termsOfService')}</span>{' '}
-                    {t('andStr')}{' '}
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t('privacyPolicy')}</span>
-                  </label>
-                </div>
+                        {/* Agency code (for staff/owner) */}
+                        {(role === 'AGENCY_STAFF' || role === 'AGENCY_OWNER') && (
+                          <FloatingInput
+                            id="reg-agency-code"
+                            label={t('agencyCodeField')}
+                            value={agencyCode}
+                            onChange={(e) => setAgencyCode(e.target.value)}
+                            onFocus={() => setFocusedField('agency-code')}
+                            onBlur={() => setFocusedField(null)}
+                            placeholder={t('agencyCodePlaceholder')}
+                            dir="ltr"
+                          />
+                        )}
+
+                        {/* Admin secret code */}
+                        {role === 'SUPER_ADMIN' && (
+                          <>
+                            <FloatingInput
+                              id="reg-admin-code"
+                              label={t('adminSecretCode')}
+                              type="password"
+                              value={adminCode}
+                              onChange={(e) => setAdminCode(e.target.value)}
+                              onFocus={() => setFocusedField('admin-code')}
+                              onBlur={() => setFocusedField(null)}
+                              placeholder="••••••••"
+                              dir="ltr"
+                            />
+                            <p className="text-xs text-muted-foreground">{t('adminCodeDesc')}</p>
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    {/* Step 3: Confirm */}
+                    {step === 3 && (
+                      <>
+                        {/* Success Checkmark Animation */}
+                        <motion.div
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                          className="flex justify-center mb-4"
+                        >
+                          <div className="relative">
+                            <motion.div
+                              animate={{ boxShadow: ['0 0 0 0 rgba(16,185,129,0.3)', '0 0 0 16px rgba(16,185,129,0)', '0 0 0 0 rgba(16,185,129,0)'] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                              className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg"
+                            >
+                              <CircleDot className="h-9 w-9 text-white" />
+                            </motion.div>
+                          </div>
+                        </motion.div>
+
+                        {/* Review Card */}
+                        <div className="space-y-3 p-4 rounded-xl bg-gradient-to-br from-emerald-50/80 to-teal-50/80 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800/30">
+                          <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">{t('reviewInfo') || 'Review Your Information'}</p>
+
+                          <div className="space-y-2.5">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{t('username')}</span>
+                              <span className="font-semibold text-foreground">{username}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{t('fullName')}</span>
+                              <span className="font-semibold text-foreground">{fullName}</span>
+                            </div>
+                            {phoneNumber && (
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">{t('phoneNumber')}</span>
+                                <span className="font-semibold text-foreground" dir="ltr">{phoneNumber}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{t('selectRole')}</span>
+                              <span className="font-semibold text-foreground">
+                                {role === 'CUSTOMER' ? t('loginAsCustomer') : role === 'AGENCY_STAFF' ? t('loginAsAgency') : role === 'AGENCY_OWNER' ? t('loginAsAgency') : t('loginAsAdmin')}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{t('password')}</span>
+                              <span className="font-semibold text-foreground">{'•'.repeat(Math.min(password.length, 10))}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Terms checkbox */}
+                        <div className="flex items-start gap-3 pt-1">
+                          <Checkbox
+                            id="reg-terms"
+                            checked={agreeTerms}
+                            onCheckedChange={(checked) => setAgreeTerms(checked === true)}
+                            className="mt-0.5"
+                          />
+                          <label htmlFor="reg-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                            {t('agreeTerms')}{' '}
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t('termsOfService')}</span>{' '}
+                            {t('andStr')}{' '}
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t('privacyPolicy')}</span>
+                          </label>
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               </CardContent>
-              <CardFooter className="flex-col gap-4 pt-2 pb-6">
-                <Button
-                  className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-base rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 hover:scale-[1.01]"
-                  onClick={handleRegister}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    t('register')
+
+              <CardFooter className="flex-col gap-3 pt-2 pb-6">
+                {/* Navigation Buttons */}
+                <div className="flex gap-3 w-full">
+                  {step > 1 && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-12 rounded-xl font-semibold text-base"
+                      onClick={() => { setDirection(-1); goToPrev(); }}
+                    >
+                      <ArrowLeft className="h-4 w-4 me-2 rtl:rotate-180" />
+                      {t('back') || 'Back'}
+                    </Button>
                   )}
-                </Button>
+                  {step < 3 ? (
+                    <Button
+                      className="flex-1 h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-base rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 hover:scale-[1.01]"
+                      onClick={() => { setDirection(1); goToNext(); }}
+                    >
+                      {t('next') || 'Next'}
+                      <ArrowRight className="h-4 w-4 ms-2 rtl:rotate-180" />
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-base rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 hover:scale-[1.01]"
+                      onClick={handleRegister}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <>
+                          <Check className="h-5 w-5 me-2" />
+                          {t('register')}
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {t('hasAccount')}{' '}
                   <button

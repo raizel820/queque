@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '@/hooks/use-language';
+import type { TranslationKeys } from '@/i18n';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -34,13 +34,15 @@ import {
   Save,
   Clock,
   Users,
-  ToggleLeft,
+  ChevronDown,
   AlertTriangle,
   LogOut,
   Shield,
   Gauge,
+  Info,
+  Briefcase,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -54,9 +56,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useAppStore } from '@/store/use-app-store';
-
-// Remove duplicate import - useAppStore is imported above
-// (keeping only one import at the top of the file)
 
 interface AgencyService {
   id: string;
@@ -76,6 +75,21 @@ interface AgencySettingsData {
   autoPauseWhenFull: boolean;
 }
 
+interface SettingsSection {
+  id: string;
+  icon: React.ElementType;
+  titleKey: string;
+  danger?: boolean;
+}
+
+const SECTIONS: SettingsSection[] = [
+  { id: 'general', icon: Info, titleKey: 'settings' },
+  { id: 'hours', icon: Clock, titleKey: 'workingHours' },
+  { id: 'services', icon: Settings, titleKey: 'manageServices' },
+  { id: 'capacity', icon: Gauge, titleKey: 'queueCapacity' },
+  { id: 'danger', icon: AlertTriangle, titleKey: 'deleteAccount', danger: true },
+];
+
 export function AgencySettings() {
   const { user, logout } = useAppStore();
   const { t, lang } = useLanguage();
@@ -85,6 +99,15 @@ export function AgencySettings() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    general: true,
+    hours: true,
+    services: true,
+    capacity: true,
+    danger: false,
+  });
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const originalSettingsRef = useRef<AgencySettingsData | null>(null);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -106,6 +129,8 @@ export function AgencySettings() {
       if (res.ok) {
         const data = await res.json();
         setSettings(data);
+        originalSettingsRef.current = JSON.parse(JSON.stringify(data));
+        setHasUnsavedChanges(false);
       }
     } catch {
       toast.error(t('error'));
@@ -113,6 +138,13 @@ export function AgencySettings() {
       setLoading(false);
     }
   };
+
+  // Detect unsaved changes
+  useEffect(() => {
+    if (!settings || !originalSettingsRef.current) return;
+    const changed = JSON.stringify(settings) !== JSON.stringify(originalSettingsRef.current);
+    setHasUnsavedChanges(changed);
+  }, [settings]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -124,6 +156,8 @@ export function AgencySettings() {
       });
       if (res.ok) {
         toast.success(t('success'));
+        originalSettingsRef.current = JSON.parse(JSON.stringify(settings));
+        setHasUnsavedChanges(false);
       } else {
         const data = await res.json();
         toast.error(data.error || t('error'));
@@ -133,6 +167,14 @@ export function AgencySettings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const toggleSection = (id: string) => {
+    setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const updateSetting = <K extends keyof AgencySettingsData>(key: K, value: AgencySettingsData[K]) => {
+    setSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
   };
 
   const openAddServiceDialog = () => {
@@ -223,9 +265,38 @@ export function AgencySettings() {
     }
   };
 
+  // Custom toggle switch component
+  const CustomToggle = ({ checked, onCheckedChange, label, description }: { checked: boolean; onCheckedChange: (v: boolean) => void; label: string; description?: string }) => (
+    <div className="flex items-center justify-between">
+      <div className="me-4">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+      </div>
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={() => onCheckedChange(!checked)}
+        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
+          checked
+            ? 'bg-emerald-500 shadow-inner shadow-emerald-600/30'
+            : 'bg-gray-300 dark:bg-gray-600 shadow-inner shadow-gray-400/30'
+        }`}
+      >
+        <motion.span
+          layout
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          className={`inline-block h-5 w-5 transform rounded-full shadow-md transition-colors duration-300 ${
+            checked
+              ? 'bg-white translate-x-[22px]'
+              : 'bg-white translate-x-[3px]'
+          }`}
+        />
+      </motion.button>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="p-4 lg:p-6 space-y-4">
+      <div className="p-4 lg:p-6 space-y-4 pb-28">
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-48 rounded-2xl" />
         <Skeleton className="h-64 rounded-2xl" />
@@ -234,283 +305,298 @@ export function AgencySettings() {
   }
 
   return (
-    <div className="p-4 lg:p-6 space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{t('settings')}</h1>
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Save className="h-4 w-4 me-2" />}
-          {t('save')}
-        </Button>
-      </div>
+    <div className="p-4 lg:p-6 space-y-4 pb-28">
+      <h1 className="text-2xl font-bold text-foreground">{t('settings')}</h1>
 
-      {/* Queue Capacity Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.02 }}
-      >
-        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Gauge className="h-4 w-4 text-emerald-600" />
-              {t('queueCapacity')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* Max Active Reservations */}
-            <div className="space-y-2">
-              <Label className="text-sm flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                {t('maxActiveReservations')}
-              </Label>
-              <p className="text-[11px] text-muted-foreground">{t('maxReservations')}</p>
-              <Input
-                type="number"
-                min={1}
-                max={500}
-                value={settings?.maxReservations ?? 50}
-                onChange={(e) =>
-                  setSettings((prev) =>
-                    prev ? { ...prev, maxReservations: parseInt(e.target.value) || 50 } : prev
-                  )
-                }
-                className="h-11 w-40"
-              />
-            </div>
+      {/* Collapsible Settings Sections */}
+      {SECTIONS.map((section, sectionIdx) => {
+        const Icon = section.icon;
+        const isExpanded = expandedSections[section.id] ?? true;
+        const isDanger = section.danger;
 
-            <Separator />
-
-            {/* Auto-Pause Toggle */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm flex items-center gap-2">
-                    <ToggleLeft className="h-4 w-4 text-muted-foreground" />
-                    {t('autoPause')}
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">{t('autoPauseDesc')}</p>
-                </div>
-                <Switch
-                  checked={settings?.autoPauseWhenFull ?? false}
-                  onCheckedChange={(checked) =>
-                    setSettings((prev) => (prev ? { ...prev, autoPauseWhenFull: checked } : prev))
-                  }
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Estimated Service Time */}
-            <div className="space-y-2">
-              <Label className="text-sm flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                {t('estServiceTime')}
-              </Label>
-              <Input
-                type="number"
-                min={1}
-                max={120}
-                value={settings?.avgServiceTime ?? 10}
-                onChange={(e) =>
-                  setSettings((prev) =>
-                    prev ? { ...prev, avgServiceTime: parseInt(e.target.value) || 10 } : prev
-                  )
-                }
-                className="h-11 w-40"
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Queue Settings */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <ToggleLeft className="h-4 w-4 text-emerald-600" />
-              {t('queueManagement')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* Queue Open/Close */}
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {settings?.isQueueOpen ? t('queueOpen') : t('queueClosedStatus')}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {settings?.isQueueOpen ? t('openNow') : t('closed')}
-                </p>
-              </div>
-              <Switch
-                checked={settings?.isQueueOpen ?? false}
-                onCheckedChange={(checked) =>
-                  setSettings((prev) => (prev ? { ...prev, isQueueOpen: checked } : prev))
-                }
-              />
-            </div>
-
-            <Separator />
-
-            {/* Average Service Time */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  {t('avgServiceTime')}
-                </Label>
-                <span className="text-sm font-semibold text-emerald-600">
-                  {settings?.avgServiceTime ?? 10} {t('min')}
-                </span>
-              </div>
-              <Slider
-                value={[settings?.avgServiceTime ?? 10]}
-                onValueChange={([v]) =>
-                  setSettings((prev) => (prev ? { ...prev, avgServiceTime: v } : prev))
-                }
-                min={1}
-                max={60}
-                step={1}
-                className="w-full"
-              />
-            </div>
-
-            <Separator />
-
-            {/* Max Reservations */}
-            <div className="space-y-2">
-              <Label className="text-sm flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                {t('maxReservations')}
-              </Label>
-              <Input
-                type="number"
-                min={1}
-                max={500}
-                value={settings?.maxReservations ?? 50}
-                onChange={(e) =>
-                  setSettings((prev) =>
-                    prev ? { ...prev, maxReservations: parseInt(e.target.value) || 50 } : prev
-                  )
-                }
-                className="h-11 w-32"
-              />
-            </div>
-
-            <Separator />
-
-            {/* Working Hours */}
-            <div className="space-y-3">
-              <Label className="text-sm flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                {t('workingHours')}
-              </Label>
-              <div className="flex items-center gap-3">
-                <Input
-                  type="time"
-                  value={settings?.workingHoursStart ?? '08:00'}
-                  onChange={(e) =>
-                    setSettings((prev) => (prev ? { ...prev, workingHoursStart: e.target.value } : prev))
-                  }
-                  className="h-11 w-32"
-                  dir="ltr"
-                />
-                <span className="text-sm text-muted-foreground">—</span>
-                <Input
-                  type="time"
-                  value={settings?.workingHoursEnd ?? '17:00'}
-                  onChange={(e) =>
-                    setSettings((prev) => (prev ? { ...prev, workingHoursEnd: e.target.value } : prev))
-                  }
-                  className="h-11 w-32"
-                  dir="ltr"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Service Management */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-      >
-        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Settings className="h-4 w-4 text-emerald-600" />
-                {t('manageServices')}
-              </CardTitle>
-              <Button
-                size="sm"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-9"
-                onClick={openAddServiceDialog}
+        return (
+          <motion.div
+            key={section.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: sectionIdx * 0.04 }}
+          >
+            <Card className={`border-0 shadow-sm overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 ${
+              isDanger ? 'ring-1 ring-red-200 dark:ring-red-800/50' : ''
+            }`}>
+              {/* Collapsible Header */}
+              <button
+                onClick={() => toggleSection(section.id)}
+                className={`w-full flex items-center justify-between p-4 transition-colors duration-200 text-start ${
+                  isDanger
+                    ? 'bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/10 dark:to-orange-900/10 hover:from-red-100/50 dark:hover:from-red-900/20'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/30'
+                }`}
               >
-                <Plus className="h-4 w-4 me-1.5" />
-                {t('addService')}
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {settings?.services.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">{t('noData')}</p>
-            ) : (
-              <div className="space-y-2 max-h-72 overflow-y-auto">
-                {settings?.services.map((svc) => (
-                  <div
-                    key={svc.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                          {svc.prefix}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{svc.name}</p>
-                        {svc.nameAr && (
-                          <p className="text-xs text-muted-foreground">{svc.nameAr}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                        onClick={() => openEditServiceDialog(svc)}
-                      >
-                        <Edit3 className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
-                        onClick={() => handleDeleteService(svc.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${
+                    isDanger
+                      ? 'bg-red-100 dark:bg-red-900/30'
+                      : 'bg-emerald-100 dark:bg-emerald-900/30'
+                  }`}>
+                    <Icon className={`h-4.5 w-4.5 ${
+                      isDanger ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
+                    }`} />
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
+                  <div>
+                    <p className={`text-sm font-semibold ${isDanger ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>
+                      {t(section.titleKey as TranslationKeys)}
+                    </p>
+                    {isDanger && (
+                      <p className="text-[10px] text-red-500/70 dark:text-red-400/60">{t('irreversibleActions') || 'Irreversible actions'}</p>
+                    )}
+                  </div>
+                </div>
+                <motion.div
+                  animate={{ rotate: isExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.25, ease: 'easeInOut' }}
+                >
+                  <ChevronDown className={`h-5 w-5 ${isDanger ? 'text-red-400' : 'text-muted-foreground'}`} />
+                </motion.div>
+              </button>
+
+              {/* Collapsible Content */}
+              <AnimatePresence initial={false}>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4">
+                      <Separator className="mb-4" />
+
+                      {/* General Info Section */}
+                      {section.id === 'general' && (
+                        <div className="space-y-4">
+                          <CustomToggle
+                            checked={settings?.isQueueOpen ?? false}
+                            onCheckedChange={(v) => updateSetting('isQueueOpen', v)}
+                            label={settings?.isQueueOpen ? t('queueOpen') : t('queueClosedStatus')}
+                            description={settings?.isQueueOpen ? t('openNow') : t('closed')}
+                          />
+                        </div>
+                      )}
+
+                      {/* Working Hours Section */}
+                      {section.id === 'hours' && (
+                        <div className="space-y-4">
+                          <Label className="text-sm flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            {t('workingHours')}
+                          </Label>
+                          <div className="flex items-center gap-3">
+                            <Input
+                              type="time"
+                              value={settings?.workingHoursStart ?? '08:00'}
+                              onChange={(e) => updateSetting('workingHoursStart', e.target.value)}
+                              className="h-11 w-32"
+                              dir="ltr"
+                            />
+                            <span className="text-sm text-muted-foreground">—</span>
+                            <Input
+                              type="time"
+                              value={settings?.workingHoursEnd ?? '17:00'}
+                              onChange={(e) => updateSetting('workingHoursEnd', e.target.value)}
+                              className="h-11 w-32"
+                              dir="ltr"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Services Section */}
+                      {section.id === 'services' && (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm flex items-center gap-2">
+                              <Briefcase className="h-4 w-4 text-muted-foreground" />
+                              {t('services')}
+                            </Label>
+                            <Button
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-8 text-xs"
+                              onClick={openAddServiceDialog}
+                            >
+                              <Plus className="h-3.5 w-3.5 me-1" />
+                              {t('addService')}
+                            </Button>
+                          </div>
+                          {settings?.services.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">{t('noData')}</p>
+                          ) : (
+                            <div className="space-y-2 max-h-72 overflow-y-auto">
+                              {settings?.services.map((svc) => (
+                                <div
+                                  key={svc.id}
+                                  className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                                        {svc.prefix}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-foreground">{svc.name}</p>
+                                      {svc.nameAr && (
+                                        <p className="text-xs text-muted-foreground">{svc.nameAr}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                                      onClick={() => openEditServiceDialog(svc)}
+                                    >
+                                      <Edit3 className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                                      onClick={() => handleDeleteService(svc.id)}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Queue Capacity Section */}
+                      {section.id === 'capacity' && (
+                        <div className="space-y-5">
+                          {/* Max Active Reservations */}
+                          <div className="space-y-2">
+                            <Label className="text-sm flex items-center gap-2">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                              {t('maxActiveReservations')}
+                            </Label>
+                            <p className="text-[11px] text-muted-foreground">{t('maxReservations')}</p>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={500}
+                              value={settings?.maxReservations ?? 50}
+                              onChange={(e) =>
+                                updateSetting('maxReservations', parseInt(e.target.value) || 50)
+                              }
+                              className="h-11 w-40"
+                            />
+                          </div>
+
+                          <Separator />
+
+                          {/* Auto-Pause Toggle */}
+                          <CustomToggle
+                            checked={settings?.autoPauseWhenFull ?? false}
+                            onCheckedChange={(v) => updateSetting('autoPauseWhenFull', v)}
+                            label={t('autoPause')}
+                            description={t('autoPauseDesc')}
+                          />
+
+                          <Separator />
+
+                          {/* Average Service Time */}
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-sm flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                {t('avgServiceTime')}
+                              </Label>
+                              <span className="text-sm font-semibold text-emerald-600">
+                                {settings?.avgServiceTime ?? 10} {t('min')}
+                              </span>
+                            </div>
+                            <Slider
+                              value={[settings?.avgServiceTime ?? 10]}
+                              onValueChange={([v]) => updateSetting('avgServiceTime', v)}
+                              min={1}
+                              max={60}
+                              step={1}
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Danger Zone */}
+                      {section.id === 'danger' && (
+                        <div className="space-y-3">
+                          <p className="text-sm text-muted-foreground">{t('deleteAccountDesc')}</p>
+                          <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteConfirmText(''); }}>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 rounded-xl h-10"
+                              >
+                                <Trash2 className="h-4 w-4 me-2" />
+                                {t('deleteAccount')}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="sm:max-w-md">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                                  <AlertTriangle className="h-5 w-5" />
+                                  {t('deleteAccount')}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="space-y-3">
+                                  <p>{t('deleteAccountDesc')}</p>
+                                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+                                    <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                                      ⚠️ {t('deleteAccountWarning')}
+                                    </p>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <p className="text-sm text-muted-foreground">{t('typeDeleteToConfirm')}</p>
+                                    <Input
+                                      value={deleteConfirmText}
+                                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                                      placeholder={lang === 'ar' ? 'حذف' : lang === 'fr' ? 'supprimer' : 'delete'}
+                                      className="h-10"
+                                      dir="ltr"
+                                    />
+                                  </div>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+                                <AlertDialogCancel className="w-full rounded-xl h-10">
+                                  {t('cancel')}
+                                </AlertDialogCancel>
+                                <Button
+                                  onClick={handleDeleteAccount}
+                                  disabled={deleteLoading || deleteConfirmText !== (lang === 'ar' ? 'حذف' : lang === 'fr' ? 'supprimer' : 'delete')}
+                                  className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-10"
+                                >
+                                  {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Trash2 className="h-4 w-4 me-2" />}
+                                  {t('deleteAccount')}
+                                </Button>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          </motion.div>
+        );
+      })}
 
       {/* Add/Edit Service Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -574,73 +660,67 @@ export function AgencySettings() {
         </DialogContent>
       </Dialog>
 
-      {/* Danger Zone — Delete Account */}
+      {/* Floating Save Button */}
+      <AnimatePresence>
+        {hasUnsavedChanges && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="fixed bottom-20 inset-x-4 z-40 lg:inset-x-auto lg:start-auto lg:end-6"
+          >
+            <div className="flex items-center justify-center gap-2">
+              {/* Unsaved changes toast */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs font-medium px-3 py-2 rounded-lg shadow-xl flex items-center gap-2"
+              >
+                <motion.div
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="h-2 w-2 rounded-full bg-amber-400"
+                />
+                {t('unsavedChanges') || 'You have unsaved changes'}
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Save Button - always visible at bottom */}
       <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="fixed bottom-6 inset-x-4 z-50 lg:inset-x-auto lg:start-auto lg:end-6"
       >
-        <Card className="border-0 shadow-sm border-t-4 border-t-red-500 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2 text-red-600">
-              <AlertTriangle className="h-4 w-4" />
-              {t('deleteAccount')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="text-sm text-muted-foreground mb-4">{t('deleteAccountDesc')}</p>
-            <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteConfirmText(''); }}>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 rounded-xl h-10"
-                >
-                  <Trash2 className="h-4 w-4 me-2" />
-                  {t('deleteAccount')}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="sm:max-w-md">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-                    <AlertTriangle className="h-5 w-5" />
-                    {t('deleteAccount')}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription className="space-y-3">
-                    <p>{t('deleteAccountDesc')}</p>
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-                      <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                        ⚠️ {t('deleteAccountWarning')}
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">{t('typeDeleteToConfirm')}</p>
-                      <Input
-                        value={deleteConfirmText}
-                        onChange={(e) => setDeleteConfirmText(e.target.value)}
-                        placeholder={lang === 'ar' ? 'حذف' : lang === 'fr' ? 'supprimer' : 'delete'}
-                        className="h-10"
-                        dir="ltr"
-                      />
-                    </div>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-                  <AlertDialogCancel className="w-full rounded-xl h-10">
-                    {t('cancel')}
-                  </AlertDialogCancel>
-                  <Button
-                    onClick={handleDeleteAccount}
-                    disabled={deleteLoading || deleteConfirmText !== (lang === 'ar' ? 'حذف' : lang === 'fr' ? 'supprimer' : 'delete')}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-10"
-                  >
-                    {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Trash2 className="h-4 w-4 me-2" />}
-                    {t('deleteAccount')}
-                  </Button>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardContent>
-        </Card>
+        <div className="max-w-lg mx-auto lg:max-w-none">
+          <Button
+            onClick={handleSave}
+            disabled={saving || !hasUnsavedChanges}
+            className={`w-full h-13 font-semibold text-base rounded-2xl shadow-xl transition-all duration-300 flex items-center justify-center gap-2 ${
+              hasUnsavedChanges
+                ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-700 hover:via-teal-700 hover:to-emerald-700 text-white shadow-emerald-500/30 hover:shadow-emerald-500/40 hover:scale-[1.01]'
+                : 'bg-gray-200 dark:bg-gray-800 text-muted-foreground'
+            }`}
+          >
+            {saving ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Save className="h-5 w-5" />
+            )}
+            {t('save')}
+            {hasUnsavedChanges && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="h-3 w-3 rounded-full bg-amber-400 inline-block"
+              />
+            )}
+          </Button>
+        </div>
       </motion.div>
     </div>
   );

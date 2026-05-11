@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
           isActive: true,
           createdAt: true,
           avatarUrl: true,
+          phoneNumber: true,
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
@@ -51,9 +52,22 @@ export async function GET(request: NextRequest) {
       db.user.count({ where }),
     ]);
 
+    // Fetch agency names for agency owners
+    const userIds = users.map((u) => u.id);
+    const agencies = await db.agency.findMany({
+      where: { ownerId: { in: userIds } },
+      select: { ownerId: true, name: true, nameAr: true, nameFr: true },
+    });
+    const agencyMap = Object.fromEntries(agencies.map((a) => [a.ownerId, a]));
+
+    const enrichedUsers = users.map((u) => ({
+      ...u,
+      agencyName: agencyMap[u.id]?.name || null,
+    }));
+
     return NextResponse.json({
       success: true,
-      users,
+      users: enrichedUsers,
       total,
       page,
       totalPages: Math.ceil(total / limit),

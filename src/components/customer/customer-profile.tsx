@@ -9,7 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -30,8 +29,11 @@ import {
   Check,
   Sun,
   Moon,
+  Monitor,
   Palette,
   Bell,
+  BellRing,
+  CheckCircle2,
   Loader2,
   Trash2,
   AlertTriangle,
@@ -229,88 +231,135 @@ export function CustomerProfile() {
   const smsMax = Math.max(smsCount, 50);
   const smsPercent = Math.min(100, (smsRemaining / smsMax) * 100);
 
+  // Get formatted member since date
+  const getMemberSince = () => {
+    if (!user?.createdAt) return '';
+    const date = new Date(user.createdAt);
+    return date.toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  // Notification card data
+  const notifCards = [
+    {
+      key: 'queue_called' as const,
+      label: t('queueCalledNotif'),
+      icon: BellRing,
+      color: 'emerald' as const,
+      description: t('queueCalledNotifDesc') || 'Get notified when your turn is called',
+    },
+    {
+      key: 'turn_approaching' as const,
+      label: t('turnApproachingNotif'),
+      icon: Clock,
+      color: 'amber' as const,
+      description: t('turnApproachingNotifDesc') || 'Alert when your turn is approaching',
+    },
+    {
+      key: 'completed' as const,
+      label: t('completedNotif'),
+      icon: CheckCircle2,
+      color: 'teal' as const,
+      description: t('completedNotifDesc') || 'Notify when service is completed',
+    },
+  ];
+
   if (notifLoading) {
     return (
       <div className="px-4 py-4 pb-24">
         <Skeleton className="h-8 w-32 mb-5 animate-pulse" />
-        {/* Skeleton User Info Card */}
-        <div className="border-0 shadow-sm mb-4 overflow-hidden bg-white dark:bg-gray-900/80 rounded-xl">
-          <Skeleton className="h-20 w-full animate-pulse" />
-          <div className="p-5 -mt-10 relative">
-            <div className="flex items-end gap-4 mb-4">
-              <Skeleton className="h-16 w-16 rounded-full animate-pulse flex-shrink-0" />
-              <div className="pb-1 space-y-2">
-                <Skeleton className="h-5 w-28 animate-pulse" />
-                <Skeleton className="h-4 w-20 animate-pulse" />
-              </div>
-            </div>
-            <div className="space-y-3">
-              <Skeleton className="h-8 w-full animate-pulse" />
-              <Skeleton className="h-8 w-full animate-pulse" />
-            </div>
-          </div>
-        </div>
-        {/* Skeleton Notification Preferences Card */}
-        <div className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 rounded-xl">
-          <div className="pb-3 pt-5 px-5">
-            <Skeleton className="h-5 w-32 mb-2 animate-pulse" />
-          </div>
-          <div className="pt-0 px-5 pb-5 space-y-4">
-            <Skeleton className="h-4 w-48 animate-pulse" />
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <Skeleton className="h-4 w-28 animate-pulse" />
-                  <Skeleton className="h-5 w-10 rounded-full animate-pulse" />
-                </div>
-              ))}
-            </div>
-            <Skeleton className="h-10 w-full rounded-lg animate-pulse" />
-          </div>
-        </div>
-        {/* Skeleton Phone Number Card */}
-        <div className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 rounded-xl">
-          <div className="pb-3 pt-5 px-5">
-            <Skeleton className="h-5 w-28 animate-pulse" />
-          </div>
-          <div className="pt-0 px-5 pb-5">
-            <div className="flex gap-2">
-              <Skeleton className="h-11 flex-1 animate-pulse" />
-              <Skeleton className="h-11 w-12 animate-pulse" />
-            </div>
-          </div>
-        </div>
-        {/* Skeleton SMS Wallet Card */}
-        <div className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 rounded-xl">
-          <div className="pb-3 pt-5 px-5">
-            <Skeleton className="h-5 w-28 animate-pulse" />
-          </div>
-          <div className="pt-0 px-5 pb-5 space-y-3">
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <Skeleton className="h-8 w-16 animate-pulse" />
-                  <Skeleton className="h-3 w-32 mt-1.5 animate-pulse" />
-                </div>
-                <Skeleton className="h-12 w-12 rounded-full animate-pulse" />
-              </div>
-              <Skeleton className="h-2 w-full rounded-full animate-pulse" />
-            </div>
-            <Skeleton className="h-4 w-24 animate-pulse" />
-            <div className="grid grid-cols-3 gap-2">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 rounded-xl animate-pulse" />
-              ))}
-            </div>
-          </div>
-        </div>
+        <Skeleton className="h-48 rounded-2xl mb-4 animate-pulse" />
+        <Skeleton className="h-64 rounded-2xl mb-4 animate-pulse" />
+        <Skeleton className="h-40 rounded-2xl mb-4 animate-pulse" />
+        <Skeleton className="h-32 rounded-2xl animate-pulse" />
       </div>
     );
   }
 
   return (
     <div className="px-4 py-4 pb-24">
-      <h1 className="text-2xl font-bold text-foreground mb-5">{t('profile')}</h1>
+      {/* Enhanced Profile Header Card with gradient */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <Card className="border-0 shadow-sm mb-4 overflow-hidden">
+          {/* Gradient banner background */}
+          <div className="relative h-32 bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600">
+            {/* Decorative circles */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute -top-8 -end-8 w-32 h-32 rounded-full bg-white/10" />
+              <div className="absolute -bottom-12 -start-12 w-40 h-40 rounded-full bg-white/5" />
+              <div className="absolute top-4 end-20 w-16 h-16 rounded-full bg-white/5" />
+            </div>
+          </div>
+          <CardContent className="p-5 -mt-12 relative">
+            <div className="flex items-end gap-4 mb-4">
+              {/* Avatar circle with ring */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                className="relative"
+              >
+                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-400 via-teal-400 to-emerald-600 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-white dark:ring-gray-900 shadow-xl flex-shrink-0">
+                  {getInitials()}
+                </div>
+                {/* Online indicator dot */}
+                <div className="absolute bottom-0.5 end-0.5 h-5 w-5 rounded-full bg-emerald-500 border-[3px] border-white dark:border-gray-900" />
+              </motion.div>
+              <div className="pb-1 min-w-0 flex-1">
+                <h2 className="text-xl font-bold text-foreground truncate">{user?.fullName || 'User'}</h2>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-sm text-muted-foreground truncate">@{user?.username || 'user'}</p>
+                  {phoneNumber && (
+                    <span className="text-xs text-muted-foreground hidden sm:inline">• {phoneNumber}</span>
+                  )}
+                </div>
+                {/* Member Since Badge */}
+                {user?.createdAt && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="mt-2"
+                  >
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-200/50 dark:border-emerald-700/30">
+                      <CalendarDays className="h-3 w-3" />
+                      {t('memberSince') || 'Member since'} {getMemberSince()}
+                    </span>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick info row */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-2.5 text-sm p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/30">
+                <div className="h-7 w-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                  <User className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground">{t('fullName')}</p>
+                  <p className="text-xs font-medium text-foreground truncate">{user?.fullName || '-'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 text-sm p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/30">
+                <div className="h-7 w-7 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                  <Shield className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground">{t('username')}</p>
+                  <p className="text-xs font-medium text-foreground truncate">{user?.username || '-'}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* My Queue Stats Card */}
       <motion.div
@@ -420,56 +469,11 @@ export function CustomerProfile() {
         </Card>
       </motion.div>
 
-      {/* User Info Card with gradient avatar */}
+      {/* Notification Preferences - Visual Toggle Cards */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-      >
-        <Card className="border-0 shadow-sm mb-4 overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-          {/* Top gradient banner */}
-          <div className="h-20 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 relative" />
-          <CardContent className="p-5 -mt-10 relative">
-            <div className="flex items-end gap-4 mb-4">
-              {/* Gradient Avatar Circle */}
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                className="h-16 w-16 rounded-full bg-gradient-to-br from-emerald-400 via-teal-400 to-emerald-600 flex items-center justify-center text-white text-xl font-bold ring-4 ring-white dark:ring-gray-900 shadow-lg flex-shrink-0"
-              >
-                {getInitials()}
-              </motion.div>
-              <div className="pb-1">
-                <h2 className="text-lg font-bold text-foreground">{user?.fullName || 'User'}</h2>
-                <p className="text-sm text-muted-foreground">@{user?.username || 'user'}</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-sm">
-                <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0">
-                  <User className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <span className="text-muted-foreground">{t('fullName')}:</span>
-                <span className="font-medium text-foreground ms-auto">{user?.fullName || '-'}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0">
-                  <Shield className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <span className="text-muted-foreground">{t('username')}:</span>
-                <span className="font-medium text-foreground ms-auto">{user?.username || '-'}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Notification Preferences */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
+        transition={{ delay: 0.1 }}
       >
         <Card className="border-0 shadow-sm mb-4">
           <CardHeader className="pb-3">
@@ -480,22 +484,81 @@ export function CustomerProfile() {
           </CardHeader>
           <CardContent className="pt-0">
             <p className="text-xs text-muted-foreground mb-4">{t('notifPrefsDesc')}</p>
-            <div className="space-y-4">
-              {[
-                { key: 'queue_called' as const, label: t('queueCalledNotif') },
-                { key: 'turn_approaching' as const, label: t('turnApproachingNotif') },
-                { key: 'completed' as const, label: t('completedNotif') },
-              ].map((item) => (
-                <div key={item.key} className="flex items-center justify-between">
-                  <Label className="text-sm text-foreground">{item.label}</Label>
-                  <Switch
-                    checked={notifPrefs[item.key]}
-                    onCheckedChange={(checked) =>
-                      setNotifPrefs((prev) => ({ ...prev, [item.key]: checked }))
-                    }
-                  />
-                </div>
-              ))}
+            <div className="space-y-3">
+              {notifCards.map((item) => {
+                const isEnabled = notifPrefs[item.key];
+                const Icon = item.icon;
+                const colorStyles = {
+                  emerald: {
+                    active: 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/80 dark:bg-emerald-900/20',
+                    iconBg: 'bg-emerald-100 dark:bg-emerald-800/40',
+                    iconColor: 'text-emerald-600 dark:text-emerald-400',
+                    badge: 'bg-emerald-500',
+                  },
+                  amber: {
+                    active: 'border-amber-300 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-900/20',
+                    iconBg: 'bg-amber-100 dark:bg-amber-800/40',
+                    iconColor: 'text-amber-600 dark:text-amber-400',
+                    badge: 'bg-amber-500',
+                  },
+                  teal: {
+                    active: 'border-teal-300 dark:border-teal-700 bg-teal-50/80 dark:bg-teal-900/20',
+                    iconBg: 'bg-teal-100 dark:bg-teal-800/40',
+                    iconColor: 'text-teal-600 dark:text-teal-400',
+                    badge: 'bg-teal-500',
+                  },
+                };
+                const styles = colorStyles[item.color];
+                return (
+                  <motion.button
+                    key={item.key}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => setNotifPrefs((prev) => ({ ...prev, [item.key]: !isEnabled }))}
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-300 text-start ${
+                      isEnabled
+                        ? styles.active
+                        : 'border-transparent bg-gray-50 dark:bg-gray-800/30 opacity-70'
+                    }`}
+                  >
+                    <div className={`h-10 w-10 rounded-xl ${styles.iconBg} flex items-center justify-center flex-shrink-0 transition-colors`}>
+                      <Icon className={`h-5 w-5 ${styles.iconColor}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm font-semibold ${isEnabled ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {item.label}
+                        </p>
+                        {isEnabled && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="text-[9px] font-bold text-white px-1.5 py-0.5 rounded-full"
+                          >
+                            ON
+                          </motion.span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{item.description}</p>
+                    </div>
+                    {/* Toggle indicator */}
+                    <motion.div
+                      animate={{ backgroundColor: isEnabled ? '#10b981' : '#d1d5db' }}
+                      transition={{ duration: 0.2 }}
+                      className="relative h-6 w-11 rounded-full flex-shrink-0"
+                    >
+                      <motion.span
+                        layout
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                        className="absolute top-0.5 h-5 w-5 bg-white rounded-full shadow-md"
+                        style={{
+                          left: isEnabled ? '22px' : '2px',
+                        }}
+                      />
+                    </motion.div>
+                  </motion.button>
+                );
+              })}
             </div>
             <Button
               size="sm"
@@ -514,7 +577,7 @@ export function CustomerProfile() {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
+        transition={{ delay: 0.15 }}
       >
         <Card className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
@@ -550,7 +613,7 @@ export function CustomerProfile() {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.2 }}
       >
         <Card className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
@@ -607,7 +670,7 @@ export function CustomerProfile() {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
+        transition={{ delay: 0.25 }}
       >
         <Card className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
@@ -631,11 +694,11 @@ export function CustomerProfile() {
         </Card>
       </motion.div>
 
-      {/* Appearance / Theme Card */}
+      {/* Appearance / Theme Card with visual previews */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.3 }}
       >
         <Card className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
@@ -646,32 +709,104 @@ export function CustomerProfile() {
           </CardHeader>
           <CardContent className="pt-0">
             <p className="text-xs text-muted-foreground mb-3">{t('appearanceDesc')}</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
+              {/* Light */}
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => setTheme('light')}
-                className={`p-3 rounded-xl border-2 transition-all text-center ${
+                className={`group relative overflow-hidden rounded-xl border-2 transition-all text-center p-3 ${
                   theme !== 'dark'
-                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                    : 'border-border hover:border-emerald-200'
+                    ? 'border-emerald-500 shadow-md shadow-emerald-500/10'
+                    : 'border-border hover:border-emerald-200 dark:hover:border-emerald-700'
                 }`}
               >
-                <Sun className="h-5 w-5 mx-auto mb-1.5 text-amber-500" />
-                <span className="text-xs font-medium">{t('lightMode')}</span>
+                {/* Theme preview card */}
+                <div className="h-16 rounded-lg bg-white border border-gray-200 mb-2 p-1.5 overflow-hidden">
+                  <div className="h-3 w-8 rounded-sm bg-emerald-500 mb-1" />
+                  <div className="space-y-0.5">
+                    <div className="h-1.5 w-full rounded-sm bg-gray-200" />
+                    <div className="h-1.5 w-3/4 rounded-sm bg-gray-200" />
+                  </div>
+                </div>
+                <Sun className="h-4 w-4 mx-auto mb-1 text-amber-500" />
+                <span className="text-[10px] font-medium">{t('lightMode')}</span>
+                {theme !== 'dark' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute top-1.5 end-1.5"
+                  >
+                    <Check className="h-3 w-3 text-emerald-500" />
+                  </motion.div>
+                )}
               </motion.button>
+
+              {/* Dark */}
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => setTheme('dark')}
-                className={`p-3 rounded-xl border-2 transition-all text-center ${
+                className={`group relative overflow-hidden rounded-xl border-2 transition-all text-center p-3 ${
                   theme === 'dark'
-                    ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                    : 'border-border hover:border-emerald-200'
+                    ? 'border-emerald-500 shadow-md shadow-emerald-500/10'
+                    : 'border-border hover:border-emerald-200 dark:hover:border-emerald-700'
                 }`}
               >
-                <Moon className="h-5 w-5 mx-auto mb-1.5 text-slate-400" />
-                <span className="text-xs font-medium">{t('darkMode')}</span>
+                {/* Theme preview card */}
+                <div className="h-16 rounded-lg bg-gray-900 border border-gray-700 mb-2 p-1.5 overflow-hidden">
+                  <div className="h-3 w-8 rounded-sm bg-emerald-500 mb-1" />
+                  <div className="space-y-0.5">
+                    <div className="h-1.5 w-full rounded-sm bg-gray-700" />
+                    <div className="h-1.5 w-3/4 rounded-sm bg-gray-700" />
+                  </div>
+                </div>
+                <Moon className="h-4 w-4 mx-auto mb-1 text-slate-400" />
+                <span className="text-[10px] font-medium">{t('darkMode')}</span>
+                {theme === 'dark' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute top-1.5 end-1.5"
+                  >
+                    <Check className="h-3 w-3 text-emerald-500" />
+                  </motion.div>
+                )}
+              </motion.button>
+
+              {/* System */}
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setTheme('system')}
+                className={`group relative overflow-hidden rounded-xl border-2 transition-all text-center p-3 ${
+                  theme === 'system'
+                    ? 'border-emerald-500 shadow-md shadow-emerald-500/10'
+                    : 'border-border hover:border-emerald-200 dark:hover:border-emerald-700'
+                }`}
+              >
+                {/* Theme preview card - split */}
+                <div className="h-16 rounded-lg mb-2 overflow-hidden border border-gray-300 dark:border-gray-600 flex">
+                  <div className="w-1/2 bg-white p-1">
+                    <div className="h-1.5 w-4 rounded-sm bg-emerald-500 mb-0.5" />
+                    <div className="h-1 w-full rounded-sm bg-gray-200" />
+                  </div>
+                  <div className="w-1/2 bg-gray-900 p-1">
+                    <div className="h-1.5 w-4 rounded-sm bg-emerald-500 mb-0.5" />
+                    <div className="h-1 w-full rounded-sm bg-gray-700" />
+                  </div>
+                </div>
+                <Monitor className="h-4 w-4 mx-auto mb-1 text-gray-500" />
+                <span className="text-[10px] font-medium">{t('systemTheme') || 'System'}</span>
+                {theme === 'system' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute top-1.5 end-1.5"
+                  >
+                    <Check className="h-3 w-3 text-emerald-500" />
+                  </motion.div>
+                )}
               </motion.button>
             </div>
           </CardContent>
@@ -684,7 +819,7 @@ export function CustomerProfile() {
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.25 }}
+        transition={{ delay: 0.35 }}
       >
         <Button
           variant="outline"
@@ -699,62 +834,75 @@ export function CustomerProfile() {
         </Button>
       </motion.div>
 
-      {/* Delete Account */}
+      {/* Delete Account - Red Gradient Border Warning Card */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.4 }}
       >
-        <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteConfirmText(''); }}>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full h-11 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 font-medium text-sm transition-all duration-200"
-            >
-              <Trash2 className="h-4 w-4 me-2" />
-              {t('deleteAccount')}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="sm:max-w-md">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="h-5 w-5" />
-                {t('deleteAccount')}
-              </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-3">
-                <p>{t('deleteAccountDesc')}</p>
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-                  <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                    ⚠️ {t('deleteAccountWarning')}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">{t('typeDeleteToConfirm')}</p>
-                  <Input
-                    value={deleteConfirmText}
-                    onChange={(e) => setDeleteConfirmText(e.target.value)}
-                    placeholder={lang === 'ar' ? 'حذف' : lang === 'fr' ? 'supprimer' : 'delete'}
-                    className="h-10"
-                    dir="ltr"
-                  />
-                </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-              <AlertDialogCancel className="w-full rounded-xl h-10">
-                {t('cancel')}
-              </AlertDialogCancel>
-              <Button
-                onClick={handleDeleteAccount}
-                disabled={deleteLoading || deleteConfirmText !== (lang === 'ar' ? 'حذف' : lang === 'fr' ? 'supprimer' : 'delete')}
-                className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-10"
-              >
-                {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Trash2 className="h-4 w-4 me-2" />}
-                {t('deleteAccount')}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="relative p-[2px] rounded-2xl bg-gradient-to-r from-red-500 via-rose-500 to-red-600 shadow-lg shadow-red-500/10">
+          <div className="bg-white dark:bg-gray-900 rounded-[14px] p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-red-600 dark:text-red-400">{t('deleteAccount')}</p>
+                <p className="text-[11px] text-muted-foreground">{t('deleteAccountDesc')}</p>
+              </div>
+            </div>
+            <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteConfirmText(''); }}>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full h-11 rounded-xl border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                >
+                  <Trash2 className="h-4 w-4 me-2" />
+                  {t('deleteAccount')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="sm:max-w-md">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                    <AlertTriangle className="h-5 w-5" />
+                    {t('deleteAccount')}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-3">
+                    <p>{t('deleteAccountDesc')}</p>
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+                      <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                        ⚠️ {t('deleteAccountWarning')}
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">{t('typeDeleteToConfirm')}</p>
+                      <Input
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder={lang === 'ar' ? 'حذف' : lang === 'fr' ? 'supprimer' : 'delete'}
+                        className="h-10"
+                        dir="ltr"
+                      />
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+                  <AlertDialogCancel className="w-full rounded-xl h-10">
+                    {t('cancel')}
+                  </AlertDialogCancel>
+                  <Button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteLoading || deleteConfirmText !== (lang === 'ar' ? 'حذف' : lang === 'fr' ? 'supprimer' : 'delete')}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-10"
+                  >
+                    {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Trash2 className="h-4 w-4 me-2" />}
+                    {t('deleteAccount')}
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
       </motion.div>
     </div>
   );
