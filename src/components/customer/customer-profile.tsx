@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -103,7 +104,7 @@ export function CustomerProfile() {
         }
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setNotifLoading(false);
     }
@@ -196,6 +197,85 @@ export function CustomerProfile() {
   const smsRemaining = smsCount;
   const smsMax = Math.max(smsCount, 50);
   const smsPercent = Math.min(100, (smsRemaining / smsMax) * 100);
+
+  if (notifLoading) {
+    return (
+      <div className="px-4 py-4 pb-24">
+        <Skeleton className="h-8 w-32 mb-5 animate-pulse" />
+        {/* Skeleton User Info Card */}
+        <div className="border-0 shadow-sm mb-4 overflow-hidden bg-white dark:bg-gray-900/80 rounded-xl">
+          <Skeleton className="h-20 w-full animate-pulse" />
+          <div className="p-5 -mt-10 relative">
+            <div className="flex items-end gap-4 mb-4">
+              <Skeleton className="h-16 w-16 rounded-full animate-pulse flex-shrink-0" />
+              <div className="pb-1 space-y-2">
+                <Skeleton className="h-5 w-28 animate-pulse" />
+                <Skeleton className="h-4 w-20 animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-full animate-pulse" />
+              <Skeleton className="h-8 w-full animate-pulse" />
+            </div>
+          </div>
+        </div>
+        {/* Skeleton Notification Preferences Card */}
+        <div className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 rounded-xl">
+          <div className="pb-3 pt-5 px-5">
+            <Skeleton className="h-5 w-32 mb-2 animate-pulse" />
+          </div>
+          <div className="pt-0 px-5 pb-5 space-y-4">
+            <Skeleton className="h-4 w-48 animate-pulse" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-28 animate-pulse" />
+                  <Skeleton className="h-5 w-10 rounded-full animate-pulse" />
+                </div>
+              ))}
+            </div>
+            <Skeleton className="h-10 w-full rounded-lg animate-pulse" />
+          </div>
+        </div>
+        {/* Skeleton Phone Number Card */}
+        <div className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 rounded-xl">
+          <div className="pb-3 pt-5 px-5">
+            <Skeleton className="h-5 w-28 animate-pulse" />
+          </div>
+          <div className="pt-0 px-5 pb-5">
+            <div className="flex gap-2">
+              <Skeleton className="h-11 flex-1 animate-pulse" />
+              <Skeleton className="h-11 w-12 animate-pulse" />
+            </div>
+          </div>
+        </div>
+        {/* Skeleton SMS Wallet Card */}
+        <div className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 rounded-xl">
+          <div className="pb-3 pt-5 px-5">
+            <Skeleton className="h-5 w-28 animate-pulse" />
+          </div>
+          <div className="pt-0 px-5 pb-5 space-y-3">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <Skeleton className="h-8 w-16 animate-pulse" />
+                  <Skeleton className="h-3 w-32 mt-1.5 animate-pulse" />
+                </div>
+                <Skeleton className="h-12 w-12 rounded-full animate-pulse" />
+              </div>
+              <Skeleton className="h-2 w-full rounded-full animate-pulse" />
+            </div>
+            <Skeleton className="h-4 w-24 animate-pulse" />
+            <div className="grid grid-cols-3 gap-2">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-24 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="px-4 py-4 pb-24">
@@ -365,18 +445,19 @@ export function CustomerProfile() {
             <p className="text-sm font-medium text-foreground mb-3">{t('smsPackages')}</p>
             <div className="grid grid-cols-3 gap-2">
               {smsPacks.map((pack) => (
-                <motion.button
+                <div
                   key={pack.count}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="p-3 rounded-xl border border-border hover:border-emerald-300 dark:hover:border-emerald-700 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors text-center"
+                  className="relative p-3 rounded-xl border border-border cursor-not-allowed opacity-75 text-center"
                 >
                   <div className="flex items-center justify-center mb-1">
                     <CreditCard className="h-4 w-4 text-emerald-600" />
                   </div>
                   <p className="text-sm font-semibold text-foreground">{pack.count}</p>
                   <p className="text-[10px] text-muted-foreground">{pack.price} {t('currency')}</p>
-                </motion.button>
+                  <span className="absolute top-1.5 end-1.5 text-[9px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
+                    {t('comingSoon')}
+                  </span>
+                </div>
               ))}
             </div>
           </CardContent>

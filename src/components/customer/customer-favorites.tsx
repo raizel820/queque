@@ -66,7 +66,7 @@ export function CustomerFavorites() {
         setFavorites(data.favorites ?? []);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }

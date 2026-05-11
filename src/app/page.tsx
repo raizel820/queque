@@ -166,6 +166,7 @@ function CustomerBottomNav() {
                 whileTap={{ scale: 0.9 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 onClick={() => setView(item.view)}
+                aria-current={active ? 'page' : undefined}
                 className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full"
               >
                 {active && (
@@ -303,6 +304,7 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
                 setView(item.view);
                 onClose();
               }}
+              aria-current={active ? 'page' : undefined}
               className={`relative flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 active
                   ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm'
@@ -425,6 +427,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
                 setView(item.view);
                 onClose();
               }}
+              aria-current={active ? 'page' : undefined}
               className={`relative flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 active
                   ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 shadow-sm'

@@ -407,6 +407,7 @@ const fr: Record<TranslationKeys, string> = {
   // ─── QR & Notifications Extras ─────────
   shareCodeWithCustomers: "Partagez ce code avec vos clients pour un accès rapide",
   yourTurn: "C'est votre tour !",
+  turnNotifBody: "Veuillez vous rendre au guichet de service.",
   dismissAlert: "Compris",
   fileTooLarge: "La taille du fichier dépasse 5 Mo",
   seconds: "Seconde",
@@ -494,6 +495,12 @@ const fr: Record<TranslationKeys, string> = {
   // ─── Role Labels ──────────────────────
   staffRole: "Employé",
   ownerRole: "Propriétaire",
+
+  // ─── Feature Badges ─────────────────────
+  comingSoon: "Bientôt",
+
+  // ─── Auth Role Errors ──────────────────
+  wrongRoleError: "Ce compte ne correspond pas au rôle sélectionné",
 };
 
 export default fr;

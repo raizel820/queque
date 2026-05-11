@@ -407,6 +407,7 @@ const en: Record<TranslationKeys, string> = {
   // ─── QR & Notifications Extras ─────────
   shareCodeWithCustomers: "Share this code with your customers for quick access",
   yourTurn: "Your Turn!",
+  turnNotifBody: 'Please proceed to the service counter.',
   dismissAlert: "Got it",
   fileTooLarge: "File size exceeds 5 MB limit",
   seconds: "Seconds",
@@ -494,6 +495,12 @@ const en: Record<TranslationKeys, string> = {
   // ─── Role Labels ──────────────────────
   staffRole: "Staff",
   ownerRole: "Owner",
+
+  // ─── Feature Badges ─────────────────────
+  comingSoon: "Coming Soon",
+
+  // ─── Auth Role Errors ──────────────────
+  wrongRoleError: "This account does not match the selected role",
 };
 
 export default en;

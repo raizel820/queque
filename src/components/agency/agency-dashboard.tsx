@@ -601,9 +601,12 @@ export function AgencyDashboard() {
                         {entry.queueNumber}
                       </span>
                     </div>
-                    <div className="hidden sm:block">
-                      <p className="text-sm font-medium text-foreground">{entry.customerName}</p>
+                    <div className="hidden sm:block min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{entry.customerName}</p>
                       <p className="text-xs text-muted-foreground">{getServiceName(entry)}</p>
+                    </div>
+                    <div className="sm:hidden min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate max-w-[80px]">{entry.customerName}</p>
                     </div>
                   </div>
 
@@ -623,6 +626,7 @@ export function AgencyDashboard() {
                         className="h-8 w-8 p-0 text-emerald-600 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                         onClick={() => handleAction(entry.id, 'complete')}
                         title={t('markCompleted')}
+                        aria-label={t('markCompleted')}
                         disabled={!!actionLoading}
                       >
                         <UserCheck className="h-3.5 w-3.5" />
@@ -633,6 +637,7 @@ export function AgencyDashboard() {
                         className="h-8 w-8 p-0 text-amber-600 border-amber-200 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                         onClick={() => handleAction(entry.id, 'no_show')}
                         title={t('markNoShow')}
+                        aria-label={t('markNoShow')}
                         disabled={!!actionLoading}
                       >
                         <UserX className="h-3.5 w-3.5" />
@@ -643,6 +648,7 @@ export function AgencyDashboard() {
                         className="h-8 w-8 p-0 text-red-600 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20"
                         onClick={() => handleAction(entry.id, 'cancel')}
                         title={t('cancelRes')}
+                        aria-label={t('markCancelled')}
                         disabled={!!actionLoading}
                       >
                         <XCircle className="h-3.5 w-3.5" />

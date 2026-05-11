@@ -414,3 +414,41 @@ Stage Summary:
 | 11 | register-form: hardcoded Staff/Owner text | HIGH | ✅ Fixed |
 | 12 | sounds.ts: dead code cleanup | LOW | ✅ Fixed |
 | 13 | customer-queue: raw ISO date display | LOW | ✅ Fixed |
+
+---
+Task ID: 8
+Agent: Feature Enhancement Agent
+Task: Document titles, web notifications, notification polling
+
+Work Log:
+- Added dynamic document.title updates based on current view (20+ view titles)
+- Added scroll-to-top on view navigation change
+- Implemented Web Notification API for turn alerts (native browser notifications)
+- Added notification badge polling every 30 seconds for real-time count updates
+- Added turnNotifBody i18n key (ar/fr/en)
+
+Stage Summary:
+- Browser tab title now updates with current view name
+- Native browser notifications fire when customer's turn is called (works in background tabs)
+- Notification badge count auto-refreshes every 30 seconds
+- ESLint clean
+
+---
+Task ID: 7
+Agent: Feature Fix Agent
+Task: Profile skeleton, error feedback, SMS packs, login role tabs
+
+Work Log:
+- Added skeleton loading UI to customer profile page (matches real layout structure)
+- Added toast.error() feedback to all silent catch blocks in 6 customer component files
+- Marked SMS pack buttons as "Coming Soon" with badge overlay and disabled interactions
+- Made login role tabs functional: role is sent to API, server validates role match
+- Added comingSoon and wrongRoleError i18n keys (ar/fr/en)
+- Updated login API to validate expectedRole parameter
+
+Stage Summary:
+- Customer profile now shows skeletons during data fetch
+- All customer components show error toasts on API failures
+- SMS packs clearly marked as upcoming feature
+- Login role tabs now validate account type (prevents confusing wrong-role logins)
+- ESLint clean

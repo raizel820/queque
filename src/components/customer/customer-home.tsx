@@ -117,7 +117,7 @@ export function CustomerHome() {
         setFavoriteIds(new Set((data.favorites ?? []).map((f: { agencyId: string }) => f.agencyId)));
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     }
   };
 
@@ -134,7 +134,7 @@ export function CustomerHome() {
         setAgencies(data.agencies ?? []);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }

@@ -142,7 +142,7 @@ export function CustomerQueue() {
         }
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
@@ -654,11 +654,13 @@ export function CustomerQueue() {
                   <div className="flex items-center justify-between mb-5 px-1">
                     <span className="text-xs text-muted-foreground">{t('queuePosition')}</span>
                     <div className="flex items-center gap-1.5">
+                      <div aria-live="polite">
                       <span className="text-xs font-medium text-foreground">#{res.position}</span>
                       <span className="text-[10px] text-muted-foreground">/</span>
                       <span className="text-[10px] text-muted-foreground">
                         {res.peopleAhead + res.position}
                       </span>
+                    </div>
                     </div>
                   </div>
 

@@ -70,7 +70,7 @@ export function CustomerNotifications() {
         setNotifications(data.notifications ?? []);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }

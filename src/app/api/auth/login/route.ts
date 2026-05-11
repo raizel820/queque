@@ -5,7 +5,7 @@ import { verifyPassword } from '@/lib/password'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { username, password } = body
+    const { username, password, expectedRole } = body
 
     // Validate required fields
     if (!username || !password) {
@@ -52,6 +52,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: 'Invalid username or password' },
         { status: 401 }
+      )
+    }
+
+    // Check if user's role matches the expected role from login tab
+    if (expectedRole && user.role !== expectedRole) {
+      return NextResponse.json(
+        { success: false, error: 'wrongRoleError' },
+        { status: 403 }
       )
     }
 

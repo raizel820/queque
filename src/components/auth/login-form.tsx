@@ -37,7 +37,7 @@ export function LoginForm() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password }),
+        body: JSON.stringify({ username: username.trim(), password, expectedRole: getRoleFromTab(roleTab) }),
       });
 
       const data = await res.json();
@@ -50,7 +50,7 @@ export function LoginForm() {
           setLoginSuccess(false);
         }, 600);
       } else {
-        toast.error(data.error || t('invalidCredentials'));
+        toast.error(data.error === 'wrongRoleError' ? t('wrongRoleError') : data.error || t('invalidCredentials'));
       }
     } catch {
       toast.error(t('error'));

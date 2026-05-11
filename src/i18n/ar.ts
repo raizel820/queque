@@ -405,6 +405,7 @@ const ar = {
   // ─── QR & Notifications Extras ─────────
   shareCodeWithCustomers: "شارك هذا الكود مع عملائك للانضمام السريع",
   yourTurn: "!دورك الآن",
+  turnNotifBody: 'يرجى التوجه إلى مكتب الخدمة.',
   dismissAlert: "فهمت",
   fileTooLarge: "حجم الملف يتجاوز 5 ميغابايت",
   seconds: "ثانية",
@@ -492,6 +493,12 @@ const ar = {
   // ─── Role Labels ──────────────────────
   staffRole: "موظف",
   ownerRole: "مالك",
+
+  // ─── Feature Badges ─────────────────────
+  comingSoon: 'قريباً',
+
+  // ─── Auth Role Errors ──────────────────
+  wrongRoleError: 'هذا الحساب لا يناسب الدور المحدد',
 };
 
 export default ar;

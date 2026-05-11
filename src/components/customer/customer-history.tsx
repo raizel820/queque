@@ -77,7 +77,7 @@ export function CustomerHistory() {
         setHistory(list);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
