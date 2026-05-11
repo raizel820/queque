@@ -79,8 +79,12 @@ export async function GET(
         description: agency.description,
         isQueueOpen: agency.isQueueOpen,
         isPaused: agency.queueSettings.length > 0 ? agency.queueSettings[0].isPaused : false,
+        isSponsored: agency.isSponsored ?? false,
         currentServingNumber: agency.queueSettings.length > 0 ? agency.queueSettings[0].currentServingNumber : 0,
         lastIssuedNumber: agency.queueSettings.length > 0 ? agency.queueSettings[0].lastIssuedNumber : 0,
+        workingHoursStart: agency.workingHoursStart,
+        workingHoursEnd: agency.workingHoursEnd,
+        avgServiceTime: agency.averageServiceTime,
         services: servicesWithCount,
       },
     })

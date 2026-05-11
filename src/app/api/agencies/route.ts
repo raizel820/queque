@@ -35,9 +35,9 @@ export async function GET(request: NextRequest) {
             select: { services: { where: { isActive: true } } },
           },
           queueSettings: {
-            where: { isPaused: false },
             select: { isPaused: true },
             take: 1,
+            orderBy: { updatedAt: 'desc' },
           },
         },
         orderBy: [
@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
       workingHoursStart: agency.workingHoursStart,
       workingHoursEnd: agency.workingHoursEnd,
       isPaused: agency.queueSettings.length > 0 ? agency.queueSettings[0].isPaused : false,
+      avgServiceTime: agency.averageServiceTime,
       createdAt: agency.createdAt,
     }))
 

@@ -51,9 +51,11 @@ interface AgencyListItem {
   isSponsored: boolean;
   customCode: string;
   isQueueOpen: boolean;
+  isPaused: boolean;
   serviceCount: number;
   workingHoursStart?: string;
   workingHoursEnd?: string;
+  avgServiceTime?: number;
 }
 
 interface AgencyDetail {
@@ -178,19 +180,25 @@ export function CustomerHome() {
 
   const handleJoinByCode = async () => {
     if (!agencyCode.trim()) return;
-    const agency = agencies.find(
-      (a) => a.customCode.toLowerCase() === agencyCode.trim().toLowerCase()
-    );
-    if (agency) {
-      await fetchAgencyDetail(agency.customCode);
-      setAgencyCode('');
-    } else {
-      toast.error(t('noData'));
-    }
+    const code = agencyCode.trim();
+    setAgencyCode('');
+    // Directly fetch agency detail from API (works even if agency not in loaded list)
+    await fetchAgencyDetail(code);
   };
 
   const handleSelectAgency = async (agency: AgencyListItem) => {
     await fetchAgencyDetail(agency.customCode);
+  };
+
+  // Quick join: go straight to date picker without showing agency detail
+  const handleQuickJoin = (agencyId: string, serviceId?: string) => {
+    if (!user?.id) {
+      toast.error(t('error'));
+      return;
+    }
+    setPendingJoin({ agencyId, serviceId });
+    setSelectedDate(undefined);
+    setDateDialogOpen(true);
   };
 
   const getTotalWaiting = () => {
@@ -677,12 +685,12 @@ export function CustomerHome() {
                       <Badge
                         variant="outline"
                         className={
-                          agency.isQueueOpen
-                            ? 'text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
-                            : 'text-[10px] bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                          !agency.isQueueOpen || agency.isPaused
+                            ? 'text-[10px] bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200'
+                            : 'text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
                         }
                       >
-                        {agency.isQueueOpen ? t('openNow') : t('closed')}
+                        {agency.isPaused ? t('paused') : agency.isQueueOpen ? t('openNow') : t('closed')}
                       </Badge>
                     </div>
                   </div>
@@ -715,8 +723,18 @@ export function CustomerHome() {
                           <Heart className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600" />
                         )}
                       </button>
+                      {/* Quick Join button for single-service agencies */}
+                      {agency.isQueueOpen && !agency.isPaused && agency.serviceCount === 1 && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleQuickJoin(agency.id); }}
+                          className="h-7 px-2.5 rounded-full flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-medium hover:bg-emerald-600 transition-colors"
+                        >
+                          <Zap className="h-3 w-3" />
+                          {t('joinQueue')}
+                        </button>
+                      )}
                       {/* Mini waiting count badge */}
-                      {agency.isQueueOpen && (
+                      {agency.isQueueOpen && agency.serviceCount > 1 && (
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
