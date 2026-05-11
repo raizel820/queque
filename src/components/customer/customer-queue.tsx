@@ -436,7 +436,7 @@ export function CustomerQueue() {
                     {/* Reserved date badge */}
                     {res.reservedDate && (
                       <span className="ms-auto text-xs bg-white/20 px-2 py-0.5 rounded-full">
-                        📅 {res.reservedDate}
+                        📅 {new Date(res.reservedDate + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     )}
                   </div>
@@ -534,7 +534,7 @@ export function CustomerQueue() {
                     <p className="text-xs text-muted-foreground">{getServiceName(res)}</p>
                     {res.reservedDate && (
                       <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                        📅 {t('reservedFor')} {res.reservedDate}
+                        📅 {t('reservedFor')} {new Date(res.reservedDate + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { month: 'short', day: 'numeric' })}
                       </p>
                     )}
                   </div>

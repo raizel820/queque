@@ -70,6 +70,7 @@ interface AgencyDetail {
   lastIssuedNumber: number;
   workingHoursStart?: string;
   workingHoursEnd?: string;
+  avgServiceTime?: number;
   services: { id: string; name: string; nameAr?: string; nameFr?: string; waitingCount: number }[];
 }
 
@@ -303,7 +304,7 @@ export function CustomerHome() {
 
   if (selectedAgency) {
     const totalWaiting = getTotalWaiting();
-    const estWait = totalWaiting * 10;
+    const estWait = totalWaiting * (selectedAgency.avgServiceTime || 10);
     return (
       <motion.div
         initial={{ opacity: 0, x: 20 }}

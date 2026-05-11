@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -125,6 +125,9 @@ export function AgencyProfile() {
       if (res.ok) {
         toast.success(t('success'));
         setEditMode(false);
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
       }
     } catch {
       toast.error(t('error'));
@@ -142,7 +145,7 @@ export function AgencyProfile() {
     return found ? t(found.key) : cat;
   };
 
-  const agencyLink = profile?.code ? `https://queuewise.dz/join/${profile.code}` : '';
+  const agencyLink = profile?.code ? `${typeof window !== 'undefined' ? window.location.origin : ''}/?code=${profile.code}` : '';
 
   const handleCopyLink = async () => {
     if (!agencyLink) return;

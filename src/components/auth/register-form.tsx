@@ -189,8 +189,8 @@ export function RegisterForm() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="CUSTOMER">{t('loginAsCustomer')}</SelectItem>
-                      <SelectItem value="AGENCY_STAFF">{t('loginAsAgency')} (Staff)</SelectItem>
-                      <SelectItem value="AGENCY_OWNER">{t('loginAsAgency')} (Owner)</SelectItem>
+                      <SelectItem value="AGENCY_STAFF">{t('loginAsAgency')} ({t('staffRole')})</SelectItem>
+                      <SelectItem value="AGENCY_OWNER">{t('loginAsAgency')} ({t('ownerRole')})</SelectItem>
                       <SelectItem value="SUPER_ADMIN">
                         <span className="flex items-center gap-2">
                           <Shield className="h-3.5 w-3.5" />

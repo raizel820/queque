@@ -488,6 +488,10 @@ const ar = {
   popular: "الأكثر شعبية",
   todayLabel: "حجوزات اليوم",
   confirmDeleteAgency: "هل أنت متأكد أنك تريد حذف هذه الوكالة؟ لا يمكن التراجع عن هذا الإجراء.",
+
+  // ─── Role Labels ──────────────────────
+  staffRole: "موظف",
+  ownerRole: "مالك",
 };
 
 export default ar;

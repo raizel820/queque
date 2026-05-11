@@ -2,10 +2,10 @@
 
 ## Current Project Status (Assessment)
 **Status**: 🟢 Stable - Production-ready MVP
-**Phase**: 7 - UI Redesign & Feature Enhancements (Completed)
+**Phase**: 8 - Bug Fixes & Code Quality (Completed)
 **Dev Server**: Running clean on port 3000, ESLint 0 errors
 **Test Coverage**: All 4 roles tested via agent-browser (Customer, Agency Owner, Agency Staff, Admin)
-**Known Issues**: None critical. Minor: Language dropdown on profile page interaction can be improved.
+**Known Issues**: Dev server has ~40-60s lifetime in sandbox (environment limitation, not code bug). Login, customer home, agency listings all verified working.
 
 ### Completed Features Summary
 - ✅ Full auth system (register, login, session, 4 roles)
@@ -360,3 +360,57 @@ Stage Summary:
 - No WebSocket real-time updates (mini-service exists but disconnected)
 - Web Push notifications not implemented
 - CCP/Bank receipt OCR not implemented
+- ~59 silent catch blocks across components (no error feedback to users)
+- No periodic polling on admin dashboard/analytics pages
+
+---
+Task ID: 11 - Emergency Fix: App Not Working + Comprehensive Bug Fix Session
+Agent: Main Developer
+Task: Diagnose app startup failure, fix all critical bugs, audit and fix code quality issues
+
+Work Log:
+- Diagnosed dev server startup issue: background process management in sandbox environment
+- Server requires `setsid npx next dev -p 3000` to stay alive; `bun run dev` pipe to `tee` causes early exit
+- Verified app working via agent-browser: login flow, customer home, agency listings all functional
+- Fixed CRITICAL: delete-account API route referenced non-existent `user.agencyId` field
+  - User model has no agencyId; agency ownership is via Agency.ownerId
+  - Replaced with proper query: `db.agency.findFirst({ where: { ownerId: userId } })`
+- Fixed HIGH: Wrapped all delete-account cascading operations in `db.$transaction()`
+- Fixed LOW: Removed dead code in sounds.ts (unused currentOscillator/currentGain)
+- Fixed LOW: Formatted reservedDate display in customer-queue.tsx (was raw ISO string, now locale-formatted)
+- Conducted comprehensive audit of all 23 component files, identified 45 issues
+- Fixed CRITICAL: admin-agencies.tsx missing `actionLoading` useState declaration (runtime crash)
+- Fixed CRITICAL: agency-profile.tsx hardcoded domain `https://queuewise.dz` → dynamic `window.location.origin`
+- Fixed CRITICAL: agency-profile.tsx missing `useRef` import
+- Fixed HIGH: customer-home.tsx wait time now uses agency's `avgServiceTime` instead of hardcoded `* 10`
+- Fixed HIGH: admin-audit-logs.tsx hardcoded `ar-DZ` locale → uses `lang` from useLanguage()
+- Fixed HIGH: agency-subscription.tsx hardcoded `fr-DZ` locale → uses `lang` from useLanguage()
+- Fixed HIGH: agency-settings.tsx non-OK response now shows error toast
+- Fixed HIGH: agency-profile.tsx non-OK response now shows error toast
+- Fixed HIGH: register-form.tsx hardcoded `(Staff)`/`(Owner)` → i18n keys `staffRole`/`ownerRole`
+- Added i18n keys: staffRole, ownerRole (ar/fr/en)
+- ESLint clean (0 errors) after all changes
+
+Stage Summary:
+- **12 bugs fixed** (3 CRITICAL, 7 HIGH, 2 LOW)
+- App verified working: login, customer home, agency listings
+- Comprehensive audit identified 45 issues; 12 highest-priority issues fixed
+- All 3 previously implemented features (notification sounds, delete account, date picker) verified in code
+- ESLint clean, code quality improved
+
+### Fixed Issues This Session
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | delete-account API: user.agencyId doesn't exist | CRITICAL | ✅ Fixed |
+| 2 | delete-account: no DB transaction for cascading deletes | HIGH | ✅ Fixed |
+| 3 | admin-agencies: missing actionLoading state (runtime crash) | CRITICAL | ✅ Fixed |
+| 4 | agency-profile: hardcoded domain URL | CRITICAL | ✅ Fixed |
+| 5 | agency-profile: missing useRef import | CRITICAL | ✅ Fixed |
+| 6 | customer-home: hardcoded wait time multiplier | HIGH | ✅ Fixed |
+| 7 | admin-audit-logs: hardcoded ar-DZ locale | HIGH | ✅ Fixed |
+| 8 | agency-subscription: hardcoded fr-DZ locale | HIGH | ✅ Fixed |
+| 9 | agency-settings: silent save failure | HIGH | ✅ Fixed |
+| 10 | agency-profile: silent save failure | HIGH | ✅ Fixed |
+| 11 | register-form: hardcoded Staff/Owner text | HIGH | ✅ Fixed |
+| 12 | sounds.ts: dead code cleanup | LOW | ✅ Fixed |
+| 13 | customer-queue: raw ISO date display | LOW | ✅ Fixed |

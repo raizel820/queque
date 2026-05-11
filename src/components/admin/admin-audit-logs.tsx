@@ -36,7 +36,7 @@ const actionColors: Record<string, string> = {
 };
 
 export function AdminAuditLogs() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [logs, setLogs] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -75,7 +75,8 @@ export function AdminAuditLogs() {
   });
 
   const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('ar-DZ', {
+    const locale = lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US';
+    return new Date(dateStr).toLocaleString(locale, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',

@@ -121,6 +121,9 @@ export function AgencySettings() {
       });
       if (res.ok) {
         toast.success(t('success'));
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
       }
     } catch {
       toast.error(t('error'));

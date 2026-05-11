@@ -1,8 +1,6 @@
 // Notification sound utilities
 
 let audioContext: AudioContext | null = null;
-let currentOscillator: OscillatorNode | null = null;
-let currentGain: GainNode | null = null;
 let isPlaying = false;
 let loopInterval: ReturnType<typeof setInterval> | null = null;
 

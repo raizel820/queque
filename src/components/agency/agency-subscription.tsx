@@ -42,7 +42,7 @@ interface SubscriptionData {
 
 export function AgencySubscription() {
   const { user } = useAppStore();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [data, setData] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState('BASIC');
@@ -162,7 +162,8 @@ export function AgencySubscription() {
 
   const formatDate = (dateStr: string) => {
     try {
-      return new Date(dateStr).toLocaleDateString('fr-DZ', {
+      const locale = lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US';
+      return new Date(dateStr).toLocaleDateString(locale, {
         month: 'short',
         day: 'numeric',
         year: 'numeric',

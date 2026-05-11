@@ -490,6 +490,10 @@ const fr: Record<TranslationKeys, string> = {
   popular: "Populaire",
   todayLabel: "réservations aujourd'hui",
   confirmDeleteAgency: "Êtes-vous sûr de vouloir supprimer cette agence ? Cette action est irréversible.",
+
+  // ─── Role Labels ──────────────────────
+  staffRole: "Employé",
+  ownerRole: "Propriétaire",
 };
 
 export default fr;
