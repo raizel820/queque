@@ -602,6 +602,47 @@ const en: Record<TranslationKeys, string> = {
   copyLinkToast: "Link copied to clipboard!",
   shareAgency: "Share Agency",
   sharePosition: "Share My Position",
+
+  // ─── Styling Polish Keys ─────────────
+  systemUptime: "System Online",
+  emptyHistoryMsg: "Your past reservations will appear here",
+  recommended: "Recommended",
+  basicToPremium: "More features with Premium",
+  forgotPasswordHelp: "Forgot password?",
+  landingCarouselTitle: "What Our Customers Say",
+  carouselDot: "Go to testimonial",
+
+  // ─── Feature: Wait Time Prediction ─────
+  remainingTime: "Remaining Time",
+
+  // ─── Feature: Bulk Queue Actions ─────
+  batchMode: "Batch Mode",
+  completeSelected: "Complete Selected",
+  selected: "selected",
+  exitBatchMode: "Exit Batch Mode",
+  selectTickets: "Select tickets",
+
+  // ─── Feature: System Announcements ─────
+  systemAnnouncements: "System Announcements",
+  announcement: "Announcement",
+  pinned: "Pinned",
+  dismiss: "Dismiss",
+
+  // ─── Feature: QR Code Sharing ─────
+  shareViaQR: "Share via QR",
+  qrCodeTitle: "QR Code",
+  downloadQR: "Download QR",
+  qrCodeDesc: "Scan this code to track your reservation status",
+
+  // ─── Feature: Queue Status Widget ─────
+  lowWait: "Low wait",
+  mediumWait: "Medium wait",
+  highWait: "High wait",
+
+  // ─── Feature: Emergency Cancel ─────
+  emergencyCancel: "Emergency Cancel",
+  emergencyCancelDesc: "Are you sure you want to cancel your reservation immediately? This action cannot be undone.",
+  emergencyCancelConfirm: "Yes, cancel my reservation",
 };
 
 export default en;

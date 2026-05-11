@@ -24,6 +24,8 @@ import {
   ChevronDown,
   Share2,
   Sparkles,
+  QrCode,
+  ShieldAlert,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -34,6 +36,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Reservation {
   id: string;
@@ -105,6 +124,10 @@ export function CustomerQueue() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [pulseKey, setPulseKey] = useState(0);
   const [confettiKey, setConfettiKey] = useState(0);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrReservation, setQrReservation] = useState<Reservation | null>(null);
+  const [emergencyDialogOpen, setEmergencyDialogOpen] = useState(false);
+  const [emergencyResId, setEmergencyResId] = useState<string | null>(null);
   const prevStatusRef = useRef<Record<string, string>>({});
   const soundStartedRef = useRef(false);
 
@@ -901,22 +924,78 @@ export function CustomerQueue() {
                       </div>
                     </div>
 
-                    {/* Share Position Button */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="mb-3"
-                    >
-                      <Button
-                        variant="outline"
-                        className="w-full h-10 rounded-xl border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 gap-2"
-                        onClick={() => handleSharePosition(res)}
+                    {/* Wait Time Prediction with Progress Bar */}
+                    {!isCalled && res.estimatedWait > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-4 p-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 border border-amber-200/50 dark:border-amber-800/30"
                       >
-                        <Share2 className="h-4 w-4" />
-                        {t('sharePosition') || 'Share My Position'}
-                      </Button>
-                    </motion.div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <Timer className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                            <span className="text-xs font-medium text-amber-700 dark:text-amber-400">{t('remainingTime')}</span>
+                          </div>
+                          <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                            {countdown.hours > 0
+                              ? `${padZero(countdown.hours)}:${padZero(countdown.minutes)}:${padZero(countdown.seconds)}`
+                              : `${padZero(countdown.minutes)}:${padZero(countdown.seconds)}`
+                            }
+                          </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-amber-200/50 dark:bg-amber-900/40 overflow-hidden">
+                          <motion.div
+                            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
+                            initial={{ width: '0%' }}
+                            animate={{
+                              width: `${countdownProgress}%`,
+                            }}
+                            transition={{ duration: 1, ease: 'linear' }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-1 text-center">
+                          ~{res.estimatedWait > 60
+                            ? `${Math.floor(res.estimatedWait / 60)}${t('hours')} ${res.estimatedWait % 60 > 0 ? `${res.estimatedWait % 60}${t('min')}` : ''}`
+                            : `${res.estimatedWait} ${t('min')}`
+                          }
+                        </p>
+                      </motion.div>
+                    )}
+
+                    {/* Share Position + QR Buttons */}
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <Button
+                          variant="outline"
+                          className="w-full h-10 rounded-xl border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 gap-2"
+                          onClick={() => handleSharePosition(res)}
+                        >
+                          <Share2 className="h-4 w-4" />
+                          {t('sharePosition') || 'Share'}
+                        </Button>
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.25 }}
+                      >
+                        <Button
+                          variant="outline"
+                          className="w-full h-10 rounded-xl border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 gap-2"
+                          onClick={() => {
+                            setQrReservation(res);
+                            setQrDialogOpen(true);
+                          }}
+                        >
+                          <QrCode className="h-4 w-4" />
+                          {t('shareViaQR')}
+                        </Button>
+                      </motion.div>
+                    </div>
 
                     {/* Cancel Button */}
                     {res.status === 'WAITING' && (
@@ -933,6 +1012,28 @@ export function CustomerQueue() {
                         )}
                         {t('cancelReservation')}
                       </Button>
+                    )}
+
+                    {/* Emergency Cancel Button - shown only for WAITING status */}
+                    {res.status === 'WAITING' && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="mt-3"
+                      >
+                        <Button
+                          variant="outline"
+                          className="w-full h-11 rounded-xl border-2 border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 font-semibold transition-all duration-300 gap-2"
+                          onClick={() => {
+                            setEmergencyResId(res.id);
+                            setEmergencyDialogOpen(true);
+                          }}
+                        >
+                          <ShieldAlert className="h-4 w-4" />
+                          {t('emergencyCancel')}
+                        </Button>
+                      </motion.div>
                     )}
 
                     {/* CALLED — prominent info */}
@@ -954,6 +1055,152 @@ export function CustomerQueue() {
           </motion.div>
         );
       })}
+
+      {/* QR Code Dialog */}
+      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-emerald-600" />
+              {t('qrCodeTitle')}
+            </DialogTitle>
+            <DialogDescription>{t('qrCodeDesc')}</DialogDescription>
+          </DialogHeader>
+          {qrReservation && (
+            <div className="flex flex-col items-center gap-4 py-4">
+              {/* QR Code placeholder with ticket info */}
+              <div className="relative p-4 bg-white dark:bg-gray-900 rounded-2xl border-2 border-dashed border-emerald-300 dark:border-emerald-700">
+                <svg className="h-48 w-48" viewBox="0 0 200 200" fill="none">
+                  {/* QR code corner squares */}
+                  <rect x="10" y="10" width="60" height="60" rx="4" className="fill-emerald-600" />
+                  <rect x="130" y="10" width="60" height="60" rx="4" className="fill-emerald-600" />
+                  <rect x="10" y="130" width="60" height="60" rx="4" className="fill-emerald-600" />
+                  {/* Inner white squares for QR corners */}
+                  <rect x="18" y="18" width="44" height="44" rx="2" className="fill-white" />
+                  <rect x="138" y="18" width="44" height="44" rx="2" className="fill-white" />
+                  <rect x="18" y="138" width="44" height="44" rx="2" className="fill-white" />
+                  <rect x="26" y="26" width="28" height="28" rx="1" className="fill-emerald-600" />
+                  <rect x="146" y="26" width="28" height="28" rx="1" className="fill-emerald-600" />
+                  <rect x="26" y="146" width="28" height="28" rx="1" className="fill-emerald-600" />
+                  {/* Data pattern dots */}
+                  <rect x="80" y="10" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="96" y="10" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="112" y="10" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="80" y="26" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="112" y="26" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="80" y="42" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="96" y="42" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="112" y="42" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="80" y="58" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="96" y="58" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="10" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="26" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="42" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="58" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="80" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="96" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="112" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="130" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="146" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="162" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="178" y="80" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="10" y="96" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="42" y="96" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="80" y="96" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="112" y="96" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="130" y="96" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="162" y="96" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="10" y="112" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="26" y="112" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="42" y="112" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="58" y="112" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="80" y="112" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="96" y="112" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="112" y="112" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="130" y="112" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="146" y="112" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="178" y="112" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="80" y="130" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="96" y="130" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="112" y="130" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="130" y="130" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="146" y="130" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="162" y="130" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="80" y="146" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="112" y="146" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="130" y="146" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="162" y="146" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="178" y="146" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="80" y="162" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="96" y="162" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="112" y="162" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="130" y="162" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="146" y="162" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="80" y="178" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="96" y="178" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="112" y="178" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="146" y="178" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="162" y="178" width="8" height="8" className="fill-emerald-500" />
+                  <rect x="178" y="178" width="8" height="8" className="fill-emerald-500" />
+                  {/* Center label */}
+                  <rect x="82" y="132" width="36" height="36" rx="4" className="fill-white" />
+                  <text x="100" y="156" textAnchor="middle" className="fill-emerald-600" fontSize="10" fontWeight="bold">QW</text>
+                </svg>
+              </div>
+              {/* Ticket Info Display */}
+              <div className="w-full space-y-2">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
+                  <span className="text-xs text-muted-foreground">{t('myQueue')}</span>
+                  <span className="text-sm font-bold text-foreground">{qrReservation.queueNumber}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
+                  <span className="text-xs text-muted-foreground">{getAgencyName(qrReservation)}</span>
+                  <span className="text-sm font-medium text-foreground">#{qrReservation.position}</span>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full rounded-xl gap-2"
+                onClick={() => {
+                  toast.info(t('comingSoon'));
+                }}
+              >
+                <QrCode className="h-4 w-4" />
+                {t('downloadQR')}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Emergency Cancel AlertDialog */}
+      <AlertDialog open={emergencyDialogOpen} onOpenChange={setEmergencyDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-rose-600">
+              <ShieldAlert className="h-5 w-5" />
+              {t('emergencyCancel')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('emergencyCancelDesc')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-600 hover:bg-rose-700 text-white"
+              onClick={() => {
+                if (emergencyResId) {
+                  handleCancel(emergencyResId);
+                }
+                setEmergencyDialogOpen(false);
+              }}
+            >
+              {t('emergencyCancelConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Users,
   Clock,
@@ -20,7 +20,6 @@ import {
   XCircle,
   RefreshCw,
   Loader2,
-  TicketCheck,
   Calendar,
   Radio,
   PieChart,
@@ -32,10 +31,14 @@ import {
   CircleCheckBig,
   Ban,
   Rss,
+  CheckSquare,
+  Square,
+  X,
 } from 'lucide-react';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useRef } from 'react';
+import { QueueStatusWidget } from '@/components/agency/queue-status-widget';
 
 interface QueueEntry {
   id: string;
@@ -161,6 +164,9 @@ export function AgencyDashboard() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
+  const [batchMode, setBatchMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchLoading, setBatchLoading] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true });
   const agencyId = user?.agencyId || '';
@@ -273,6 +279,46 @@ export function AgencyDashboard() {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const toggleBatchSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleBatchComplete = async () => {
+    if (selectedIds.size === 0) return;
+    setBatchLoading(true);
+    try {
+      const promises = Array.from(selectedIds).map(id =>
+        fetch(`/api/agency/queue/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'complete' }),
+        })
+      );
+      await Promise.all(promises);
+      toast.success(t('success'));
+      setSelectedIds(new Set());
+      setBatchMode(false);
+      fetchData();
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  const exitBatchMode = () => {
+    setBatchMode(false);
+    setSelectedIds(new Set());
   };
 
   const getServiceName = (entry: QueueEntry) => {
@@ -447,6 +493,15 @@ export function AgencyDashboard() {
             </div>
           </div>
         </div>
+      </motion.div>
+
+      {/* Queue Status Widget */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ delay: 0.05 }}
+      >
+        <QueueStatusWidget agencyId={agencyId} />
       </motion.div>
 
       {/* Queue Status Pill */}
@@ -652,11 +707,30 @@ export function AgencyDashboard() {
       {/* Waiting List */}
       <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Users className="h-4 w-4 text-emerald-600" />
-            {t('waitingList')}
-            <Badge variant="secondary" className="text-xs">{waitingList.length}</Badge>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-4 w-4 text-emerald-600" />
+              {t('waitingList')}
+              <Badge variant="secondary" className="text-xs">{waitingList.length}</Badge>
+            </CardTitle>
+            <Button
+              variant={batchMode ? 'default' : 'outline'}
+              size="sm"
+              className={batchMode
+                ? 'h-8 px-3 rounded-lg gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs'
+                : 'h-8 px-3 rounded-lg gap-1.5 text-xs'
+              }
+              onClick={() => batchMode ? exitBatchMode() : setBatchMode(true)}
+            >
+              {batchMode ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+              {batchMode ? t('exitBatchMode') : t('batchMode')}
+            </Button>
+          </div>
+          {batchMode && selectedIds.size > 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('selectTickets')} · {selectedIds.size} {t('selected')}
+            </p>
+          )}
         </CardHeader>
         <CardContent className="pt-0">
           {waitingList.length === 0 ? (
@@ -710,7 +784,15 @@ export function AgencyDashboard() {
                         {t('statusCalled')}
                       </Badge>
                     )}
-                    <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                    <div className={`flex items-center gap-1 transition-opacity ${batchMode ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
+                      {batchMode && entry.status === 'WAITING' && (
+                        <Checkbox
+                          checked={selectedIds.has(entry.id)}
+                          onCheckedChange={() => toggleBatchSelection(entry.id)}
+                          className="h-8 w-8 rounded-lg border-emerald-300 dark:border-emerald-700 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
+                          aria-label={t('selectTickets')}
+                        />
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -859,6 +941,49 @@ export function AgencyDashboard() {
           </Button>
         </motion.div>
       </motion.div>
+
+      {/* Floating Batch Action Bar */}
+      <AnimatePresence>
+        {batchMode && selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="fixed bottom-20 inset-x-4 z-50 lg:inset-x-auto lg:bottom-6 lg:start-auto lg:end-6 lg:w-80"
+          >
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-2xl shadow-emerald-500/30">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold truncate">
+                  {t('completeSelected')} ({selectedIds.size})
+                </p>
+                <p className="text-[10px] text-emerald-200">
+                  {t('selectTickets')}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold rounded-xl h-9 px-4 text-xs gap-1.5"
+                  onClick={handleBatchComplete}
+                  disabled={batchLoading}
+                >
+                  {batchLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />}
+                  {t('markCompleted')}
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 text-white/80 hover:text-white hover:bg-white/20 rounded-xl"
+                  onClick={exitBatchMode}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

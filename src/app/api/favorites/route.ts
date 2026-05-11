@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       favorites: favorites.map((f) => ({
-        id: f.id,
+        favoriteId: f.id,
         agencyId: f.agencyId,
         favoritedAt: f.createdAt,
         ...f.agency,

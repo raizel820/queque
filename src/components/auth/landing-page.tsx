@@ -487,6 +487,87 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Floating Testimonials Carousel */}
+      <section className="w-full py-12 relative z-10">
+        <div className="max-w-4xl mx-auto px-4">
+          <motion.h3
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-lg md:text-xl font-semibold text-center mb-8 text-foreground"
+          >
+            {t('landingCarouselTitle')}
+          </motion.h3>
+          <div className="relative">
+            {/* Gradient fade overlays */}
+            <div className="absolute start-0 top-0 bottom-8 w-16 bg-gradient-to-e from-[var(--color-bg)] to-transparent z-10 pointer-events-none rtl:bg-gradient-to-l" />
+            <div className="absolute end-0 top-0 bottom-8 w-16 bg-gradient-to-s from-[var(--color-bg)] to-transparent z-10 pointer-events-none rtl:bg-gradient-to-r" />
+            {/* Carousel track */}
+            <div className="overflow-hidden">
+              <div
+                className="flex gap-4 w-max"
+                style={{
+                  animation: 'carousel-scroll 25s linear infinite',
+                }}
+              >
+                {[...testimonials, ...testimonials, ...testimonials, ...testimonials].map((testimonial, idx) => (
+                  <div
+                    key={`carousel-${idx}`}
+                    className="w-80 flex-shrink-0"
+                  >
+                    <div className="rounded-2xl p-5 bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 shadow-lg">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                          {t(testimonial.nameKey).charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{t(testimonial.nameKey)}</p>
+                          <p className="text-xs text-muted-foreground">{t(testimonial.roleKey)}</p>
+                        </div>
+                        <div className="ms-auto flex gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className="h-3 w-3 text-amber-400 fill-amber-400" />
+                          ))}
+                        </div>
+                      </div>
+                      <Quote className="h-5 w-5 text-emerald-300 dark:text-emerald-700 mb-1.5" />
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        &ldquo;{t(testimonial.textKey)}&rdquo;
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Dots indicator */}
+            <div className="flex justify-center gap-2 mt-6" role="tablist" aria-label={t('carouselDot')}>
+              {testimonials.map((_, i) => (
+                <div
+                  key={`dot-${i}`}
+                  className="h-2 w-2 rounded-full bg-emerald-400 dark:bg-emerald-600"
+                  style={{
+                    animation: `carousel-dot-pulse 3s ease-in-out ${i * 0.8}s infinite`,
+                  }}
+                  role="tab"
+                  aria-label={t('carouselDot')}
+                />
+              ))}
+            </div>
+          </div>
+          {/* CSS animations for carousel */}
+          <style>{`
+            @keyframes carousel-scroll {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-33.333%); }
+            }
+            @keyframes carousel-dot-pulse {
+              0%, 100% { opacity: 0.3; transform: scale(1); }
+              50% { opacity: 1; transform: scale(1.3); }
+            }
+          `}</style>
+        </div>
+      </section>
+
       {/* Trusted By Section */}
       <section ref={trustedRef} className="w-full px-4 py-12 relative z-10">
         <div className="max-w-3xl mx-auto">

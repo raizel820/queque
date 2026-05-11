@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,12 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [shakeError, setShakeError] = useState(false);
+
+  const triggerShake = useCallback(() => {
+    setShakeError(true);
+    setTimeout(() => setShakeError(false), 600);
+  }, []);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -50,6 +56,7 @@ export function LoginForm() {
           setLoginSuccess(false);
         }, 600);
       } else {
+        triggerShake();
         toast.error(data.error === 'wrongRoleError' ? t('wrongRoleError') : data.error || t('invalidCredentials'));
       }
     } catch {
@@ -90,11 +97,12 @@ export function LoginForm() {
             backgroundSize: '40px 40px',
           }}
         />
+        {/* Subtle dot grid pattern */}
         <div
-          className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.035] dark:opacity-[0.045]"
           style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
-            backgroundSize: '28px 28px',
+            backgroundImage: `radial-gradient(circle, rgba(16,185,129,0.15) 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
           }}
         />
         {/* Gradient orbs */}
@@ -148,10 +156,18 @@ export function LoginForm() {
           className="w-full max-w-md"
         >
           {/* Glow behind card when focused */}
-          <div className={`relative transition-all duration-700 ${isFocused ? 'scale-[1.01]' : ''}`}>
+          <div className={`relative transition-all duration-700 ${isFocused ? 'scale-[1.01]' : ''} ${shakeError ? 'animate-[shake_0.5s_ease-in-out]' : ''}`}>
             <div
               className={`absolute -inset-1 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-teal-400/20 dark:from-emerald-500/10 dark:to-teal-500/10 blur-xl transition-opacity duration-700 ${isFocused ? 'opacity-100' : 'opacity-0'}`}
             />
+            {/* Shake animation keyframes */}
+            <style>{`
+              @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 50%, 90% { transform: translateX(-6px); }
+                30%, 70% { transform: translateX(6px); }
+              }
+            `}</style>
             <Card className="relative shadow-xl border-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md">
               <CardHeader className="text-center pb-2">
                 <motion.div
@@ -187,22 +203,24 @@ export function LoginForm() {
                 </Tabs>
 
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">{t('username')}</Label>
-                    <Input
-                      id="username"
-                      placeholder={t('username')}
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      onFocus={() => setFocusedField('username')}
-                      onBlur={() => setFocusedField(null)}
-                      className="h-12 text-base transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
-                      autoComplete="username"
-                    />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="username" className={`transition-all duration-300 text-sm ${focusedField === 'username' ? 'text-emerald-600 dark:text-emerald-400 font-semibold scale-[1.02] origin-left rtl:origin-right' : ''}`}>{t('username')}</Label>
+                    <div className="relative">
+                      <Input
+                        id="username"
+                        placeholder={t('username')}
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onFocus={() => setFocusedField('username')}
+                        onBlur={() => setFocusedField(null)}
+                        className={`h-12 text-base transition-all duration-300 border-2 ${focusedField === 'username' ? 'border-emerald-400 dark:border-emerald-600 ring-4 ring-emerald-500/10 shadow-[0_0_0_3px_rgba(16,185,129,0.1)]' : 'border-border'}`}
+                        autoComplete="username"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">{t('password')}</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="password" className={`transition-all duration-300 text-sm ${focusedField === 'password' ? 'text-emerald-600 dark:text-emerald-400 font-semibold scale-[1.02] origin-left rtl:origin-right' : ''}`}>{t('password')}</Label>
                     <div className="relative">
                       <Input
                         id="password"
@@ -213,7 +231,7 @@ export function LoginForm() {
                         onKeyDown={handleKeyDown}
                         onFocus={() => setFocusedField('password')}
                         onBlur={() => setFocusedField(null)}
-                        className="h-12 text-base pe-12 transition-all duration-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+                        className={`h-12 text-base pe-12 transition-all duration-300 border-2 ${focusedField === 'password' ? 'border-emerald-400 dark:border-emerald-600 ring-4 ring-emerald-500/10 shadow-[0_0_0_3px_rgba(16,185,129,0.1)]' : 'border-border'}`}
                         autoComplete="current-password"
                       />
                       <button
@@ -280,9 +298,11 @@ export function LoginForm() {
                         {loading ? (
                           <motion.div
                             animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                            transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                            className="flex items-center gap-2"
                           >
-                            <Loader2 className="h-5 w-5" />
+                            <Loader2 className="h-4 w-4" />
+                            <span className="text-sm opacity-80">{t('loading')}</span>
                           </motion.div>
                         ) : (
                           t('login')
@@ -291,6 +311,15 @@ export function LoginForm() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Forgot Password Link */}
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors duration-200 hover:underline underline-offset-2 text-center"
+                >
+                  {t('forgotPasswordHelp')}
+                </button>
+
                 {/* Social Login Placeholder Buttons */}
                 <div className="w-full space-y-2.5 pt-2">
                   <div className="relative">

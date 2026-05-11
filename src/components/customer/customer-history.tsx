@@ -194,7 +194,7 @@ export function CustomerHistory() {
         ))}
       </div>
 
-      {/* History List */}
+      {/* History List - Timeline View */}
       {loading ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
@@ -203,64 +203,102 @@ export function CustomerHistory() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
-          <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">{t('noData')}</p>
+          {/* CSS-only Calendar Illustration */}
+          <div className="mx-auto mb-4 w-20 h-20 relative">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 border-2 border-emerald-200 dark:border-emerald-800" />
+            <div className="absolute top-0 start-0 end-0 h-7 rounded-t-2xl bg-gradient-to-r from-emerald-500 to-teal-500" />
+            <span className="absolute top-1 start-1/2 -translate-x-1/2 text-[10px] font-bold text-white">{new Date().toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { month: 'short' }).toUpperCase()}</span>
+            <span className="absolute top-10 start-1/2 -translate-x-1/2 text-2xl font-bold text-foreground">{new Date().getDate()}</span>
+          </div>
+          <p className="text-sm font-medium text-muted-foreground">{t('noData')}</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">{t('emptyHistoryMsg')}</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((item, idx) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: idx * 0.03 }}
-            >
-              <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-11 w-11 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                        <span className="text-base font-bold text-emerald-700 dark:text-emerald-400">
-                          {item.queueNumber}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">
-                          {getAgencyName(item)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {getServiceName(item)}
-                        </p>
-                      </div>
-                    </div>
-                    <QueueStatusBadge status={item.status} />
-                  </div>
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CalendarIcon className="h-3 w-3" />
-                      <span>{formatDate(item.joinedAt)}</span>
-                    </div>
-                    {canRejoin(item.status) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 rounded-lg text-xs border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                        onClick={() => handleRejoin(item)}
-                        disabled={!!joining}
-                      >
-                        {joining && pendingRejoinItem?.id === item.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin me-1" />
-                        ) : (
-                          <RotateCcw className="h-3 w-3 me-1" />
-                        )}
-                        {t('bookAgain')}
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+        <div className="relative ps-6">
+          {/* Vertical timeline line */}
+          <div className="absolute start-[9px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-emerald-300 via-teal-300 to-gray-200 dark:from-emerald-700 dark:via-teal-700 dark:to-gray-800" />
+          {(() => {
+            let lastDateStr = '';
+            return filtered.map((item, idx) => {
+              const itemDateStr = item.joinedAt?.split('T')[0] ?? '';
+              const showSeparator = itemDateStr !== lastDateStr;
+              lastDateStr = itemDateStr;
+              const statusDotColor = item.status === 'COMPLETED' ? 'bg-emerald-500'
+                : item.status === 'CANCELLED' ? 'bg-red-500'
+                : item.status === 'NO_SHOW' ? 'bg-amber-500'
+                : 'bg-gray-400';
+              return (
+                <div key={item.id}>
+                  {/* Date separator */}
+                  {showSeparator && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="relative mb-3 mt-4 first:mt-0"
+                    >
+                      <div className="absolute start-[-22px] top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-foreground" />
+                      <span className="text-xs font-semibold text-muted-foreground bg-background px-2 py-0.5 rounded-full border border-border">
+                        {new Date(item.joinedAt).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </motion.div>
+                  )}
+                  <motion.div
+                    initial={{ opacity: 0, x: -15 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: idx * 0.04 }}
+                    className="relative pb-4"
+                  >
+                    {/* Timeline dot */}
+                    <div className={`absolute start-[-21px] top-5 h-3 w-3 rounded-full ${statusDotColor} ring-2 ring-background shadow-sm`} />
+                    <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="h-11 w-11 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                              <span className="text-base font-bold text-emerald-700 dark:text-emerald-400">
+                                {item.queueNumber}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">
+                                {getAgencyName(item)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {getServiceName(item)}
+                              </p>
+                            </div>
+                          </div>
+                          <QueueStatusBadge status={item.status} />
+                        </div>
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <CalendarIcon className="h-3 w-3" />
+                            <span>{formatDate(item.joinedAt)}</span>
+                          </div>
+                          {canRejoin(item.status) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 rounded-lg text-xs border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                              onClick={() => handleRejoin(item)}
+                              disabled={!!joining}
+                            >
+                              {joining && pendingRejoinItem?.id === item.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin me-1" />
+                              ) : (
+                                <RotateCcw className="h-3 w-3 me-1" />
+                              )}
+                              {t('bookAgain')}
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </div>
+              );
+            });
+          })()}
         </div>
       )}
 

@@ -13,6 +13,7 @@ import {
   Calendar,
   CreditCard,
   Clock,
+  ArrowRight,
   ShieldCheck,
   TrendingUp,
   UserCircle,
@@ -249,7 +250,7 @@ export function AdminDashboard() {
               </div>
             </motion.div>
           )}
-          {/* Announcement 2 */}
+          {/* Announcement 2 */
           {(!dismissedAnnouncements.has('sys-2')) && (
             <motion.div
               initial={{ opacity: 0, y: 5 }}
@@ -279,7 +280,7 @@ export function AdminDashboard() {
               </div>
             </motion.div>
           )}
-          {/* Announcement 3 - Pinned */}
+          {/* Announcement 3 - Pinned */
           {(!dismissedAnnouncements.has('sys-3')) && (
             <motion.div
               initial={{ opacity: 0, y: 5 }}

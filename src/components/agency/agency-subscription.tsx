@@ -244,8 +244,8 @@ export function AgencySubscription() {
         </Card>
       </motion.div>
 
-      {/* Plan Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Plan Cards - Premium Design */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
         {[
           {
             id: 'BASIC',
@@ -253,6 +253,8 @@ export function AgencySubscription() {
             price: t('basicPrice'),
             features: t('basicFeatures').split(' • '),
             highlight: false,
+            gradientFrom: 'from-gray-400',
+            gradientTo: 'to-slate-500',
           },
           {
             id: 'PREMIUM',
@@ -260,6 +262,8 @@ export function AgencySubscription() {
             price: t('premiumPrice'),
             features: t('premiumFeatures').split(' • '),
             highlight: true,
+            gradientFrom: 'from-emerald-500',
+            gradientTo: 'to-teal-500',
           },
         ].map((plan, idx) => (
           <motion.div
@@ -267,45 +271,95 @@ export function AgencySubscription() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 + idx * 0.05 }}
+            className={plan.highlight && selectedPlan === plan.id ? 'relative' : ''}
           >
-            <Card
-              className={`border-0 shadow-sm h-full cursor-pointer transition-all bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 ${
-                selectedPlan === plan.id
-                  ? 'ring-2 ring-emerald-500 shadow-lg'
-                  : 'hover:shadow-md'
-              } ${plan.highlight && selectedPlan === plan.id ? 'ring-emerald-500' : ''}`}
-              onClick={() => setSelectedPlan(plan.id)}
+            {/* Subtle floating animation for recommended plan */}
+            {plan.highlight && selectedPlan === plan.id && (
+              <style>{`
+                @keyframes premium-float {
+                  0%, 100% { transform: translateY(0); }
+                  50% { transform: translateY(-4px); }
+                }
+                @keyframes sparkle-rotate {
+                  0% { transform: rotate(0deg) scale(1); opacity: 0; }
+                  50% { opacity: 1; }
+                  100% { transform: rotate(180deg) scale(0.5); opacity: 0; }
+                }
+                @keyframes checkmark-draw {
+                  0% { stroke-dashoffset: 20; }
+                  100% { stroke-dashoffset: 0; }
+                }
+              `}</style>
+            )}
+            <motion.div
+              animate={plan.highlight && selectedPlan === plan.id ? { y: [0, -4, 0] } : {}}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             >
-              {plan.highlight && (
-                <div className="bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-1 text-center">
-                  <span className="text-xs font-semibold text-white flex items-center justify-center gap-1">
-                    <Star className="h-3 w-3" />
-                    {t('popular')}
-                  </span>
-                </div>
-              )}
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-lg text-foreground">{plan.name}</h3>
-                  {selectedPlan === plan.id && (
-                    <div className="h-6 w-6 rounded-full bg-emerald-600 flex items-center justify-center">
-                      <Check className="h-3.5 w-3.5 text-white" />
+              <Card
+                className={`border-0 h-full cursor-pointer transition-all duration-300 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden ${
+                  selectedPlan === plan.id
+                    ? 'ring-2 ring-emerald-500 shadow-xl'
+                    : 'hover:shadow-md shadow-sm'
+                }`}
+                onClick={() => setSelectedPlan(plan.id)}
+              >
+                {/* Gradient header stripe */}
+                <div className={`h-1.5 bg-gradient-to-r ${plan.gradientFrom} ${plan.gradientTo}`} />
+                {plan.highlight && (
+                  <div className="bg-gradient-to-r from-amber-400 via-amber-400 to-amber-500 px-3 py-1.5 text-center relative overflow-hidden">
+                    {/* Sparkle animation particles */}
+                    <span className="absolute start-2 top-1 h-1 w-1 rounded-full bg-white" style={{ animation: 'sparkle-rotate 2s ease-in-out infinite' }} />
+                    <span className="absolute end-4 top-2 h-0.5 w-0.5 rounded-full bg-white" style={{ animation: 'sparkle-rotate 2s ease-in-out 0.7s infinite' }} />
+                    <span className="absolute start-1/2 top-0.5 h-1 w-1 rounded-full bg-white/70" style={{ animation: 'sparkle-rotate 2s ease-in-out 1.2s infinite' }} />
+                    <span className="text-xs font-semibold text-white flex items-center justify-center gap-1 relative z-10">
+                      <Star className="h-3 w-3 fill-amber-200" />
+                      {t('popular')}
+                      <Star className="h-3 w-3 fill-amber-200" />
+                    </span>
+                  </div>
+                )}
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-lg text-foreground">{plan.name}</h3>
+                      {plan.highlight && selectedPlan === plan.id && (
+                        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">{t('recommended')}</span>
+                      )}
                     </div>
-                  )}
-                </div>
-                <p className="text-2xl font-bold text-foreground mb-4">{plan.price}</p>
-                <ul className="space-y-2">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Check className="h-3.5 w-3.5 text-emerald-600 flex-shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+                    {selectedPlan === plan.id && (
+                      <div className="h-6 w-6 rounded-full bg-emerald-600 flex items-center justify-center shadow-sm">
+                        <Check className="h-3.5 w-3.5 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-2xl font-bold text-foreground mb-4">{plan.price}</p>
+                  <ul className="space-y-2.5">
+                    {plan.features.map((f, i) => (
+                      <li key={i} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                        {/* Animated SVG checkmark */}
+                        <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0">
+                          <circle cx="10" cy="10" r="9" className="fill-emerald-50 dark:fill-emerald-900/30 stroke-emerald-200 dark:stroke-emerald-800" strokeWidth="1" />
+                          <path d="M6 10l3 3 5-6" className="stroke-emerald-600 dark:stroke-emerald-400" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="20" style={{ animation: `checkmark-draw 0.4s ease-out ${i * 0.1}s both` }} />
+                        </svg>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            </motion.div>
           </motion.div>
         ))}
+      </div>
+
+      {/* Comparison arrow between plans */}
+      <div className="flex items-center justify-center gap-2 py-1">
+        <span className="text-xs text-muted-foreground">{t('basicPlan')}</span>
+        <svg viewBox="0 0 60 16" className="w-12 h-4" fill="none">
+          <path d="M2 8h50M42 2l8 6-8 6" className="stroke-emerald-500 dark:stroke-emerald-400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{t('premiumPlan')}</span>
+        <span className="text-xs text-muted-foreground ms-1">— {t('basicToPremium')}</span>
       </div>
 
       {/* Payment Section */}

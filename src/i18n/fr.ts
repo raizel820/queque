@@ -602,6 +602,47 @@ const fr: Record<TranslationKeys, string> = {
   copyLinkToast: "Lien copié dans le presse-papiers !",
   shareAgency: "Partager l'établissement",
   sharePosition: "Partager ma position",
+
+  // ─── Styling Polish Keys ─────────────
+  systemUptime: "Système en ligne",
+  emptyHistoryMsg: "Vos réservations passées apparaîtront ici",
+  recommended: "Recommandé",
+  basicToPremium: "Plus de fonctionnalités avec Premium",
+  forgotPasswordHelp: "Mot de passe oublié ?",
+  landingCarouselTitle: "Témoignages de nos clients",
+  carouselDot: "Aller au témoignage",
+
+  // ─── Feature: Wait Time Prediction ─────
+  remainingTime: "Temps restant",
+
+  // ─── Feature: Bulk Queue Actions ─────
+  batchMode: "Mode groupé",
+  completeSelected: "Terminer la sélection",
+  selected: "sélectionné(s)",
+  exitBatchMode: "Quitter le mode groupé",
+  selectTickets: "Sélectionner des tickets",
+
+  // ─── Feature: System Announcements ─────
+  systemAnnouncements: "Annonces système",
+  announcement: "Annonce",
+  pinned: "Épinglé",
+  dismiss: "Fermer",
+
+  // ─── Feature: QR Code Sharing ─────
+  shareViaQR: "Partager via QR",
+  qrCodeTitle: "Code QR",
+  downloadQR: "Télécharger le QR",
+  qrCodeDesc: "Scannez ce code pour suivre l'état de votre réservation",
+
+  // ─── Feature: Queue Status Widget ─────
+  lowWait: "Attente courte",
+  mediumWait: "Attente moyenne",
+  highWait: "Attente longue",
+
+  // ─── Feature: Emergency Cancel ─────
+  emergencyCancel: "Annulation d'urgence",
+  emergencyCancelDesc: "Êtes-vous sûr de vouloir annuler votre réservation immédiatement ? Cette action est irréversible.",
+  emergencyCancelConfirm: "Oui, annuler ma réservation",
 };
 
 export default fr;

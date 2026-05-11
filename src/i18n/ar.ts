@@ -600,6 +600,47 @@ const ar = {
   copyLinkToast: '!تم نسخ الرابط',
   shareAgency: 'مشاركة المؤسسة',
   sharePosition: 'مشاركة موقعي',
+
+  // ─── Styling Polish Keys ─────────────
+  systemUptime: 'النظام يعمل',
+  emptyHistoryMsg: 'ستظهر حجوزاتك السابقة هنا',
+  recommended: 'موصى به',
+  basicToPremium: 'المزيد من الميزات مع الخطة المميزة',
+  forgotPasswordHelp: 'هل نسيت كلمة المرور؟',
+  landingCarouselTitle: 'آراء عملائنا',
+  carouselDot: 'الانتقال للشهادة',
+
+  // ─── Feature: Wait Time Prediction ─────
+  remainingTime: 'الوقت المتبقي',
+
+  // ─── Feature: Bulk Queue Actions ─────
+  batchMode: 'وضع الدُفعة',
+  completeSelected: 'إتمام المحدد',
+  selected: 'محدد',
+  exitBatchMode: 'إنهاء وضع الدُفعة',
+  selectTickets: 'اختر التذاكر',
+
+  // ─── Feature: System Announcements ─────
+  systemAnnouncements: 'إعلانات النظام',
+  announcement: 'إعلان',
+  pinned: 'مثبّت',
+  dismiss: 'إغلاق',
+
+  // ─── Feature: QR Code Sharing ─────
+  shareViaQR: 'مشاركة عبر QR',
+  qrCodeTitle: 'رمز QR للموقع',
+  downloadQR: 'تحميل رمز QR',
+  qrCodeDesc: 'امسح هذا الرمز لمتابعة حالة الحجز',
+
+  // ─── Feature: Queue Status Widget ─────
+  lowWait: 'انتظار قليل',
+  mediumWait: 'انتظار متوسط',
+  highWait: 'انتظار طويل',
+
+  // ─── Feature: Emergency Cancel ─────
+  emergencyCancel: 'إلغاء طوارئ',
+  emergencyCancelDesc: 'هل أنت متأكد أنك تريد إلغاء حجزك فوراً؟ لا يمكن التراجع عن هذا الإجراء.',
+  emergencyCancelConfirm: 'نعم، إلغاء الحجز',
 };
 
 export default ar;
