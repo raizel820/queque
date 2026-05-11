@@ -92,6 +92,20 @@ export function CustomerQueue() {
                 startNotificationSound();
               }
               setShowTurnAlert(true);
+              // Request notification permission on first CALLED status
+              if (typeof window !== 'undefined' && 'Notification' in window) {
+                if (Notification.permission === 'default') {
+                  Notification.requestPermission();
+                }
+                if (Notification.permission === 'granted') {
+                  new Notification(t('yourTurn') || 'Your Turn!', {
+                    body: t('turnNotifBody') || 'Please proceed to the service counter.',
+                    icon: '/favicon.ico',
+                    tag: 'queuewise-turn',
+                    requireInteraction: true,
+                  });
+                }
+              }
             }
           }
         });
@@ -111,6 +125,20 @@ export function CustomerQueue() {
             startNotificationSound();
           }
           setShowTurnAlert(true);
+          // Request notification permission on first CALLED status
+          if (typeof window !== 'undefined' && 'Notification' in window) {
+            if (Notification.permission === 'default') {
+              Notification.requestPermission();
+            }
+            if (Notification.permission === 'granted') {
+              new Notification(t('yourTurn') || 'Your Turn!', {
+                body: t('turnNotifBody') || 'Please proceed to the service counter.',
+                icon: '/favicon.ico',
+                tag: 'queuewise-turn',
+                requireInteraction: true,
+              });
+            }
+          }
         }
       }
     } catch {

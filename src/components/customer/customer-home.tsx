@@ -27,6 +27,7 @@ import {
   Building2,
   Zap,
   CalendarDays,
+  ArrowLeft,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -315,7 +316,7 @@ export function CustomerHome() {
           onClick={() => setSelectedAgency(null)}
           className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mb-4 flex items-center gap-1 hover:underline"
         >
-          ← {t('back')}
+          <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('back')}
         </button>
 
         <Card className="shadow-lg border-0 mb-4 overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">

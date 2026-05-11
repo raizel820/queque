@@ -527,7 +527,7 @@ export default function Home() {
       'admin-transactions': t('transactions') + ' - QueueWise',
       'admin-agencies': t('agencies') + ' - QueueWise',
       'admin-audit': t('auditLogs') + ' - QueueWise',
-      'admin-users': t('users') + ' - QueueWise',
+      'admin-users': t('userManagement') + ' - QueueWise',
       'admin-analytics': t('analytics') + ' - QueueWise',
     };
     document.title = titles[currentView] || 'QueueWise';
