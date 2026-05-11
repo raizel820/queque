@@ -505,7 +505,38 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
 
 export default function Home() {
   const { user, currentView, sidebarOpen, toggleSidebar } = useAppStore();
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
+
+  // Dynamic document title based on current view
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      'landing': 'QueueWise - Smart Queue Management',
+      'login': t('login') + ' - QueueWise',
+      'register': t('register') + ' - QueueWise',
+      'customer-home': t('home') + ' - QueueWise',
+      'customer-queue': t('myQueue') + ' - QueueWise',
+      'customer-history': t('history') + ' - QueueWise',
+      'customer-profile': t('profile') + ' - QueueWise',
+      'customer-notifications': t('notifications') + ' - QueueWise',
+      'customer-favorites': t('favorites') + ' - QueueWise',
+      'agency-dashboard': t('dashboard') + ' - QueueWise',
+      'agency-settings': t('settings') + ' - QueueWise',
+      'agency-profile': t('profile') + ' - QueueWise',
+      'agency-subscription': t('subscription') + ' - QueueWise',
+      'admin-dashboard': t('dashboard') + ' - QueueWise',
+      'admin-transactions': t('transactions') + ' - QueueWise',
+      'admin-agencies': t('agencies') + ' - QueueWise',
+      'admin-audit': t('auditLogs') + ' - QueueWise',
+      'admin-users': t('users') + ' - QueueWise',
+      'admin-analytics': t('analytics') + ' - QueueWise',
+    };
+    document.title = titles[currentView] || 'QueueWise';
+  }, [currentView, t]);
+
+  // Scroll to top on view change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentView]);
 
   // Update document direction on language change
   useEffect(() => {
