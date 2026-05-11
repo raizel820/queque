@@ -66,7 +66,7 @@ export function AgencySubscription() {
         setData(data);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }

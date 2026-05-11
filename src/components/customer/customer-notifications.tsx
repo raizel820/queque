@@ -217,10 +217,10 @@ export function CustomerNotifications() {
                           {(() => {
                             const diff = Date.now() - new Date(notif.createdAt).getTime();
                             const mins = Math.floor(diff / 60000);
-                            if (mins < 1) return t('justNow') || 'just now';
-                            if (mins < 60) return `${mins} ${t('minutesLabel') || 'min'} ago`;
+                            if (mins < 1) return t('justNow');
+                            if (mins < 60) return `${mins} ${t('minutesLabel')} ${t('timeAgo')}`;
                             const hours = Math.floor(mins / 60);
-                            if (hours < 24) return `${hours} ${t('hours') || 'hour'} ago`;
+                            if (hours < 24) return `${hours} ${t('hours')} ${t('timeAgo')}`;
                             return new Date(notif.createdAt).toLocaleString();
                           })()}
                         </p>

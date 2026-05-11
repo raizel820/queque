@@ -7,8 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
 import { QueueStatusBadge } from '@/components/shared/queue-status-badge';
-import { TicketCheck, Calendar, MapPin, Filter, RotateCcw, Loader2 } from 'lucide-react';
+import { TicketCheck, CalendarDays, MapPin, RotateCcw, Loader2, Filter, Calendar as CalendarIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import type { TranslationKeys } from '@/i18n';
@@ -42,7 +50,12 @@ export function CustomerHistory() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
-  const [rejoining, setRejoining] = useState<string | null>(null);
+
+  // Date picker state for rejoin
+  const [dateDialogOpen, setDateDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [pendingRejoinItem, setPendingRejoinItem] = useState<HistoryItem | null>(null);
+  const [joining, setJoining] = useState(false);
 
   useEffect(() => {
     fetchHistory();
@@ -83,22 +96,40 @@ export function CustomerHistory() {
     }
   };
 
-  const handleRejoin = async (item: HistoryItem) => {
-    if (!user?.id) return;
-    setRejoining(item.id);
+  const handleRejoin = (item: HistoryItem) => {
+    setPendingRejoinItem(item);
+    setSelectedDate(undefined);
+    setDateDialogOpen(true);
+  };
+
+  const confirmRejoin = async () => {
+    if (!user?.id || !pendingRejoinItem) return;
+    setJoining(true);
     try {
+      const body: Record<string, string> = {
+        userId: user.id,
+        agencyId: pendingRejoinItem.agencyId,
+        serviceId: pendingRejoinItem.serviceId,
+      };
+      if (selectedDate) {
+        const today = new Date();
+        const isToday = selectedDate.getFullYear() === today.getFullYear()
+          && selectedDate.getMonth() === today.getMonth()
+          && selectedDate.getDate() === today.getDate();
+        if (!isToday) {
+          body.reservedDate = selectedDate.toISOString().split('T')[0];
+        }
+      }
       const res = await fetch('/api/reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          agencyId: item.agencyId,
-          serviceId: item.serviceId,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok) {
         toast.success(t('joinSuccess'));
+        setDateDialogOpen(false);
+        setPendingRejoinItem(null);
         setView('customer-queue');
       } else {
         toast.error(data.error || t('error'));
@@ -106,7 +137,7 @@ export function CustomerHistory() {
     } catch {
       toast.error(t('error'));
     } finally {
-      setRejoining(null);
+      setJoining(false);
     }
   };
 
@@ -206,7 +237,7 @@ export function CustomerHistory() {
                   </div>
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
+                      <CalendarIcon className="h-3 w-3" />
                       <span>{formatDate(item.joinedAt)}</span>
                     </div>
                     {canRejoin(item.status) && (
@@ -215,9 +246,9 @@ export function CustomerHistory() {
                         size="sm"
                         className="h-8 rounded-lg text-xs border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                         onClick={() => handleRejoin(item)}
-                        disabled={!!rejoining}
+                        disabled={!!joining}
                       >
-                        {rejoining === item.id ? (
+                        {joining && pendingRejoinItem?.id === item.id ? (
                           <Loader2 className="h-3 w-3 animate-spin me-1" />
                         ) : (
                           <RotateCcw className="h-3 w-3 me-1" />
@@ -232,6 +263,58 @@ export function CustomerHistory() {
           ))}
         </div>
       )}
+
+      {/* Date Picker Dialog for Rejoin */}
+      <Dialog open={dateDialogOpen} onOpenChange={(open) => { setDateDialogOpen(open); if (!open) { setPendingRejoinItem(null); setSelectedDate(undefined); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-emerald-600" />
+              {t('reserveForDate')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm text-muted-foreground mb-4">{t('selectDate')}</p>
+            <div className="flex justify-center">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                className="rounded-xl border"
+              />
+            </div>
+            <div className="flex gap-2 mt-4 justify-center">
+              <Button variant="outline" size="sm" className="rounded-lg h-9" onClick={() => setSelectedDate(undefined)}>
+                {t('today')}
+              </Button>
+              <Button variant="outline" size="sm" className="rounded-lg h-9" onClick={() => {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                setSelectedDate(tomorrow);
+              }}>
+                {t('tomorrow')}
+              </Button>
+            </div>
+            {selectedDate && (
+              <div className="mt-3 text-center">
+                <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                  📅 {t('reservedFor')} {selectedDate.toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => { setDateDialogOpen(false); setPendingRejoinItem(null); setSelectedDate(undefined); }} className="rounded-xl h-10">
+              {t('cancel')}
+            </Button>
+            <Button onClick={confirmRejoin} disabled={joining} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10">
+              {joining ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <TicketCheck className="h-4 w-4 me-2" />}
+              {t('joinQueue')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

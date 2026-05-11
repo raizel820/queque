@@ -49,6 +49,7 @@ export async function GET(req: NextRequest) {
       services: agency.services,
       workingHoursStart: agency.workingHoursStart,
       workingHoursEnd: agency.workingHoursEnd,
+      autoPauseWhenFull: agency.autoPauseWhenFull ?? false,
     });
   } catch (error) {
     console.error('Agency settings GET error:', error);
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { agencyId, avgServiceTime, maxReservations, isQueueOpen, workingHoursStart, workingHoursEnd } = body;
+    const { agencyId, avgServiceTime, maxReservations, isQueueOpen, workingHoursStart, workingHoursEnd, autoPauseWhenFull } = body;
 
     let targetAgency;
     if (agencyId) {
@@ -79,6 +80,7 @@ export async function PATCH(req: NextRequest) {
         ...(isQueueOpen !== undefined && { isQueueOpen }),
         ...(workingHoursStart !== undefined && { workingHoursStart }),
         ...(workingHoursEnd !== undefined && { workingHoursEnd }),
+        ...(autoPauseWhenFull !== undefined && { autoPauseWhenFull }),
       },
     });
 

@@ -39,7 +39,7 @@ interface PendingPayment {
 }
 
 export function AdminTransactions() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const [payments, setPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -79,7 +79,7 @@ export function AdminTransactions() {
         setPayments(mapped);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
@@ -125,6 +125,9 @@ export function AdminTransactions() {
         setRejectId(null);
         setRejectReason('');
         fetchPayments();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
       }
     } catch {
       toast.error(t('error'));
@@ -191,7 +194,7 @@ export function AdminTransactions() {
                           </Badge>
                           <span className="text-xs text-muted-foreground">{payment.method}</span>
                           <span className="text-xs text-muted-foreground">
-                            {new Date(payment.createdAt).toLocaleDateString()}
+                            {new Date(payment.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US')}
                           </span>
                         </div>
                       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -71,9 +71,27 @@ export function LandingPage() {
     { icon: BellRing, titleKey: 'step3' as const, descKey: 'step3Desc' as const },
   ];
 
+  const [landingStats, setLandingStats] = useState<{ agencies: number; users: number } | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch('/api/agencies');
+        if (res.ok) {
+          const data = await res.json();
+          const agencyCount = data.total ?? data.agencies?.length ?? 0;
+          setLandingStats({ agencies: agencyCount, users: agencyCount * 25 });
+        }
+      } catch {
+        // keep fallback values
+      }
+    };
+    fetchStats();
+  }, []);
+
   const stats = [
-    { icon: Building2, value: 10, suffix: '+', labelKey: 'landingStatAgencies' as const },
-    { icon: Users, value: 1000, suffix: '+', labelKey: 'landingStatUsers' as const },
+    { icon: Building2, value: landingStats?.agencies ?? 10, suffix: '+', labelKey: 'landingStatAgencies' as const },
+    { icon: Users, value: landingStats?.users ?? 1000, suffix: '+', labelKey: 'landingStatUsers' as const },
     { icon: MapPin, value: 1, suffix: '', displayValue: "M'Sila", labelKey: 'landingStatLocation' as const },
   ];
 
@@ -92,9 +110,13 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Subtle gradient pattern background */}
+      {/* Animated gradient pattern background */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/20" />
+        <motion.div
+          animate={{ backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+          className="absolute inset-0 bg-[length:400%_400%] bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/30"
+        />
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
           style={{
@@ -102,8 +124,21 @@ export function LandingPage() {
             backgroundSize: '32px 32px',
           }}
         />
-        <div className="absolute top-0 start-1/4 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-800/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 end-1/4 w-80 h-80 bg-teal-200/30 dark:bg-teal-800/10 rounded-full blur-3xl" />
+        <motion.div
+          animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-0 start-1/4 w-96 h-96 bg-emerald-200/40 dark:bg-emerald-800/15 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{ x: [0, -20, 0], y: [0, 30, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          className="absolute bottom-1/4 end-1/4 w-80 h-80 bg-teal-200/40 dark:bg-teal-800/15 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-300/10 dark:bg-emerald-700/5 rounded-full blur-3xl"
+        />
       </div>
 
       {/* Floating decorative elements */}
@@ -181,48 +216,74 @@ export function LandingPage() {
         >
           {/* Floating Hero Icon */}
           <motion.div
-            animate={{ y: [0, -12, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            animate={{ y: [0, -14, 0], rotate: [0, 3, -3, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
             className="inline-flex mb-8"
           >
-            <div className="h-20 w-20 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-2xl shadow-emerald-500/30">
-              <Zap className="h-10 w-10 text-white" />
+            <div className="relative">
+              <motion.div
+                animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 blur-xl"
+              />
+              <div className="relative h-24 w-24 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-2xl shadow-emerald-500/40">
+                <Zap className="h-12 w-12 text-white" />
+              </div>
             </div>
           </motion.div>
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-sm font-medium mb-6 border border-emerald-200/50 dark:border-emerald-800/50">
-            <TicketCheck className="h-4 w-4" />
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-sm font-medium mb-6 border border-emerald-200/50 dark:border-emerald-800/50"
+          >
+            <motion.div
+              animate={{ rotate: [0, 15, -15, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
+            >
+              <TicketCheck className="h-4 w-4" />
+            </motion.div>
             {t('appTagline')}
-          </div>
+          </motion.div>
 
           {/* Animated gradient title */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
-            <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient-shift_4s_ease-in-out_infinite]">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight mb-6 leading-[1.1]">
+            <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient-shift_4s_ease-in-out_infinite] drop-shadow-sm">
               {t('heroTitle')}
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
             {t('heroSubtitle')}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-8 py-6 text-base rounded-xl shadow-lg shadow-emerald-500/25 min-h-12 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 hover:scale-[1.02]"
-              onClick={() => setView('register')}
-            >
-              {t('getStarted')}
-              <ArrowRight className="ms-2 h-5 w-5 rtl:rotate-180" />
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="font-semibold px-8 py-6 text-base rounded-xl min-h-12 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all duration-300 hover:scale-[1.02]"
-              onClick={() => setView('login')}
-            >
-              {t('login')}
-            </Button>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-10 py-7 text-lg rounded-2xl shadow-xl shadow-emerald-500/30 min-h-14 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300"
+                onClick={() => setView('register')}
+              >
+                {t('getStarted')}
+                <motion.div
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  <ArrowRight className="ms-2 h-5 w-5 rtl:rotate-180" />
+                </motion.div>
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+              <Button
+                size="lg"
+                variant="outline"
+                className="font-bold px-10 py-7 text-lg rounded-2xl min-h-14 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all duration-300 border-2"
+                onClick={() => setView('login')}
+              >
+                {t('login')}
+              </Button>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -239,24 +300,27 @@ export function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.3 + idx * 0.1 }}
-              whileHover={{ scale: 1.03, y: -2 }}
+              whileHover={{ scale: 1.03, y: -4 }}
               className="cursor-default"
             >
-              <Card className="h-full border-0 shadow-sm hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 group">
-                <CardContent className="p-5 flex items-start gap-4">
-                  <div className="flex-shrink-0 h-11 w-11 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800/50 transition-colors duration-300">
-                    <feature.icon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm text-foreground mb-1">
-                      {t(feature.titleKey)}
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {t(feature.descKey)}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="relative rounded-2xl p-[1.5px] bg-gradient-to-br from-emerald-200/50 via-transparent to-teal-200/50 dark:from-emerald-700/30 dark:via-transparent dark:to-teal-700/30 group-hover:from-emerald-300/80 dark:group-hover:from-emerald-600/50 group-hover:to-teal-300/80 dark:group-hover:to-teal-600/50 transition-all duration-300">
+                <Card className="h-full border-0 shadow-sm group-hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-900 dark:to-gray-950 overflow-hidden rounded-[13px]">
+                  <div className="absolute top-0 start-0 w-full h-[2px] bg-gradient-to-r from-transparent via-emerald-400/0 to-transparent group-hover:via-emerald-400/60 transition-all duration-500" />
+                  <CardContent className="p-5 flex items-start gap-4">
+                    <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center group-hover:from-emerald-200 group-hover:to-teal-200 dark:group-hover:from-emerald-800/50 dark:group-hover:to-teal-800/50 group-hover:shadow-lg group-hover:shadow-emerald-500/10 transition-all duration-300">
+                      <feature.icon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm text-foreground mb-1">
+                        {t(feature.titleKey)}
+                      </h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {t(feature.descKey)}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </motion.div>
           ))}
         </motion.div>
@@ -272,7 +336,14 @@ export function LandingPage() {
         className="w-full px-4 py-8 relative z-10"
       >
         <div className="max-w-3xl mx-auto">
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 md:p-8 shadow-xl shadow-emerald-500/20">
+          <div className="relative rounded-2xl p-[1px] overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 opacity-60" />
+            <motion.div
+              animate={{ backgroundPosition: ['0% 0%', '200% 0%'] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+              className="absolute inset-0 bg-[length:200%_100%] bg-gradient-to-r from-emerald-300 via-teal-300 to-amber-300 opacity-30"
+            />
+          <div className="relative bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 md:p-8 shadow-xl shadow-emerald-500/25 backdrop-blur-sm">
             <div className="grid grid-cols-3 gap-4 text-center">
               {stats.map((stat, idx) => {
                 const Icon = stat.icon;
@@ -300,6 +371,7 @@ export function LandingPage() {
                 );
               })}
             </div>
+          </div>
           </div>
         </div>
       </motion.section>

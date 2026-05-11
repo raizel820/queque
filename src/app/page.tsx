@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore, updateDocumentDirection } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
-import { isRTL, type Language, type TranslationKeys } from '@/i18n';
+import { isRTL, type Language } from '@/i18n';
 
 // Auth Views
 import { LandingPage } from '@/components/auth/landing-page';
@@ -204,7 +204,7 @@ function CustomerBottomNav() {
                     </motion.span>
                   )}
                 </div>
-                <span className="text-[10px] font-medium text-muted-foreground">{t('more' as unknown as TranslationKeys)}</span>
+                <span className="text-[10px] font-medium text-muted-foreground">{t('more')}</span>
               </motion.button>
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-3xl max-h-[65vh] overflow-y-auto">
@@ -213,7 +213,7 @@ function CustomerBottomNav() {
                 <div className="h-1.5 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
               </div>
               <SheetHeader>
-                <SheetTitle className="sr-only">{t('more' as unknown as TranslationKeys)}</SheetTitle>
+                <SheetTitle className="sr-only">{t('more')}</SheetTitle>
               </SheetHeader>
               {/* User header */}
               <div className="flex items-center gap-3 px-5 pb-4">
@@ -605,7 +605,7 @@ export default function Home() {
         )}
 
         {/* Page content */}
-        <div className={isCustomer ? '' : ''}>
+        <div className={isCustomer ? 'pb-24' : ''}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentView}

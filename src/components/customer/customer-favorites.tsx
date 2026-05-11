@@ -308,7 +308,7 @@ export function CustomerFavorites() {
                             {unfavoriting === fav.agencyId ? (
                               <Loader2 className="h-4 w-4 text-red-500 animate-spin" />
                             ) : (
-                              <Heart className="h-4.5 w-4.5 text-red-500 fill-red-500" />
+                              <Heart className="h-[18px] w-[18px] text-red-500 fill-red-500" />
                             )}
                           </button>
                         </div>

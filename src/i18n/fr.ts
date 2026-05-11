@@ -69,6 +69,8 @@ const fr: Record<TranslationKeys, string> = {
   invalidPhone: "Numéro de téléphone invalide",
   phoneOptional: "Téléphone (optionnel)",
   selectRole: "Choisir le type de compte",
+  rememberMe: "Se souvenir de moi",
+  orContinueWith: "Ou continuer avec",
 
   // ─── Navigation ──────────────────────────
   home: "Accueil",
@@ -419,10 +421,10 @@ const fr: Record<TranslationKeys, string> = {
   avgWaitTimeStat: "Temps d'attente moyen",
   busiestDay: "Jour le plus chargé",
   peakHour: "Heure de pointe",
+  registrations: "Inscriptions",
   registrationsTrend: "Tendance des inscriptions",
   last14Days: "14 derniers jours",
   topAgencies: "Établissements les plus actifs",
-  reservations: "Réservations",
   peakHours: "Heures de pointe",
   hourly: "Par heure",
   noAnalyticsData: "Aucune donnée analytique",
@@ -464,6 +466,7 @@ const fr: Record<TranslationKeys, string> = {
   invalidAdminCode: "Code admin invalide",
   passwordMinLength: "Le mot de passe doit contenir au moins 6 caractères",
   justNow: "à l'instant",
+  timeAgo: "depuis",
 
   // ─── Slide to Confirm ──────────────
   slideToConfirm: "Glissez pour confirmer",
@@ -503,6 +506,44 @@ const fr: Record<TranslationKeys, string> = {
 
   // ─── Auth Role Errors ──────────────────
   wrongRoleError: "Ce compte ne correspond pas au rôle sélectionné",
+
+  // ─── Feature 1: Queue Auto-Refresh ──────
+  refreshInterval: "Intervalle d'actualisation",
+  refreshEvery: "Actualiser toutes les",
+  updatedAgo: "Mis à jour",
+  off: "Désactivé",
+  seconds5: "5s",
+  seconds10: "10s",
+  seconds30: "30s",
+
+  // ─── Feature 2: Today's Summary ─────────
+  todaySummary: "Résumé du jour",
+  peakHourToday: "Heure de pointe",
+
+  // ─── Feature 3: Nearby Agencies ─────────
+  nearby: "À proximité",
+  nearbyAgencies: "Établissements à proximité",
+
+  // ─── Feature 4: Quick Actions ────────────
+  quickActions: "Actions rapides",
+  addNewAgency: "Ajouter un établissement",
+  viewAnalytics: "Voir les analyses",
+  manageUsers: "Gérer les utilisateurs",
+  viewTransactions: "Voir les transactions",
+
+  // ─── Feature 5: Queue Capacity ───────────
+  queueCapacity: "Capacité de la file",
+  maxActiveReservations: "Max. réservations actives",
+  autoPause: "Pause automatique",
+  autoPauseDesc: "Mettre en pause automatiquement la file quand la capacité est atteinte",
+  estServiceTime: "Durée de service estimée (minutes)",
+
+  // ─── Feature 6: Customer Stats ──────────
+  myStats: "Mes statistiques",
+  totalQueuesJoined: "Total des files rejointes",
+  avgWaitTimeExperienced: "Temps d'attente moyen",
+  favoriteAgencyStat: "Établissement préféré",
+  thisMonth: "Ce mois-ci",
 };
 
 export default fr;

@@ -67,6 +67,8 @@ const ar = {
   invalidPhone: "رقم الهاتف غير صالح",
   phoneOptional: "رقم الهاتف (اختياري)",
   selectRole: "اختر نوع الحساب",
+  rememberMe: "تذكرني",
+  orContinueWith: "أو تابع باستخدام",
 
   // ─── Navigation ──────────────────────────
   home: "الرئيسية",
@@ -417,10 +419,10 @@ const ar = {
   avgWaitTimeStat: "متوسط وقت الانتظار",
   busiestDay: "أزدحم يوم",
   peakHour: "ساعة الذروة",
+  registrations: "التسجيلات",
   registrationsTrend: "اتجاه التسجيلات",
   last14Days: "آخر 14 يوماً",
   topAgencies: "المؤسسات الأكثر نشاطاً",
-  reservations: "حجوزات",
   peakHours: "ساعات الذروة",
   hourly: "بالساعة",
   noAnalyticsData: "لا توجد بيانات تحليلية",
@@ -462,6 +464,7 @@ const ar = {
   invalidAdminCode: "رمز المدير غير صحيح",
   passwordMinLength: "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
   justNow: "الآن",
+  timeAgo: "منذ",
 
   // ─── Slide to Confirm ──────────────
   slideToConfirm: "اسحب للتأكيد",
@@ -501,6 +504,44 @@ const ar = {
 
   // ─── Auth Role Errors ──────────────────
   wrongRoleError: 'هذا الحساب لا يناسب الدور المحدد',
+
+  // ─── Feature 1: Queue Auto-Refresh ──────
+  refreshInterval: 'فاصل التحديث',
+  refreshEvery: 'تحديث كل',
+  updatedAgo: 'آخر تحديث',
+  off: 'إيقاف',
+  seconds5: '5 ثوانٍ',
+  seconds10: '10 ثوانٍ',
+  seconds30: '30 ثانية',
+
+  // ─── Feature 2: Today's Summary ─────────
+  todaySummary: 'ملخص اليوم',
+  peakHourToday: 'ساعة الذروة اليوم',
+
+  // ─── Feature 3: Nearby Agencies ─────────
+  nearby: 'قريبة',
+  nearbyAgencies: 'مؤسسات قريبة منك',
+
+  // ─── Feature 4: Quick Actions ────────────
+  quickActions: 'إجراءات سريعة',
+  addNewAgency: 'إضافة مؤسسة',
+  viewAnalytics: 'عرض التحليلات',
+  manageUsers: 'إدارة المستخدمين',
+  viewTransactions: 'عرض المعاملات',
+
+  // ─── Feature 5: Queue Capacity ───────────
+  queueCapacity: 'سعة الطابور',
+  maxActiveReservations: 'الحد الأقصى للحجوزات النشطة',
+  autoPause: 'إيقاف تلقائي',
+  autoPauseDesc: 'إيقاف الطابور تلقائياً عند امتلاء السعة',
+  estServiceTime: 'مدة الخدمة المقدرة (بالدقائق)',
+
+  // ─── Feature 6: Customer Stats ──────────
+  myStats: 'إحصائياتي',
+  totalQueuesJoined: 'إجمالي الطوابير',
+  avgWaitTimeExperienced: 'متوسط الانتظار',
+  favoriteAgencyStat: 'المؤسسة المفضلة',
+  thisMonth: 'هذا الشهر',
 };
 
 export default ar;

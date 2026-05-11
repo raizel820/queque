@@ -21,6 +21,8 @@ export async function GET(req: NextRequest) {
       todayReservations,
       waitingCount,
       servedToday,
+      noShowCount,
+      cancelledCount,
       queueSettings,
     ] = await Promise.all([
       db.reservation.count({
@@ -32,8 +34,38 @@ export async function GET(req: NextRequest) {
       db.reservation.count({
         where: { agencyId, status: { in: ['COMPLETED'] }, completedAt: { gte: todayStart, lte: todayEnd } },
       }),
+      db.reservation.count({
+        where: { agencyId, status: { in: ['NO_SHOW'] }, cancelledAt: { gte: todayStart, lte: todayEnd } },
+      }),
+      db.reservation.count({
+        where: { agencyId, status: { in: ['CANCELLED'] }, cancelledAt: { gte: todayStart, lte: todayEnd } },
+      }),
       db.queueSettings.findFirst({ where: { agencyId } }),
     ]);
+
+    // Calculate peak hour today
+    const todayReservationsList = await db.reservation.findMany({
+      where: { agencyId, joinedAt: { gte: todayStart, lte: todayEnd } },
+      select: { joinedAt: true },
+    });
+
+    let peakHour = '—';
+    if (todayReservationsList.length > 0) {
+      const hourCounts: Record<number, number> = {};
+      todayReservationsList.forEach((r) => {
+        const h = r.joinedAt.getHours();
+        hourCounts[h] = (hourCounts[h] || 0) + 1;
+      });
+      let maxCount = 0;
+      let peakH = 0;
+      for (const [hour, count] of Object.entries(hourCounts)) {
+        if (count > maxCount) {
+          maxCount = count;
+          peakH = parseInt(hour);
+        }
+      }
+      peakHour = `${String(peakH).padStart(2, '0')}:00`;
+    }
 
     const currentQueueNumber = queueSettings
       ? `${queueSettings.currentServingNumber}`
@@ -43,9 +75,12 @@ export async function GET(req: NextRequest) {
       todayReservations,
       currentlyWaiting: waitingCount,
       servedToday,
+      noShowCount,
+      cancelledCount,
       avgWaitTime: agency.averageServiceTime,
       currentQueueNumber,
       isPaused: queueSettings?.isPaused ?? false,
+      peakHour,
     });
   } catch (error) {
     console.error('Agency stats error:', error);

@@ -75,9 +75,13 @@ export function LoginForm() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Background gradient + decorative pattern */}
+      {/* Animated background gradient + decorative pattern */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/20" />
+        <motion.div
+          animate={{ backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'] }}
+          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+          className="absolute inset-0 bg-[length:400%_400%] bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/80 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/25"
+        />
         {/* Subtle grid pattern */}
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"
@@ -94,8 +98,16 @@ export function LoginForm() {
           }}
         />
         {/* Gradient orbs */}
-        <div className="absolute top-1/4 start-0 w-72 h-72 bg-emerald-200/20 dark:bg-emerald-800/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 end-0 w-80 h-80 bg-teal-200/20 dark:bg-teal-800/10 rounded-full blur-3xl" />
+        <motion.div
+          animate={{ x: [0, 20, 0], y: [0, -15, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1/4 start-0 w-72 h-72 bg-emerald-200/30 dark:bg-emerald-800/15 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{ x: [0, -15, 0], y: [0, 20, 0] }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+          className="absolute bottom-0 end-0 w-80 h-80 bg-teal-200/30 dark:bg-teal-800/15 rounded-full blur-3xl"
+        />
         <motion.div
           animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
@@ -221,6 +233,19 @@ export function LoginForm() {
                 </div>
               </CardContent>
               <CardFooter className="flex-col gap-4 pt-2 pb-6">
+                {/* Remember me checkbox */}
+                <div className="flex items-center gap-2 w-full">
+                  <button
+                    type="button"
+                    onClick={() => {}}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <div className="h-4 w-4 rounded border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                      <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                    </div>
+                    {t('rememberMe') || 'Remember me'}
+                  </button>
+                </div>
                 <AnimatePresence mode="wait">
                   {loginSuccess ? (
                     <motion.div
@@ -266,6 +291,53 @@ export function LoginForm() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                {/* Social Login Placeholder Buttons */}
+                <div className="w-full space-y-2.5 pt-2">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="bg-white dark:bg-gray-900 px-3 text-muted-foreground">{t('orContinueWith') || 'Or continue with'}</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="relative group">
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-60 transition-all"
+                      >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Google
+                      </button>
+                      <span className="absolute -top-2 -end-2 px-2 py-0.5 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-full shadow-sm">
+                        {t('comingSoon') || 'Coming Soon'}
+                      </span>
+                    </div>
+                    <div className="relative group">
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full h-11 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-60 transition-all"
+                      >
+                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                        </svg>
+                        Apple
+                      </button>
+                      <span className="absolute -top-2 -end-2 px-2 py-0.5 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded-full shadow-sm">
+                        {t('comingSoon') || 'Coming Soon'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                 <p className="text-sm text-muted-foreground">
                   {t('noAccount')}{' '}
                   <button

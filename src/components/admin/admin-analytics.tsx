@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 interface QuickStats {
@@ -57,7 +58,7 @@ export function AdminAnalytics() {
         setData(json);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }

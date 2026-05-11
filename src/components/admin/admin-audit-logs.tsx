@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Shield, Search, RefreshCw, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 interface AuditEntry {
@@ -57,7 +58,7 @@ export function AdminAuditLogs() {
         setLogs(data.logs ?? data.auditLogs ?? []);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }

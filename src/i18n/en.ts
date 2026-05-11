@@ -69,6 +69,8 @@ const en: Record<TranslationKeys, string> = {
   invalidPhone: "Invalid phone number",
   phoneOptional: "Phone (optional)",
   selectRole: "Select account type",
+  rememberMe: "Remember me",
+  orContinueWith: "Or continue with",
 
   // ─── Navigation ──────────────────────────
   home: "Home",
@@ -419,10 +421,10 @@ const en: Record<TranslationKeys, string> = {
   avgWaitTimeStat: "Avg. Wait Time",
   busiestDay: "Busiest Day",
   peakHour: "Peak Hour",
+  registrations: "Registrations",
   registrationsTrend: "Registrations Trend",
   last14Days: "Last 14 days",
   topAgencies: "Top Agencies",
-  reservations: "Reservations",
   peakHours: "Peak Hours",
   hourly: "Hourly",
   noAnalyticsData: "No analytics data available",
@@ -464,6 +466,7 @@ const en: Record<TranslationKeys, string> = {
   invalidAdminCode: "Invalid admin code",
   passwordMinLength: "Password must be at least 6 characters",
   justNow: "just now",
+  timeAgo: "ago",
 
   // ─── Slide to Confirm ──────────────
   slideToConfirm: "Slide to confirm",
@@ -503,6 +506,44 @@ const en: Record<TranslationKeys, string> = {
 
   // ─── Auth Role Errors ──────────────────
   wrongRoleError: "This account does not match the selected role",
+
+  // ─── Feature 1: Queue Auto-Refresh ──────
+  refreshInterval: "Refresh Interval",
+  refreshEvery: "Refresh every",
+  updatedAgo: "Updated",
+  off: "Off",
+  seconds5: "5s",
+  seconds10: "10s",
+  seconds30: "30s",
+
+  // ─── Feature 2: Today's Summary ─────────
+  todaySummary: "Today's Summary",
+  peakHourToday: "Peak Hour Today",
+
+  // ─── Feature 3: Nearby Agencies ─────────
+  nearby: "Nearby",
+  nearbyAgencies: "Nearby Agencies",
+
+  // ─── Feature 4: Quick Actions ────────────
+  quickActions: "Quick Actions",
+  addNewAgency: "Add Agency",
+  viewAnalytics: "View Analytics",
+  manageUsers: "Manage Users",
+  viewTransactions: "View Transactions",
+
+  // ─── Feature 5: Queue Capacity ───────────
+  queueCapacity: "Queue Capacity",
+  maxActiveReservations: "Max Active Reservations",
+  autoPause: "Auto-Pause",
+  autoPauseDesc: "Automatically pause queue when capacity is full",
+  estServiceTime: "Est. Service Time (minutes)",
+
+  // ─── Feature 6: Customer Stats ──────────
+  myStats: "My Queue Stats",
+  totalQueuesJoined: "Total Queues Joined",
+  avgWaitTimeExperienced: "Avg. Wait Time",
+  favoriteAgencyStat: "Favorite Agency",
+  thisMonth: "This Month",
 };
 
 export default en;

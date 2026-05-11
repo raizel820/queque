@@ -22,7 +22,11 @@ import {
   Circle,
   Activity,
   UserCheck,
+  Plus,
+  BarChart3,
+  ClipboardList,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
 interface AdminStats {
@@ -93,7 +97,7 @@ export function AdminDashboard() {
         setActivities(data.recentActivity ?? []);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
@@ -182,24 +186,34 @@ export function AdminDashboard() {
         </Badge>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid with gradient borders */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
         {statCards.map((stat, idx) => {
           const Icon = stat.icon;
           return (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
+              transition={{ delay: idx * 0.08 }}
             >
-              <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-                <CardContent className={`p-4 rounded-xl ${stat.color}`}>
-                  <Icon className={`h-5 w-5 ${stat.iconColor} mb-2`} />
-                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </CardContent>
-              </Card>
+              <div className="rounded-2xl p-[1px] bg-gradient-to-br from-emerald-200/40 via-transparent to-teal-200/40 dark:from-emerald-700/20 dark:via-transparent dark:to-teal-700/20">
+                <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-0.5 bg-white dark:bg-gray-900/90 rounded-[14px]">
+                  <CardContent className={`p-4 rounded-t-[14px] ${stat.color}`}>
+                    <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${
+                      idx === 0 ? 'from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40'
+                      : idx === 1 ? 'from-teal-200 to-teal-300 dark:from-teal-900/40 dark:to-teal-800/40'
+                      : idx === 2 ? 'from-teal-200 to-emerald-200 dark:from-teal-900/40 dark:to-emerald-900/40'
+                      : idx === 3 ? 'from-amber-200 to-amber-300 dark:from-amber-900/40 dark:to-amber-800/40'
+                      : 'from-rose-200 to-rose-300 dark:from-rose-900/40 dark:to-rose-800/40'
+                    } flex items-center justify-center mb-2 shadow-sm`}>
+                      <Icon className={`h-5 w-5 ${stat.iconColor}`} />
+                    </div>
+                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  </CardContent>
+                </Card>
+              </div>
             </motion.div>
           );
         })}
@@ -222,7 +236,7 @@ export function AdminDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Active Users Today */}
               <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/10">
-                <div className="h-9 w-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40 flex items-center justify-center flex-shrink-0 shadow-sm">
                   <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="min-w-0">
@@ -235,7 +249,7 @@ export function AdminDashboard() {
               </div>
               {/* Total Agencies */}
               <div className="flex items-center gap-3 p-3 rounded-xl bg-teal-50 dark:bg-teal-900/10">
-                <div className="h-9 w-9 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-teal-200 to-teal-300 dark:from-teal-900/40 dark:to-teal-800/40 flex items-center justify-center flex-shrink-0 shadow-sm">
                   <Building2 className="h-4 w-4 text-teal-600 dark:text-teal-400" />
                 </div>
                 <div className="min-w-0">
@@ -248,7 +262,7 @@ export function AdminDashboard() {
               </div>
               {/* Active Queues */}
               <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10">
-                <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-amber-200 to-amber-300 dark:from-amber-900/40 dark:to-amber-800/40 flex items-center justify-center flex-shrink-0 shadow-sm">
                   <Users className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div className="min-w-0">
@@ -272,38 +286,57 @@ export function AdminDashboard() {
       >
         <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t('actions')}</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="h-4 w-4 text-emerald-600" />
+              {t('quickActions')}
+            </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                className="h-14 justify-start px-4 rounded-xl hover:border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/10"
-                onClick={() => setView('admin-transactions')}
-              >
-                <CreditCard className="h-5 w-5 me-3 text-emerald-600" />
-                <div className="text-start">
-                  <p className="text-sm font-semibold">{t('reviewPayment')}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {stats?.pendingTransactions ?? 0} {t('pending')}
-                  </p>
-                </div>
-                <ArrowRight className="h-4 w-4 ms-auto text-muted-foreground rtl:rotate-180" />
-              </Button>
-              <Button
-                variant="outline"
-                className="h-14 justify-start px-4 rounded-xl hover:border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/10"
+            <div className="grid grid-cols-2 gap-3">
+              <motion.button
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => setView('admin-agencies')}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 dark:hover:border-emerald-800 transition-all duration-200"
               >
-                <Building2 className="h-5 w-5 me-3 text-emerald-600" />
-                <div className="text-start">
-                  <p className="text-sm font-semibold">{t('agencyManagement')}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {stats?.totalAgencies ?? 0} {t('agencies')}
-                  </p>
+                <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <ArrowRight className="h-4 w-4 ms-auto text-muted-foreground rtl:rotate-180" />
-              </Button>
+                <span className="text-xs font-semibold text-foreground">{t('addNewAgency')}</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setView('admin-analytics')}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-teal-300 hover:bg-teal-50/50 dark:hover:bg-teal-900/10 dark:hover:border-teal-800 transition-all duration-200"
+              >
+                <div className="h-10 w-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+                  <BarChart3 className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                </div>
+                <span className="text-xs font-semibold text-foreground">{t('viewAnalytics')}</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setView('admin-users')}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-amber-300 hover:bg-amber-50/50 dark:hover:bg-amber-900/10 dark:hover:border-amber-800 transition-all duration-200"
+              >
+                <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <ClipboardList className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <span className="text-xs font-semibold text-foreground">{t('manageUsers')}</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setView('admin-transactions')}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-rose-300 hover:bg-rose-50/50 dark:hover:bg-rose-900/10 dark:hover:border-rose-800 transition-all duration-200"
+              >
+                <div className="h-10 w-10 rounded-xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+                </div>
+                <span className="text-xs font-semibold text-foreground">{t('viewTransactions')}</span>
+              </motion.button>
             </div>
           </CardContent>
         </Card>
@@ -332,7 +365,8 @@ export function AdminDashboard() {
                     key={item.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/5 transition-colors"
+                    whileHover={{ x: 4, backgroundColor: 'rgba(236,253,245,0.3)' }}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-all duration-200 hover:shadow-sm cursor-default"
                   >
                     <ActivityIcon action={item.action} />
                     <div className="flex-1 min-w-0">

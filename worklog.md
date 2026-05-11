@@ -528,3 +528,213 @@ Stage Summary:
 - **2 client-side bugs fixed** in customer-home.tsx (auth guard + error feedback)
 - **1 server-side security fix** in reservations API (role validation)
 - Full end-to-end flow verified: search → agency detail → select service → date picker → join queue ✅
+
+---
+Task ID: 14-a - Fix All Audit Bugs
+Agent: Main Developer
+Task: Fix 10 audit bugs across admin, agency, customer, and auth components
+
+Work Log:
+- Bug #1 (HIGH): admin-transactions.tsx handleReject — added else branch with toast.error for non-OK response
+- Bug #2 (HIGH): Added toast.error(t('error')) to silent catch blocks in 10 files:
+  - admin-dashboard.tsx (fetchDashboard) — also added toast import
+  - admin-agencies.tsx (fetchAgencies) — also added toast import (was already imported)
+  - admin-analytics.tsx (fetchAnalytics) — also added toast import
+  - admin-audit-logs.tsx (fetchLogs) — also added toast import
+  - admin-transactions.tsx (fetchPayments) — toast already imported
+  - admin-users.tsx (fetchUsers) — toast already imported
+  - agency-dashboard.tsx (fetchData) — toast already imported
+  - agency-settings.tsx (fetchSettings) — toast already imported
+  - agency-profile.tsx (fetchProfile) — toast already imported
+  - agency-subscription.tsx (fetchSubscription) — toast already imported
+- Bug #3 (HIGH): admin-transactions.tsx — added `lang` to useLanguage destructure; date formatting now uses `lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US'` instead of browser default
+- Bug #4 (MEDIUM): customer-history.tsx — "Book Again" button now opens date picker dialog (Calendar from shadcn/ui) instead of directly calling POST. Added dateDialogOpen, selectedDate, pendingRejoinItem, joining state. Added Dialog with Calendar component, Today/Tomorrow quick buttons, localized date display. Confirm sends reservedDate to API. Renamed lucide Calendar import to CalendarIcon to avoid conflict with shadcn/ui Calendar.
+- Bug #5 (MEDIUM): page.tsx — fixed dead ternary `className={isCustomer ? '' : ''}` → `className={isCustomer ? 'pb-24' : ''}` for customer mobile bottom padding
+- Bug #6 (MEDIUM): page.tsx — removed unsafe `as unknown as TranslationKeys` double cast from t('more'). Removed unused TranslationKeys import.
+- Bug #7 (MEDIUM): customer-notifications.tsx — replaced hardcoded "ago" fallback strings with i18n t('timeAgo'). Added `timeAgo` key to all 3 language files (ar: "منذ", fr: "depuis", en: "ago"). Removed `|| 'just now'` / `|| 'min'` / `|| 'hour'` fallback patterns.
+- Bug #8 (LOW): agency-dashboard.tsx — added `agencyId` to fetchData useCallback dependency array (was empty [])
+- Bug #9 (LOW): landing-page.tsx — added useState, useEffect to fetch real agency count from /api/agencies on mount. Stats now display actual agency count and estimated user count (fallback values preserved). Added useRef→useState→useEffect import change.
+- Bug #10 (LOW): customer-favorites.tsx — replaced non-standard `h-4.5 w-4.5` with `h-[18px] w-[18px]` (4.5 = 1.125rem = 18px)
+
+Stage Summary:
+- **10 bugs fixed** (3 HIGH, 4 MEDIUM, 3 LOW)
+- All admin/agency components now show error toasts on initial data fetch failure
+- Customer "Book Again" flow now includes date picker (consistent with customer-home and customer-favorites)
+- Notification timestamps fully localized (no more hardcoded English "ago")
+- Landing page shows real agency count from database
+- No new dependencies added (all components already had shadcn/ui Calendar and toast)
+- Removed unused imports and state variables
+
+### Fixed Issues This Session
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | admin-transactions handleReject no error toast on non-OK | HIGH | ✅ Fixed |
+| 2 | 10 admin/agency components silent catch blocks | HIGH | ✅ Fixed |
+| 3 | admin-transactions wrong locale for dates | HIGH | ✅ Fixed |
+| 4 | customer-history "Book Again" bypasses date picker | MEDIUM | ✅ Fixed |
+| 5 | page.tsx dead ternary (both branches empty string) | MEDIUM | ✅ Fixed |
+| 6 | page.tsx unsafe double type cast `as unknown as TranslationKeys` | MEDIUM | ✅ Fixed |
+| 7 | customer-notifications hardcoded English "ago"/"just now" | MEDIUM | ✅ Fixed |
+| 8 | agency-dashboard fetchData stale closure (empty deps) | LOW | ✅ Fixed |
+| 9 | landing-page hardcoded stats (10+ agencies, 1000+ users) | LOW | ✅ Fixed |
+| 10 | customer-favorites non-standard Tailwind `h-4.5` | LOW | ✅ Fixed |
+
+---
+Task ID: 14-c - Add 6 New Features
+Agent: Feature Enhancement Agent
+Task: Add 6 new features across customer, agency, and admin components
+
+Work Log:
+
+**Feature 1: Customer Queue Auto-Refresh with Sound (customer-queue.tsx)**
+- Added visible "Refresh" button with icon and label (replaced ghost icon-only button)
+- Added "Updated: Xs ago" timestamp display that updates every 5 seconds
+- Added configurable auto-refresh interval dropdown (5s, 10s, 30s, Off)
+- Added pulse animation (opacity fade) when new data arrives via pulseKey state
+- Added Select component from shadcn/ui for interval picker
+- State: refreshInterval, lastUpdated, pulseKey, timeAgo
+
+**Feature 2: Agency Dashboard - Today's Summary Card (agency-dashboard.tsx)**
+- Added gradient "Today's Summary" card with 4 metric cells at top of dashboard
+- Shows: Total Served Today, Avg Wait Time, Current Queue Length, Peak Hour Today
+- Uses backdrop-blur glass-morphism cells on emerald gradient background
+- Updated /api/agency/stats to return noShowCount, cancelledCount, peakHour
+- Peak hour calculated from today's reservation join times (grouped by hour)
+- Added TrendingUp and PieChart icon imports
+
+**Feature 3: Customer Home - Nearby Agencies Section (customer-home.tsx)**
+- Added "Nearby Agencies" section below agency code input, above category filters
+- Shows up to 3 open agencies sorted by address (simulates proximity)
+- Each card shows: Navigation icon, agency name, address, simulated distance in km
+- Horizontal scrollable card row with hover/tap animations
+- Added Navigation icon import
+
+**Feature 4: Admin - Quick Actions Widget (admin-dashboard.tsx)**
+- Replaced old 2-column button list with new 2x2 grid of action cards
+- 4 buttons: Add Agency → admin-agencies, View Analytics → admin-analytics, Manage Users → admin-users, View Transactions → admin-transactions
+- Each card has colored icon in rounded background, label text, hover lift animation
+- Color-coded: emerald, teal, amber, rose
+- Added Plus, BarChart3, ClipboardList, CreditCardIcon imports
+
+**Feature 5: Agency Settings - Queue Capacity Management (agency-settings.tsx)**
+- Added new "Queue Capacity" card section at top of settings page
+- Max Active Reservations number input
+- Auto-Pause toggle with description (auto-pauses queue when full)
+- Estimated Service Time per customer (in minutes)
+- Updated Prisma schema: added `autoPauseWhenFull Boolean @default(false)` to Agency model
+- Updated /api/agency/settings: GET returns autoPauseWhenFull, PATCH accepts it
+- Added Gauge icon import
+
+**Feature 6: Customer Profile - Queue Statistics (customer-profile.tsx)**
+- Created /api/user/stats endpoint returning: totalQueues, thisMonth, avgWaitTime, favoriteAgency
+- Added "My Queue Stats" glass-morphism card at top of profile page (below title)
+- 4 metric cells with animated counters: Total Queues Joined, Avg Wait Time, Favorite Agency, This Month
+- Favorite agency name localized (ar/fr/en)
+- Skeleton loading state while stats fetch
+- Added BarChart3, Clock, Heart, CalendarDays icon imports
+
+**i18n: 30+ new keys added across ar.ts, fr.ts, en.ts**
+- Feature 1: refreshInterval, refreshEvery, updatedAgo, off, seconds5, seconds10, seconds30
+- Feature 2: todaySummary, peakHourToday
+- Feature 3: nearby, nearbyAgencies
+- Feature 4: quickActions, addNewAgency, viewAnalytics, manageUsers, viewTransactions
+- Feature 5: queueCapacity, maxActiveReservations, autoPause, autoPauseDesc, estServiceTime
+- Feature 6: myStats, totalQueuesJoined, avgWaitTimeExperienced, favoriteAgencyStat, thisMonth
+
+Stage Summary:
+- **6 new features implemented** across all 3 user types
+- 30+ i18n keys added across all 3 languages
+- 1 new API endpoint created (/api/user/stats)
+- 1 API endpoint enhanced (/api/agency/stats with noShowCount, cancelledCount, peakHour)
+- 1 API endpoint updated (/api/agency/settings with autoPauseWhenFull)
+- 1 Prisma schema field added (Agency.autoPauseWhenFull)
+- All features follow existing design patterns (emerald/teal color scheme, shadcn/ui, Framer Motion)
+- Note: Run `npx prisma db push` to apply the new schema field
+
+### New API Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| /api/user/stats | GET | Returns customer queue statistics (total, monthly, avg wait, favorite agency) |
+
+### Modified Files
+| File | Changes |
+|------|---------|
+| src/i18n/ar.ts | 30+ new translation keys |
+| src/i18n/en.ts | 30+ new translation keys |
+| src/i18n/fr.ts | 30+ new translation keys |
+| src/components/customer/customer-queue.tsx | Auto-refresh interval, last-updated timestamp, pulse animation |
+| src/components/agency/agency-dashboard.tsx | Today's Summary gradient card with 4 metrics |
+| src/components/customer/customer-home.tsx | Nearby Agencies horizontal scroll section |
+| src/components/admin/admin-dashboard.tsx | Quick Actions 2x2 grid widget |
+| src/components/agency/agency-settings.tsx | Queue Capacity card (max reservations, auto-pause, service time) |
+| src/components/customer/customer-profile.tsx | My Queue Stats glass-morphism card |
+| src/app/api/agency/stats/route.ts | Added noShowCount, cancelledCount, peakHour calculation |
+| src/app/api/agency/settings/route.ts | Added autoPauseWhenFull read/write |
+| src/app/api/user/stats/route.ts | NEW: Customer queue statistics endpoint |
+| prisma/schema.prisma | Added autoPauseWhenFull field to Agency model |
+
+---
+Task ID: 14 - Comprehensive QA, Bug Fixes, Styling Polish & New Features
+Agent: Main Developer (3 parallel subagents + 1 fix agent)
+Task: Full project assessment, bug fixes, styling improvements, and new features
+
+Work Log:
+- Reviewed worklog.md to understand full project history (13 previous task phases)
+- Conducted comprehensive code audit of all 21 component files via subagent
+- Identified 10 bugs (3 HIGH, 4 MEDIUM, 3 LOW) ranked by severity
+- Dispatched 3 parallel subagents for: bug fixes, styling polish, new features
+- Fixed all TypeScript errors introduced by subagents (11 errors → 1 pre-existing)
+- Pushed new Prisma schema (autoPauseWhenFull field on Agency)
+- Verified all new API endpoints return correct data
+- ESLint clean (0 errors), TypeScript: 1 pre-existing error only
+
+### Subagent 14-a: Bug Fixes (10 bugs fixed)
+1. admin-transactions.tsx handleReject: Added error toast on non-OK response
+2. 10 admin/agency components: Added toast.error() to all silent catch blocks
+3. admin-transactions.tsx: Fixed wrong locale for date formatting (now uses user's lang)
+4. customer-history.tsx: Rejoin now opens date picker dialog (consistent with other join flows)
+5. page.tsx: Fixed dead ternary (added pb-24 for customer mobile views)
+6. page.tsx: Removed unsafe `as unknown as TranslationKeys` double cast
+7. customer-notifications.tsx: Replaced hardcoded "ago"/"just now" with i18n keys
+8. agency-dashboard.tsx: Fixed stale closure in useCallback (added agencyId to deps)
+9. landing-page.tsx: Stats now fetch real agency count from API (with fallbacks)
+10. customer-favorites.tsx: Replaced non-standard h-4.5 with h-[18px]
+
+### Subagent 14-b: Styling Polish (6 areas improved)
+1. Landing Page: Animated gradient background, floating orbs, hero enhancement, feature cards with gradient borders, "How It Works" section, glassmorphism stats, CTA animations
+2. Login Page: Animated background, styled role tabs, glassmorphism card, social login placeholders (Coming Soon), remember me checkbox
+3. Customer Queue: Empty state pattern, dramatic turn alert banner, animated countdown digits
+4. Agency Dashboard: Alternating row colors, quick actions floating buttons, fixed duplicate imports
+5. Admin Dashboard: Gradient border stats, gradient icon backgrounds, staggered entrance, activity feed hover, fixed duplicate imports
+6. Global CSS: Emerald-tinted scrollbar, dark mode scrollbar, Firefox scrollbar support
+
+### Subagent 14-c: New Features (6 features added)
+1. Customer Queue Auto-Refresh: Visible refresh button, last-updated timestamp, configurable interval (5s/10s/30s/Off), pulse animation on data arrival
+2. Agency Today's Summary: Gradient card with 4 metrics (served today, avg wait, queue length, peak hour), enhanced agency stats API
+3. Customer Nearby Agencies: Horizontal scrollable cards showing up to 3 open agencies with simulated distance
+4. Admin Quick Actions: 2x2 grid of action cards (Add Agency, View Analytics, Manage Users, View Transactions)
+5. Agency Queue Capacity: Max reservations input, auto-pause toggle, estimated service time; new autoPauseWhenFull schema field
+6. Customer Profile Queue Stats: New /api/user/stats endpoint, glassmorphism card with 4 metrics (total queues, this month, avg wait, favorite agency)
+
+### Fix Agent: TypeScript Error Resolution (11 errors fixed)
+- Removed duplicate `reservations` key from ar.ts, en.ts, fr.ts
+- Added missing i18n keys: registrations, rememberMe, orContinueWith
+- Fixed CreditCard import alias in admin-dashboard.tsx
+- Added phoneNumber, freeSmsCount to UserState type
+- Added null guard in customer-profile handleSavePhone
+
+### i18n Keys Added (30+)
+- timeAgo, justNow, rememberMe, orContinueWith, registrations
+- nearby, nearbyAgencies, quickActions, addNewAgency, viewAnalytics, manageUsers, viewTransactions
+- queueCapacity, maxActiveReservations, autoPause, autoPauseDesc, estServiceTime
+- myStats, totalQueuesJoined, avgWaitTime, favoriteAgency, thisMonth
+- refreshInterval, lastUpdated, updatedAgo, off, seconds
+
+Stage Summary:
+- **10 bugs fixed** (3 HIGH, 4 MEDIUM, 3 LOW)
+- **6 component areas styled** with animations, gradients, glassmorphism
+- **6 new features** implemented with 1 new API endpoint and 1 schema change
+- **11 TypeScript errors** resolved from subagent work
+- **30+ i18n keys** added across ar/fr/en
+- ESLint: 0 errors | TypeScript: 1 pre-existing error only
+- All APIs verified working (agencies, user stats, agency stats)

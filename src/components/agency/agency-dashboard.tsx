@@ -26,6 +26,7 @@ import {
   PieChart,
   Layers,
   Activity,
+  TrendingUp,
 } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
 import { toast } from 'sonner';
@@ -52,6 +53,7 @@ interface DashboardStats {
   isPaused: boolean;
   noShowCount?: number;
   cancelledCount?: number;
+  peakHour?: string;
 }
 
 interface ServiceStat {
@@ -162,11 +164,11 @@ export function AgencyDashboard() {
         }
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [agencyId]);
 
   useEffect(() => {
     fetchData();
@@ -360,6 +362,56 @@ export function AgencyDashboard() {
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Today's Summary Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ delay: 0.05 }}
+      >
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 p-5 text-white shadow-lg shadow-emerald-500/20">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 end-0 h-32 w-32 rounded-full bg-white/20 -translate-y-8 translate-x-8" />
+            <div className="absolute bottom-0 start-0 h-24 w-24 rounded-full bg-white/10 translate-y-8 -translate-x-8" />
+          </div>
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-4 w-4 text-emerald-200" />
+              <p className="text-sm font-semibold text-emerald-100">{t('todaySummary')}</p>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-200" />
+                  <span className="text-[10px] text-emerald-200">{t('servedToday')}</span>
+                </div>
+                <p className="text-2xl font-bold">{stats?.servedToday ?? 0}</p>
+              </div>
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Clock className="h-3.5 w-3.5 text-emerald-200" />
+                  <span className="text-[10px] text-emerald-200">{t('avgWaitTime')}</span>
+                </div>
+                <p className="text-2xl font-bold">{stats?.avgWaitTime ?? 0}<span className="text-sm font-normal ms-1">{t('min')}</span></p>
+              </div>
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Users className="h-3.5 w-3.5 text-emerald-200" />
+                  <span className="text-[10px] text-emerald-200">{t('currentlyWaiting')}</span>
+                </div>
+                <p className="text-2xl font-bold">{stats?.currentlyWaiting ?? 0}</p>
+              </div>
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <PieChart className="h-3.5 w-3.5 text-emerald-200" />
+                  <span className="text-[10px] text-emerald-200">{t('peakHourToday')}</span>
+                </div>
+                <p className="text-2xl font-bold">{stats?.peakHour ?? '—'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Queue Status Pill */}
       <motion.div
@@ -589,7 +641,10 @@ export function AgencyDashboard() {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.03 }}
-                  className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:shadow-sm transition-all duration-200 group"
+                  className={idx % 2 === 0
+                    ? "flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:shadow-sm transition-all duration-200 group"
+                    : "flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-900/30 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:shadow-sm transition-all duration-200 group"
+                  }
                 >
                   <div className="flex items-center gap-3">
                     <div className={`h-10 w-10 rounded-xl flex items-center justify-center transition-colors duration-200 ${
@@ -661,6 +716,39 @@ export function AgencyDashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* Quick Actions Floating Area */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="flex items-center gap-2"
+      >
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            onClick={handleCallNext}
+            disabled={actionLoading === 'call' || stats?.isPaused}
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl h-11 px-5 shadow-lg shadow-emerald-500/20 gap-2 disabled:opacity-50"
+          >
+            <PhoneCall className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('callNext')}</span>
+          </Button>
+        </motion.div>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            onClick={handleTogglePause}
+            disabled={actionLoading === 'pause'}
+            variant="outline"
+            className={stats?.isPaused
+              ? "rounded-xl h-11 px-5 gap-2 border-2 border-emerald-300 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-50"
+              : "rounded-xl h-11 px-5 gap-2 border-2 border-amber-300 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-50"
+            }
+          >
+            {stats?.isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+            <span className="hidden sm:inline">{stats?.isPaused ? t('resumeQueue') : t('pauseQueue')}</span>
+          </Button>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

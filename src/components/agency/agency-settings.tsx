@@ -37,6 +37,8 @@ import {
   ToggleLeft,
   AlertTriangle,
   LogOut,
+  Shield,
+  Gauge,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -71,6 +73,7 @@ interface AgencySettingsData {
   services: AgencyService[];
   workingHoursStart: string;
   workingHoursEnd: string;
+  autoPauseWhenFull: boolean;
 }
 
 export function AgencySettings() {
@@ -105,7 +108,7 @@ export function AgencySettings() {
         setSettings(data);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }
@@ -243,6 +246,87 @@ export function AgencySettings() {
           {t('save')}
         </Button>
       </div>
+
+      {/* Queue Capacity Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.02 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Gauge className="h-4 w-4 text-emerald-600" />
+              {t('queueCapacity')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {/* Max Active Reservations */}
+            <div className="space-y-2">
+              <Label className="text-sm flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                {t('maxActiveReservations')}
+              </Label>
+              <p className="text-[11px] text-muted-foreground">{t('maxReservations')}</p>
+              <Input
+                type="number"
+                min={1}
+                max={500}
+                value={settings?.maxReservations ?? 50}
+                onChange={(e) =>
+                  setSettings((prev) =>
+                    prev ? { ...prev, maxReservations: parseInt(e.target.value) || 50 } : prev
+                  )
+                }
+                className="h-11 w-40"
+              />
+            </div>
+
+            <Separator />
+
+            {/* Auto-Pause Toggle */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm flex items-center gap-2">
+                    <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                    {t('autoPause')}
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t('autoPauseDesc')}</p>
+                </div>
+                <Switch
+                  checked={settings?.autoPauseWhenFull ?? false}
+                  onCheckedChange={(checked) =>
+                    setSettings((prev) => (prev ? { ...prev, autoPauseWhenFull: checked } : prev))
+                  }
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Estimated Service Time */}
+            <div className="space-y-2">
+              <Label className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                {t('estServiceTime')}
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                max={120}
+                value={settings?.avgServiceTime ?? 10}
+                onChange={(e) =>
+                  setSettings((prev) =>
+                    prev ? { ...prev, avgServiceTime: parseInt(e.target.value) || 10 } : prev
+                  )
+                }
+                className="h-11 w-40"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Queue Settings */}
       <motion.div

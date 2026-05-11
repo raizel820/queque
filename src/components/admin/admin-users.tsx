@@ -63,7 +63,7 @@ export function AdminUsers() {
         setTotal(data.total ?? 0);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }

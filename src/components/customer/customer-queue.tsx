@@ -21,9 +21,17 @@ import {
   Timer,
   Radio,
   BellRing,
+  ChevronDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Reservation {
   id: string;
@@ -52,6 +60,9 @@ export function CustomerQueue() {
   const [showTurnAlert, setShowTurnAlert] = useState(false);
   const [soundMuted, setSoundMuted] = useState(false);
   const [countdown, setCountdown] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [refreshInterval, setRefreshInterval] = useState<number>(10000);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [pulseKey, setPulseKey] = useState(0);
   const prevStatusRef = useRef<Record<string, string>>({});
   const soundStartedRef = useRef(false);
 
@@ -116,6 +127,8 @@ export function CustomerQueue() {
         prevStatusRef.current = currentStatuses;
 
         setReservations(list);
+        setLastUpdated(new Date());
+        setPulseKey((k) => k + 1);
 
         // Check if any is CALLED
         const hasCalled = list.some((r: Reservation) => r.status === 'CALLED');
@@ -179,12 +192,29 @@ export function CustomerQueue() {
     };
   }, []);
 
-  // Auto-refresh every 10 seconds
+  // Auto-refresh with configurable interval
   useEffect(() => {
     fetchReservations();
-    const interval = setInterval(fetchReservations, 10000);
+    if (refreshInterval > 0) {
+      const interval = setInterval(fetchReservations, refreshInterval);
+      return () => clearInterval(interval);
+    }
+  }, [fetchReservations, refreshInterval]);
+
+  // Time ago helper
+  const getTimeAgo = () => {
+    const diff = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+    if (diff < 5) return t('justNow');
+    if (diff < 60) return `${diff}s`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+    return `${Math.floor(diff / 3600)}h`;
+  };
+  const [timeAgo, setTimeAgo] = useState('');
+  useEffect(() => {
+    setTimeAgo(getTimeAgo());
+    const interval = setInterval(() => setTimeAgo(getTimeAgo()), 5000);
     return () => clearInterval(interval);
-  }, [fetchReservations]);
+  }, [lastUpdated, lang]);
 
   const handleConfirmTurn = () => {
     stopNotificationSound();
@@ -248,15 +278,26 @@ export function CustomerQueue() {
   // Empty State
   if (!activeRes && reservations.length === 0) {
     return (
-      <div className="px-4 py-4 pb-24">
-        <h1 className="text-2xl font-bold text-foreground mb-1">{t('myQueue')}</h1>
-        <div className="flex flex-col items-center justify-center py-20">
+      <div className="px-4 py-4 pb-24 relative">
+        {/* Subtle background pattern for empty state */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.02] dark:opacity-[0.03]" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+          backgroundSize: '24px 24px',
+        }} />
+        <h1 className="text-2xl font-bold text-foreground mb-1 relative">{t('myQueue')}</h1>
+        <div className="flex flex-col items-center justify-center py-20 relative">
           <div className="relative mb-6">
+            {/* Pulsing background ring */}
+            <motion.div
+              animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.05, 0.15] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-28 w-28 rounded-full bg-emerald-200 dark:bg-emerald-800"
+            />
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
-              className="h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center absolute top-0 start-0"
+              className="relative h-20 w-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center"
             >
               <TicketCheck className="h-10 w-10 text-emerald-500" />
             </motion.div>
@@ -320,28 +361,57 @@ export function CustomerQueue() {
 
   return (
     <div className="px-4 py-4 pb-24">
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold text-foreground">{t('myQueue')}</h1>
         <Button
-          variant="ghost"
-          size="icon"
+          variant="outline"
+          size="sm"
           onClick={fetchReservations}
-          className="h-10 w-10"
+          className="h-9 px-3 rounded-lg gap-1.5"
         >
           <RefreshCw className="h-4 w-4" />
+          <span className="text-xs font-medium">{t('refresh')}</span>
         </Button>
+      </div>
+      {/* Refresh interval selector + last updated */}
+      <div className="flex items-center justify-between mb-5">
+        <span className="text-[11px] text-muted-foreground">
+          {t('updatedAgo')}: <span className="font-medium text-foreground">{timeAgo}</span>
+        </span>
+        <motion.div
+          key={pulseKey}
+          initial={{ opacity: [0.3, 1] }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex items-center gap-1.5"
+        >
+          <span className="text-[11px] text-muted-foreground">{t('refreshEvery')}:</span>
+          <Select value={String(refreshInterval)} onValueChange={(v) => setRefreshInterval(Number(v))}>
+            <SelectTrigger className="h-7 w-auto px-2 py-0 text-[11px] rounded-lg border-border">
+              <SelectValue />
+              <ChevronDown className="h-3 w-3 ms-1 opacity-50" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5000">{t('seconds5')}</SelectItem>
+              <SelectItem value="10000">{t('seconds10')}</SelectItem>
+              <SelectItem value="30000">{t('seconds30')}</SelectItem>
+              <SelectItem value="0">{t('off')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </motion.div>
       </div>
 
       {/* YOUR TURN! Alert Banner — Prominent with Slide to Confirm */}
       <AnimatePresence>
         {showTurnAlert && activeRes?.status === 'CALLED' && (
           <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20 }}
             className="mb-4"
           >
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 p-5 text-white shadow-2xl shadow-emerald-500/30">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 p-5 text-white shadow-2xl shadow-emerald-500/40">
               {/* Animated background pattern */}
               <div className="absolute inset-0 opacity-10">
                 <div
@@ -351,28 +421,34 @@ export function CustomerQueue() {
                   }}
                 />
               </div>
-              {/* Animated glow border */}
+              {/* Animated glow border with scale pulse */}
               <motion.div
-                animate={{ opacity: [0.3, 0.8, 0.3] }}
+                animate={{ opacity: [0.3, 0.9, 0.3], scale: [1, 1.01, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute inset-0 rounded-2xl ring-2 ring-white/40"
+              />
+              {/* Dramatic outer glow */}
+              <motion.div
+                animate={{ opacity: [0.15, 0.35, 0.15] }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute inset-0 rounded-2xl ring-2 ring-white/30"
+                className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 blur-lg"
               />
 
               <div className="relative">
                 <div className="flex items-center gap-4 mb-4">
                   <motion.div
-                    animate={{ scale: [1, 1.25, 1], rotate: [0, 10, -10, 0] }}
-                    transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                    className="flex-shrink-0 h-14 w-14 rounded-full bg-white/20 flex items-center justify-center"
+                    animate={{ scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                    className="flex-shrink-0 h-16 w-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-emerald-900/20"
                   >
-                    <BellRing className="h-7 w-7 text-white" />
+                    <BellRing className="h-8 w-8 text-white" />
                   </motion.div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-emerald-100">{t('yourTurnAlert')}</p>
                     <motion.p
-                      animate={{ scale: [1, 1.05, 1] }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
-                      className="text-3xl font-black tracking-tight"
+                      animate={{ scale: [1, 1.08, 1] }}
+                      transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
+                      className="text-4xl font-black tracking-tight drop-shadow-lg"
                     >
                       {activeRes.queueNumber}
                     </motion.p>
@@ -619,32 +695,58 @@ export function CustomerQueue() {
                         <Timer className="h-4 w-4 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground">{t('estimatedWait') || ''}</span>
                       </div>
-                      <div className="flex items-center justify-center gap-3">
+                      <div className="flex items-center justify-center gap-2">
                         <div className="flex flex-col items-center">
-                          <div className="h-12 w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <motion.div
+                            key={`h-${countdown.hours}`}
+                            initial={{ y: -8, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ duration: 0.2 }}
+                            className="h-12 w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50"
+                          >
                             <span className="text-xl font-bold tabular-nums text-foreground">
                               {padZero(countdown.hours)}
                             </span>
-                          </div>
+                          </motion.div>
                           <span className="text-[10px] text-muted-foreground mt-1">{t('hours')}</span>
                         </div>
-                        <span className="text-lg font-bold text-muted-foreground mb-4">:</span>
+                        <motion.span
+                          animate={{ opacity: [1, 0.3, 1] }}
+                          transition={{ duration: 1, repeat: Infinity }}
+                          className="text-lg font-bold text-muted-foreground mb-4"
+                        >:</motion.span>
                         <div className="flex flex-col items-center">
-                          <div className="h-12 w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                          <motion.div
+                            key={`m-${countdown.minutes}`}
+                            initial={{ y: -8, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ duration: 0.2 }}
+                            className="h-12 w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50"
+                          >
                             <span className="text-xl font-bold tabular-nums text-foreground">
                               {padZero(countdown.minutes)}
                             </span>
-                          </div>
+                          </motion.div>
                           <span className="text-[10px] text-muted-foreground mt-1">{t('minutesLabel')}</span>
                         </div>
-                        <span className="text-lg font-bold text-muted-foreground mb-4">:</span>
+                        <motion.span
+                          animate={{ opacity: [1, 0.3, 1] }}
+                          transition={{ duration: 1, repeat: Infinity }}
+                          className="text-lg font-bold text-muted-foreground mb-4"
+                        >:</motion.span>
                         <div className="flex flex-col items-center">
-                          <div className="h-12 w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                            <span className="text-xl font-bold tabular-nums text-foreground">
+                          <motion.div
+                            key={`s-${countdown.seconds}`}
+                            initial={{ y: -8, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ duration: 0.15 }}
+                            className="h-12 w-14 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center border border-emerald-200/50 dark:border-emerald-800/50"
+                          >
+                            <span className="text-xl font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
                               {padZero(countdown.seconds)}
                             </span>
-                          </div>
-                          <span className="text-[10px] text-muted-foreground mt-1">{t('secondsLabel')}</span>
+                          </motion.div>
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1 font-medium">{t('secondsLabel')}</span>
                         </div>
                       </div>
                     </motion.div>

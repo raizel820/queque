@@ -33,6 +33,8 @@ interface UserState {
   language: Language;
   avatarUrl?: string;
   agencyId?: string;
+  phoneNumber?: string;
+  freeSmsCount?: number;
 }
 
 interface AppState {

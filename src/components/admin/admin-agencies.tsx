@@ -44,8 +44,8 @@ import {
   Filter,
   Clock,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 import type { TranslationKeys } from '@/i18n';
 
 interface Agency {
@@ -103,7 +103,7 @@ export function AdminAgencies() {
         setAgencies(data.agencies ?? []);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }

@@ -86,7 +86,7 @@ export function AgencyProfile() {
         setProfile(data);
       }
     } catch {
-      // silent
+      toast.error(t('error'));
     } finally {
       setLoading(false);
     }

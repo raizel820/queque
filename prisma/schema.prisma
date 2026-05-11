@@ -57,6 +57,7 @@ model Agency {
   descriptionAr      String?
   averageServiceTime Int      @default(10)      // minutes
   maxActiveReservations Int   @default(50)
+  autoPauseWhenFull     Boolean @default(false)
   isSponsored        Boolean  @default(false)
   subscriptionTier   String   @default("BASIC")  // BASIC | PREMIUM
   subscriptionStatus String   @default("INACTIVE") // ACTIVE | INACTIVE | SUSPENDED | PENDING
