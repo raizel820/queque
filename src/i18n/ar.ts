@@ -483,6 +483,11 @@ const ar = {
   pickDate: "اختر تاريخاً",
   reservedFor: "محجوز لـ",
   noDateSelected: "لم يتم اختيار تاريخ",
+
+  // ─── Misc Labels ────────────────────
+  popular: "الأكثر شعبية",
+  todayLabel: "حجوزات اليوم",
+  confirmDeleteAgency: "هل أنت متأكد أنك تريد حذف هذه الوكالة؟ لا يمكن التراجع عن هذا الإجراء.",
 };
 
 export default ar;

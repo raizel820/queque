@@ -495,13 +495,6 @@ export function LandingPage() {
         </footer>
       </div>
 
-      {/* Keyframe for gradient text animation */}
-      <style jsx>{`
-        @keyframes gradient-shift {
-          0%, 100% { background-position: 0% center; }
-          50% { background-position: 100% center; }
-        }
-      `}</style>
     </div>
   );
 }

@@ -8,14 +8,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Calendar } from '@/components/ui/calendar';
+import {
   Heart,
-  HeartOff,
   Clock,
   MapPin,
   TicketCheck,
   ChevronRight,
   Loader2,
   Star,
+  CalendarDays,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -87,16 +95,41 @@ export function CustomerFavorites() {
     }
   };
 
-  const handleJoinQueue = async (agencyId: string) => {
-    if (!user?.id) return;
+  // Date picker state for joining queue
+  const [dateDialogOpen, setDateDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [pendingAgencyId, setPendingAgencyId] = useState<string | null>(null);
+  const [joining, setJoining] = useState(false);
+
+  const handleJoinQueue = (agencyId: string) => {
+    setPendingAgencyId(agencyId);
+    setSelectedDate(undefined);
+    setDateDialogOpen(true);
+  };
+
+  const confirmJoinQueue = async () => {
+    if (!user?.id || !pendingAgencyId) return;
+    setJoining(true);
     try {
+      const body: Record<string, string> = { userId: user.id, agencyId: pendingAgencyId };
+      if (selectedDate) {
+        const today = new Date();
+        const isToday = selectedDate.getFullYear() === today.getFullYear()
+          && selectedDate.getMonth() === today.getMonth()
+          && selectedDate.getDate() === today.getDate();
+        if (!isToday) {
+          body.reservedDate = selectedDate.toISOString().split('T')[0];
+        }
+      }
       const res = await fetch('/api/reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, agencyId }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
         toast.success(t('joinSuccess'));
+        setDateDialogOpen(false);
+        setPendingAgencyId(null);
         setView('customer-queue');
       } else {
         const data = await res.json();
@@ -104,6 +137,8 @@ export function CustomerFavorites() {
       }
     } catch {
       toast.error(t('error'));
+    } finally {
+      setJoining(false);
     }
   };
 
@@ -123,6 +158,60 @@ export function CustomerFavorites() {
     const endMinutes = eh * 60 + em;
     return currentMinutes >= startMinutes && currentMinutes < endMinutes;
   };
+
+  // Date Picker Dialog
+  const dateDialog = (
+    <Dialog open={dateDialogOpen} onOpenChange={(open) => { setDateDialogOpen(open); if (!open) { setPendingAgencyId(null); setSelectedDate(undefined); } }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-emerald-600" />
+            {t('reserveForDate')}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="py-2">
+          <p className="text-sm text-muted-foreground mb-4">{t('selectDate')}</p>
+          <div className="flex justify-center">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+              className="rounded-xl border"
+            />
+          </div>
+          <div className="flex gap-2 mt-4 justify-center">
+            <Button variant="outline" size="sm" className="rounded-lg h-9" onClick={() => setSelectedDate(undefined)}>
+              {t('today')}
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-lg h-9" onClick={() => {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              setSelectedDate(tomorrow);
+            }}>
+              {t('tomorrow')}
+            </Button>
+          </div>
+          {selectedDate && (
+            <div className="mt-3 text-center">
+              <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                📅 {t('reservedFor')} {selectedDate.toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
+          )}
+        </div>
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <Button variant="outline" onClick={() => { setDateDialogOpen(false); setPendingAgencyId(null); setSelectedDate(undefined); }} className="rounded-xl h-10">
+            {t('cancel')}
+          </Button>
+          <Button onClick={confirmJoinQueue} disabled={joining} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-10">
+            {joining ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <TicketCheck className="h-4 w-4 me-2" />}
+            {t('joinQueue')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   if (loading) {
     return (
@@ -244,6 +333,8 @@ export function CustomerFavorites() {
           </AnimatePresence>
         </div>
       )}
+
+      {dateDialog}
     </div>
   );
 }

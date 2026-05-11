@@ -304,3 +304,59 @@ Stage Summary:
 - Web Push notifications not implemented
 - CCP/Bank receipt OCR verification not implemented
 - No PWA support yet
+
+---
+Task ID: 10 - Fix Critical/High Bugs + Styling Polish
+Agent: Main Developer
+Task: Audit all components, fix critical bugs, polish UI
+
+Work Log:
+- Read worklog.md to understand project state and previous fixes
+- Started dev server (Next.js 16 + Turbopack on port 3000)
+- Verified all 3 previously requested features compile and work:
+  1. Customer notification sound + slide-to-confirm ✅
+  2. Delete account for customer + agency ✅
+  3. Reservation date picker ✅
+- Ran comprehensive audit of 19 files via Explore agent
+- Fixed CRITICAL: agency-subscription.tsx missing `agencyId` in payment FormData
+- Fixed CRITICAL: customer-favorites.tsx - added date picker dialog for queue join (same UX as customer-home)
+- Fixed HIGH: agency-profile.tsx dead upload logo button - added file input + upload handler
+- Fixed HIGH: admin-dashboard.tsx nonsensical weekly growth metric → replaced with daily activity count
+- Fixed HIGH: admin-dashboard.tsx broken system health layout (1 item in 3-col grid) → expanded to 3 items
+- Fixed HIGH: agency-subscription.tsx hardcoded "Popular" → i18n t('popular')
+- Fixed MEDIUM: admin-agencies.tsx no delete confirmation → added AlertDialog with confirmation
+- Added i18n keys: popular, todayLabel, confirmDeleteAgency (ar/fr/en)
+- Removed duplicate Button import in customer-favorites.tsx
+- Fixed syntax error (extra closing div) in customer-favorites.tsx
+- UI Polish: Fixed skeleton-shimmer CSS (hsl() wrapper on oklch values), added Firefox scrollbar support, emerald text selection, animate-fade-in utility, removed duplicate styled-jsx in landing page
+- ESLint clean (0 errors)
+- Dev server running successfully
+
+Stage Summary:
+- **8 bugs fixed** (2 CRITICAL, 4 HIGH, 2 MEDIUM)
+- All 3 user-requested features verified working
+- UI polish: CSS fixes, scrollbar improvements, selection colors
+- 3 new i18n keys added across all 3 languages
+- App compiles and runs successfully
+
+### Fixed Issues This Session
+| # | Issue | Severity | Status |
+|---|-------|----------|--------|
+| 1 | agency-subscription missing agencyId in payment | CRITICAL | ✅ Fixed |
+| 2 | customer-favorites no date picker for queue join | CRITICAL | ✅ Fixed |
+| 3 | agency-profile dead upload logo button | HIGH | ✅ Fixed |
+| 4 | admin-dashboard nonsensical weekly growth | HIGH | ✅ Fixed |
+| 5 | admin-dashboard broken system health layout | HIGH | ✅ Fixed |
+| 6 | agency-subscription untranslated "Popular" | HIGH | ✅ Fixed |
+| 7 | admin-agencies no delete confirmation dialog | MEDIUM | ✅ Fixed |
+| 8 | skeleton-shimmer CSS broken in Tailwind v4 | MEDIUM | ✅ Fixed |
+
+### Remaining Known Issues
+- Login form role tabs are decorative (getRoleFromTab defined but unused)
+- Landing page stats are hardcoded
+- Agency dashboard sparkline charts use synthetic data
+- No pagination on admin list views
+- No notification polling (fetch once on mount)
+- No WebSocket real-time updates (mini-service exists but disconnected)
+- Web Push notifications not implemented
+- CCP/Bank receipt OCR not implemented

@@ -162,10 +162,8 @@ export function AdminDashboard() {
     },
   ];
 
-  // Calculate real weekly growth from daily reservations
-  const weeklyGrowth = stats?.dailyReservations && stats?.totalAgencies
-    ? Math.round((stats.dailyReservations / Math.max(stats.totalAgencies, 1)) * 10)
-    : 0;
+  // Show daily reservations as today's activity instead of misleading growth %
+  const dailyActivity = stats?.dailyReservations ?? 0;
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
@@ -175,7 +173,7 @@ export function AdminDashboard() {
           <h1 className="text-2xl font-bold text-foreground">{t('adminDashboard')}</h1>
           <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs font-medium px-2 py-0.5">
             <TrendingUp className="h-3 w-3 me-1" />
-            +{weeklyGrowth}% {t('weeklyGrowth')}
+            {dailyActivity} {t('todayLabel')}
           </Badge>
         </div>
         <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200">
@@ -221,7 +219,7 @@ export function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Active Users Today */}
               <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/10">
                 <div className="h-9 w-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
@@ -233,6 +231,32 @@ export function AdminDashboard() {
                     <span className="text-xs text-muted-foreground truncate">{t('activeUsersToday')}</span>
                   </div>
                   <p className="text-sm font-bold text-foreground">{stats?.totalUsers ?? stats?.dailyReservations ?? 0}</p>
+                </div>
+              </div>
+              {/* Total Agencies */}
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-teal-50 dark:bg-teal-900/10">
+                <div className="h-9 w-9 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
+                  <Building2 className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-teal-500 flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate">{t('totalAgencies')}</span>
+                  </div>
+                  <p className="text-sm font-bold text-foreground">{stats?.totalAgencies ?? 0}</p>
+                </div>
+              </div>
+              {/* Active Queues */}
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10">
+                <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                  <Users className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate">{t('activeQueues')}</span>
+                  </div>
+                  <p className="text-sm font-bold text-foreground">{stats?.activeQueues ?? 0}</p>
                 </div>
               </div>
             </div>

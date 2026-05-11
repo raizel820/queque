@@ -137,6 +137,10 @@
   background: oklch(0.7 0 0 / 30%);
 }
 
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.7 0 0 / 20%) transparent;
+}
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
 }
@@ -208,7 +212,7 @@ input:focus, textarea:focus, select:focus {
   100% { background-position: 200% 0; }
 }
 .skeleton-shimmer {
-  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.08) 50%, hsl(var(--muted)) 75%);
+  background: linear-gradient(90deg, var(--muted) 25%, oklch(0.7 0 0 / 0.06) 50%, var(--muted) 75%);
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s infinite;
 }
@@ -323,6 +327,23 @@ input:focus, textarea:focus, select:focus {
 
 .animate-count-up {
   animation: count-up 0.5s ease-out;
+}
+
+/* ─── Emerald-themed text selection ────────── */
+::selection {
+  background-color: oklch(0.7 0.14 162 / 0.25);
+}
+.dark ::selection {
+  background-color: oklch(0.7 0.14 162 / 0.35);
+}
+
+/* ─── Fade-in utility ───────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out;
 }
 
 /* ─── Mobile touch improvements ────────────── */

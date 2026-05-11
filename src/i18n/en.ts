@@ -485,6 +485,11 @@ const en: Record<TranslationKeys, string> = {
   pickDate: "Pick a date",
   reservedFor: "Reserved for",
   noDateSelected: "No date selected",
+
+  // ─── Misc Labels ────────────────────
+  popular: "Popular",
+  todayLabel: "reservations today",
+  confirmDeleteAgency: "Are you sure you want to delete this agency? This action cannot be undone.",
 };
 
 export default en;

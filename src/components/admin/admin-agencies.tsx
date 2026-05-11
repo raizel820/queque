@@ -16,6 +16,16 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -70,7 +80,8 @@ export function AdminAgencies() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  // Delete confirmation state
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
@@ -95,6 +106,16 @@ export function AdminAgencies() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setDeleteConfirmId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    await handleAction(deleteConfirmId, 'delete');
+    setDeleteConfirmId(null);
   };
 
   const handleAction = async (id: string, action: 'suspend' | 'activate' | 'delete') => {
@@ -290,7 +311,7 @@ export function AdminAgencies() {
                         size="sm"
                         variant="outline"
                         className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
-                        onClick={() => handleAction(agency.id, 'delete')}
+                        onClick={() => handleDeleteClick(agency.id)}
                         disabled={!!actionLoading}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -303,6 +324,32 @@ export function AdminAgencies() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => { if (!open) setDeleteConfirmId(null); }}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="h-5 w-5" />
+              {t('deleteAgency')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('confirmDeleteAgency')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+            <AlertDialogCancel className="w-full rounded-xl h-10">
+              {t('cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-10"
+            >
+              {t('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Create Agency Dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

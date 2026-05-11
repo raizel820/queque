@@ -70,6 +70,7 @@ export function AgencyProfile() {
   const [saving, setSaving] = useState(false);
   const [qrSvg, setQrSvg] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -247,13 +248,44 @@ export function AgencyProfile() {
               </div>
             </div>
             {editMode && (
-              <Button
-                size="sm"
-                className="absolute bottom-3 end-3 bg-white/20 text-white border-white/30 hover:bg-white/30 rounded-lg"
-              >
-                <Camera className="h-4 w-4 me-1.5" />
-                {t('uploadLogo')}
-              </Button>
+              <>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.svg,.webp"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error(t('fileTooLarge'));
+                      return;
+                    }
+                    const form = new FormData();
+                    form.append('file', file);
+                    try {
+                      const uploadRes = await fetch('/api/upload', { method: 'POST', body: form });
+                      if (uploadRes.ok) {
+                        const uploadData = await uploadRes.json();
+                        updateField('logoUrl', uploadData.url);
+                        toast.success(t('success'));
+                      } else {
+                        toast.error(t('error'));
+                      }
+                    } catch {
+                      toast.error(t('error'));
+                    }
+                  }}
+                  className="hidden"
+                />
+                <Button
+                  size="sm"
+                  className="absolute bottom-3 end-3 bg-white/20 text-white border-white/30 hover:bg-white/30 rounded-lg"
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  <Camera className="h-4 w-4 me-1.5" />
+                  {t('uploadLogo')}
+                </Button>
+              </>
             )}
           </div>
 

@@ -135,6 +135,9 @@ export function AgencySubscription() {
       payForm.append('plan', selectedPlan);
       payForm.append('method', paymentMethod);
       payForm.append('receiptUrl', receiptUrl);
+      if (user?.agencyId) {
+        payForm.append('agencyId', user.agencyId);
+      }
 
       const res = await fetch('/api/agency/subscription/pay', {
         method: 'POST',
@@ -276,7 +279,7 @@ export function AgencySubscription() {
                 <div className="bg-gradient-to-r from-amber-400 to-amber-500 px-3 py-1 text-center">
                   <span className="text-xs font-semibold text-white flex items-center justify-center gap-1">
                     <Star className="h-3 w-3" />
-                    Popular
+                    {t('popular')}
                   </span>
                 </div>
               )}
