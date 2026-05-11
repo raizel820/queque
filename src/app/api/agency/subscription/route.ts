@@ -1,9 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const agency = await db.agency.findFirst({ where: { isActive: true } });
+    const agencyId = req.nextUrl.searchParams.get('agencyId');
+
+    let agency;
+    if (agencyId) {
+      agency = await db.agency.findUnique({ where: { id: agencyId } });
+    } else {
+      agency = await db.agency.findFirst({ where: { isActive: true } });
+    }
+
     if (!agency) return NextResponse.json({ currentPlan: 'BASIC', status: 'INACTIVE' });
 
     const transactions = await db.transaction.findMany({

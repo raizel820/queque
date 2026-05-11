@@ -3,17 +3,33 @@ import { db } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
-    // For MVP, return the first active agency's settings
-    const agency = await db.agency.findFirst({
-      where: { isActive: true },
-      include: {
-        services: {
-          where: { isActive: true },
-          select: { id: true, name: true, nameAr: true, nameFr: true, prefix: true },
+    const agencyId = req.nextUrl.searchParams.get('agencyId');
+
+    let agency;
+    if (agencyId) {
+      agency = await db.agency.findUnique({
+        where: { id: agencyId },
+        include: {
+          services: {
+            where: { isActive: true },
+            select: { id: true, name: true, nameAr: true, nameFr: true, prefix: true },
+          },
+          queueSettings: true,
         },
-        queueSettings: true,
-      },
-    });
+      });
+    } else {
+      // Fallback: first active agency
+      agency = await db.agency.findFirst({
+        where: { isActive: true },
+        include: {
+          services: {
+            where: { isActive: true },
+            select: { id: true, name: true, nameAr: true, nameFr: true, prefix: true },
+          },
+          queueSettings: true,
+        },
+      });
+    }
 
     if (!agency) {
       return NextResponse.json({
@@ -43,16 +59,20 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { avgServiceTime, maxReservations, isQueueOpen, workingHoursStart, workingHoursEnd } = body;
+    const { agencyId, avgServiceTime, maxReservations, isQueueOpen, workingHoursStart, workingHoursEnd } = body;
 
-    // For MVP, update the first active agency
-    const agency = await db.agency.findFirst({ where: { isActive: true } });
-    if (!agency) {
-      return NextResponse.json({ error: 'No active agency found' }, { status: 404 });
+    let targetAgency;
+    if (agencyId) {
+      targetAgency = await db.agency.findUnique({ where: { id: agencyId } });
+    } else {
+      targetAgency = await db.agency.findFirst({ where: { isActive: true } });
+    }
+    if (!targetAgency) {
+      return NextResponse.json({ error: 'No agency found' }, { status: 404 });
     }
 
     await db.agency.update({
-      where: { id: agency.id },
+      where: { id: targetAgency.id },
       data: {
         ...(avgServiceTime !== undefined && { averageServiceTime: avgServiceTime }),
         ...(maxReservations !== undefined && { maxActiveReservations: maxReservations }),

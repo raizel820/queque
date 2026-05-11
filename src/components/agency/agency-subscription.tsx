@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,6 +41,7 @@ interface SubscriptionData {
 }
 
 export function AgencySubscription() {
+  const { user } = useAppStore();
   const { t } = useLanguage();
   const [data, setData] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,8 +59,9 @@ export function AgencySubscription() {
   const fetchSubscription = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/agency/subscription');
-      if (res.ok) {
+    const params = user?.agencyId ? `?agencyId=${user.agencyId}` : '';
+    const res = await fetch(`/api/agency/subscription${params}`);
+    if (res.ok) {
         const data = await res.json();
         setData(data);
       }
@@ -322,7 +325,7 @@ export function AgencySubscription() {
                 <Label htmlFor="ccp" className="text-sm">{t('ccpTransfer')}</Label>
               </div>
               <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                <RadioGroupItem value="BANK" id="bank" />
+                <RadioGroupItem value="BANK_TRANSFER" id="bank" />
                 <Label htmlFor="bank" className="text-sm">{t('bankTransfer')}</Label>
               </div>
             </RadioGroup>

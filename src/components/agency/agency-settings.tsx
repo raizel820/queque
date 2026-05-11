@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,6 +58,7 @@ interface AgencySettingsData {
 }
 
 export function AgencySettings() {
+  const { user } = useAppStore();
   const { t } = useLanguage();
   const [settings, setSettings] = useState<AgencySettingsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,7 +79,8 @@ export function AgencySettings() {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/agency/settings');
+      const params = user?.agencyId ? `?agencyId=${user.agencyId}` : '';
+      const res = await fetch(`/api/agency/settings${params}`);
       if (res.ok) {
         const data = await res.json();
         setSettings(data);
@@ -95,7 +98,7 @@ export function AgencySettings() {
       const res = await fetch('/api/agency/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify({ ...settings, agencyId: user?.agencyId }),
       });
       if (res.ok) {
         toast.success(t('success'));

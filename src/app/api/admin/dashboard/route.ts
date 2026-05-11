@@ -13,6 +13,7 @@ export async function GET() {
       dailyReservations,
       pendingTransactions,
       completedTransactions,
+      totalUsers,
     ] = await Promise.all([
       db.agency.count({ where: { isActive: true } }),
       db.agency.count({ where: { isActive: true, isQueueOpen: true } }),
@@ -24,6 +25,7 @@ export async function GET() {
         where: { status: 'APPROVED' },
         _sum: { amount: true },
       }),
+      db.user.count({ where: { isActive: true } }),
     ]);
 
     // Get recent activity
@@ -44,6 +46,7 @@ export async function GET() {
         dailyReservations,
         totalRevenue,
         pendingTransactions,
+        totalUsers,
       },
       recentActivity: recentActivity.map(log => ({
         id: log.id,

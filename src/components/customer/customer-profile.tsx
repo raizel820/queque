@@ -44,7 +44,7 @@ export function CustomerProfile() {
   const { t, lang } = useLanguage();
   const { theme, setTheme } = useTheme();
 
-  const [phoneNumber, setPhoneNumber] = useState(user?.username === 'demo' ? '' : '');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
   const [savingPhone, setSavingPhone] = useState(false);
 
   // Notification preferences state
@@ -64,8 +64,10 @@ export function CustomerProfile() {
     }
   };
 
-  // Fetch notification preferences
-  const fetchNotifPrefs = async () => {
+  // Fetch user profile data (notification prefs, phone, SMS count)
+  const [smsCount, setSmsCount] = useState(user?.freeSmsCount ?? 10);
+
+  const fetchProfile = async () => {
     if (!user?.id) return;
     setNotifLoading(true);
     try {
@@ -77,6 +79,12 @@ export function CustomerProfile() {
             ? JSON.parse(data.notificationPreferences)
             : data.notificationPreferences);
         }
+        if (data.phoneNumber) {
+          setPhoneNumber(data.phoneNumber);
+        }
+        if (data.freeSmsCount !== undefined) {
+          setSmsCount(data.freeSmsCount);
+        }
       }
     } catch {
       // silent
@@ -86,7 +94,7 @@ export function CustomerProfile() {
   };
 
   useEffect(() => {
-    fetchNotifPrefs();
+    fetchProfile();
   }, []);
 
   const saveNotifPrefs = async () => {
@@ -115,10 +123,12 @@ export function CustomerProfile() {
       const res = await fetch('/api/user/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: phoneNumber.trim() }),
+        body: JSON.stringify({ userId: user.id, phoneNumber: phoneNumber.trim() }),
       });
       if (res.ok) {
         toast.success(t('success'));
+        // Update local state
+        if (user) setUser({ ...user, phoneNumber: phoneNumber.trim() });
       }
     } catch {
       toast.error(t('error'));
@@ -142,8 +152,8 @@ export function CustomerProfile() {
     return parts[0].charAt(0).toUpperCase();
   };
 
-  const smsRemaining = 10;
-  const smsMax = 50;
+  const smsRemaining = smsCount;
+  const smsMax = Math.max(smsCount, 50);
   const smsPercent = Math.min(100, (smsRemaining / smsMax) * 100);
 
   return (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,6 +62,7 @@ const categoryOptions: { value: string; key: TranslationKeys }[] = [
 ];
 
 export function AgencyProfile() {
+  const { user } = useAppStore();
   const { t, lang } = useLanguage();
   const [profile, setProfile] = useState<AgencyInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,8 +78,9 @@ export function AgencyProfile() {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/agency/profile');
-      if (res.ok) {
+    const params = user?.agencyId ? `?agencyId=${user.agencyId}` : '';
+    const res = await fetch(`/api/agency/profile${params}`);
+    if (res.ok) {
         const data = await res.json();
         setProfile(data);
       }
@@ -116,7 +119,7 @@ export function AgencyProfile() {
       const res = await fetch('/api/agency/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile),
+        body: JSON.stringify({ ...profile, agencyId: user?.agencyId }),
       });
       if (res.ok) {
         toast.success(t('success'));
