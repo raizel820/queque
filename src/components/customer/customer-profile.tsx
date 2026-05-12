@@ -367,7 +367,7 @@ export function CustomerProfile() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
       >
-        <Card className="border-0 shadow-sm mb-4 overflow-hidden bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-emerald-600/5 backdrop-blur-xl dark:from-emerald-900/20 dark:via-teal-900/20 dark:to-emerald-800/10">
+        <Card className="border-0 shadow-sm mb-4 overflow-hidden bg-gradient-to-br from-emerald-500/10 via-teal-500/10 to-emerald-600/5 backdrop-blur-xl dark:from-emerald-900/20 dark:via-teal-900/20 dark:to-emerald-800/10 border border-emerald-200/30 dark:border-emerald-700/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-emerald-600" />
@@ -469,6 +469,9 @@ export function CustomerProfile() {
         </Card>
       </motion.div>
 
+      {/* Gradient divider before notifications */}
+      <hr className="gradient-divider my-5" />
+
       {/* Notification Preferences - Visual Toggle Cards */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -515,7 +518,7 @@ export function CustomerProfile() {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => setNotifPrefs((prev) => ({ ...prev, [item.key]: !isEnabled }))}
-                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-300 text-start ${
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-300 text-start toggle-item-hover ${
                       isEnabled
                         ? styles.active
                         : 'border-transparent bg-gray-50 dark:bg-gray-800/30 opacity-70'
@@ -813,7 +816,8 @@ export function CustomerProfile() {
         </Card>
       </motion.div>
 
-      <Separator className="my-5" />
+      {/* Gradient divider before logout */}
+      <hr className="gradient-divider my-5" />
 
       {/* Logout */}
       <motion.div
@@ -840,7 +844,7 @@ export function CustomerProfile() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <div className="relative p-[2px] rounded-2xl bg-gradient-to-r from-red-500 via-rose-500 to-red-600 shadow-lg shadow-red-500/10">
+        <div className="relative p-[2px] rounded-2xl bg-gradient-to-r from-red-500 via-rose-500 to-red-600 shadow-lg shadow-red-500/10 danger-gradient-border">
           <div className="bg-white dark:bg-gray-900 rounded-[14px] p-4">
             <div className="flex items-center gap-3 mb-3">
               <div className="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">

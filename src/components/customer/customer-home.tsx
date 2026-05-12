@@ -604,7 +604,10 @@ export function CustomerHome() {
   }
 
   return (
-    <div className="px-4 py-4 pb-24">
+    <div className="px-4 py-4 pb-24 relative">
+      {/* Animated gradient accent bar at top */}
+      <div className="absolute top-0 start-0 end-0 h-[3px] gradient-flow-bar rounded-full" />
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -767,7 +770,7 @@ export function CustomerHome() {
           value={agencyCode}
           onChange={(e) => setAgencyCode(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleJoinByCode()}
-          className="h-11 text-sm rounded-xl"
+          className="h-11 text-sm rounded-xl input-emerald-glow"
           dir="ltr"
         />
         <Button
@@ -842,8 +845,8 @@ export function CustomerHome() {
               onClick={() => setSelectedCategory(cat.value)}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all min-h-9 active:scale-95 ${
                 selectedCategory === cat.value
-                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/25'
-                  : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/25'
+                  : 'bg-white/60 dark:bg-gray-800/60 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
               }`}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -855,11 +858,10 @@ export function CustomerHome() {
 
       {/* Agency Cards Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade-up">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="relative overflow-hidden rounded-2xl">
-              <Skeleton className="h-40 rounded-2xl skeleton-shimmer" />
-              <div className="absolute inset-0 shimmer rounded-2xl" />
+              <Skeleton className="h-40 rounded-2xl skeleton-shimmer-enhanced" />
             </div>
           ))}
         </div>
@@ -873,10 +875,10 @@ export function CustomerHome() {
           {filteredAgencies.map((agency, idx) => (
             <motion.div
               key={agency.id}
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: idx * 0.05 }}
-              whileHover={{ y: -4 }}
+              transition={{ duration: 0.35, delay: idx * 0.07 }}
+              whileHover={{ y: -6, scale: 1.01 }}
               className="group"
             >
               <Card

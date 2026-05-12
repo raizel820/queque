@@ -271,7 +271,15 @@ const ar = {
   // ─── Notifications Center ─────────────────
   notifications: "الإشعارات",
   noNotifications: "لا توجد إشعارات",
+  noNotificationsDesc: "ستظهر هنا الإشعارات المتعلقة بحالة طابورك",
   markAllRead: "تحديد الكل كمقروء",
+  weak: "ضعيف",
+  fair: "مقبول",
+  good: "جيد",
+  strong: "قوي",
+  veryStrong: "قوي جداً",
+  usernameMinLength: "يجب أن يتكون اسم المستخدم من 3 أحرف على الأقل",
+  landingLocation: "المسيلة",
   
   // ─── Audit Logs ────────────────────────────
   auditLogsPage: "سجل المراجعة",
@@ -717,6 +725,47 @@ const ar = {
   averageRating: 'متوسط التقييم',
   totalRatings: 'إجمالي التقييمات',
   ratingDistribution: 'توزيع التقييمات',
+
+  // ─── Task 18-b: Staff Management ──────
+  staffManagement: 'إدارة الموظفين',
+  addStaff: 'إضافة موظف',
+  staffList: 'قائمة الموظفين',
+  staffUsername: 'اسم المستخدم',
+  staffRole: 'الدور',
+  staffJoinDate: 'تاريخ الانضمام',
+  removeStaff: 'إزالة',
+  staffAdded: 'تم إضافة الموظف',
+  staffRemoved: 'تم إزالة الموظف',
+  userNotFound: 'المستخدم غير موجود',
+  staffAlreadyExists: 'الموظف موجود بالفعل في هذه المؤسسة',
+  enterUsername: 'أدخل اسم المستخدم',
+
+  // ─── Task 18-b: Queue Share ──────
+  queueShareText: 'أنا #{position} في الطابور عند {agency} - {service}. التذكرة: {number}',
+
+  // ─── Task 18-b: Global Announcements ──────
+  globalAnnouncements: 'إعلانات المنصة',
+  createAnnouncement: 'إنشاء إعلان',
+  announcementCreatedSuccess: 'تم إنشاء الإعلان بنجاح',
+  announcementDeletedSuccess: 'تم حذف الإعلان بنجاح',
+  announcementMessagePlaceholder: 'اكتب رسالة الإعلان...',
+  announcementTypeInfo: 'معلومة',
+  announcementTypeWarning: 'تحذير',
+  announcementTypeUrgent: 'عاجل',
+
+  // ─── Task 18-b: Feedback ──────
+  commentFeedback: 'كيف كانت تجربتك؟',
+  feedbackComment: 'أضف تعليقاً (اختياري)',
+  submitFeedback: 'إرسال التقييم',
+  thankYouFeedback: 'شكراً لمشاركتك تجربتك!',
+  feedbackSubmitted: 'تم إرسال التقييم بنجاح',
+
+  // ─── Task 18-b: Performance Metrics ──────
+  performanceMetrics: 'مقاييس الأداء',
+  avgRatingStat: 'متوسط التقييم',
+  totalRatingsStat: 'إجمالي التقييمات',
+  completionRateStat: 'معدل الإنجاز',
+  noShowRateStat: 'معدل عدم الحضور',
 };
 
 export default ar;

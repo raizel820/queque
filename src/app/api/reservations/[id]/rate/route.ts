@@ -8,7 +8,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { rating } = body;
+    const { rating, notes } = body;
 
     if (!rating || rating < 1 || rating > 5) {
       return NextResponse.json({ error: 'Rating must be between 1 and 5' }, { status: 400 });
@@ -31,10 +31,13 @@ export async function POST(
       return NextResponse.json({ error: 'Reservation already rated' }, { status: 400 });
     }
 
-    // Update the rating
+    // Update the rating and optional notes
     const updated = await db.reservation.update({
       where: { id },
-      data: { rating },
+      data: {
+        rating,
+        ...(notes ? { notes: notes.trim() } : {}),
+      },
     });
 
     return NextResponse.json({ success: true, rating: updated.rating });

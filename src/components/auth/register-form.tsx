@@ -36,11 +36,11 @@ function getPasswordStrength(password: string): { score: number; label: string; 
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
-  if (score <= 1) return { score: 20, label: 'Weak', color: 'bg-red-500', bgColor: 'bg-red-100 dark:bg-red-900/30' };
-  if (score <= 2) return { score: 40, label: 'Fair', color: 'bg-amber-500', bgColor: 'bg-amber-100 dark:bg-amber-900/30' };
-  if (score <= 3) return { score: 60, label: 'Good', color: 'bg-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' };
-  if (score <= 4) return { score: 80, label: 'Strong', color: 'bg-emerald-500', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' };
-  return { score: 100, label: 'Very Strong', color: 'bg-emerald-600', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' };
+  if (score <= 1) return { score: 20, labelKey: 'weak' as const, color: 'bg-red-500', bgColor: 'bg-red-100 dark:bg-red-900/30' };
+  if (score <= 2) return { score: 40, labelKey: 'fair' as const, color: 'bg-amber-500', bgColor: 'bg-amber-100 dark:bg-amber-900/30' };
+  if (score <= 3) return { score: 60, labelKey: 'good' as const, color: 'bg-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' };
+  if (score <= 4) return { score: 80, labelKey: 'strong' as const, color: 'bg-emerald-500', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' };
+  return { score: 100, labelKey: 'veryStrong' as const, color: 'bg-emerald-600', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' };
 }
 
 export function RegisterForm() {
@@ -71,7 +71,7 @@ export function RegisterForm() {
     }
 
     if (username.trim().length < 3) {
-      toast.error(t('username') + ' - min 3');
+      toast.error(t('usernameMinLength'));
       return;
     }
 
@@ -138,7 +138,7 @@ export function RegisterForm() {
   const goToNext = () => {
     if (step === 1) {
       if (!username.trim() || username.trim().length < 3) {
-        toast.error(t('username') + ' - min 3');
+        toast.error(t('usernameMinLength'));
         return;
       }
       if (!password.trim() || password.length < 6) {
@@ -453,7 +453,7 @@ export function RegisterForm() {
                                   passwordStrength.score <= 60 ? 'text-amber-500' :
                                   'text-emerald-500'
                                 }`}>
-                                  {passwordStrength.label}
+                                  {t(passwordStrength.labelKey)}
                                 </span>
                               </div>
                               <div className="flex gap-1">

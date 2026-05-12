@@ -24,6 +24,11 @@ export async function GET(req: NextRequest) {
       noShowCount,
       cancelledCount,
       queueSettings,
+      ratingAgg,
+      totalRated,
+      totalAllTime,
+      completedAllTime,
+      noShowAllTime,
     ] = await Promise.all([
       db.reservation.count({
         where: { agencyId, joinedAt: { gte: todayStart, lte: todayEnd } },
@@ -41,6 +46,19 @@ export async function GET(req: NextRequest) {
         where: { agencyId, status: { in: ['CANCELLED'] }, cancelledAt: { gte: todayStart, lte: todayEnd } },
       }),
       db.queueSettings.findFirst({ where: { agencyId } }),
+      db.reservation.aggregate({
+        where: { agencyId, rating: { not: null } },
+        _avg: { rating: true },
+        _count: { rating: true },
+      }),
+      // total rated today
+      db.reservation.count({
+        where: { agencyId, rating: { not: null }, completedAt: { gte: todayStart, lte: todayEnd } },
+      }),
+      // all-time totals
+      db.reservation.count({ where: { agencyId } }),
+      db.reservation.count({ where: { agencyId, status: 'COMPLETED' } }),
+      db.reservation.count({ where: { agencyId, status: 'NO_SHOW' } }),
     ]);
 
     // Calculate peak hour today
@@ -71,6 +89,12 @@ export async function GET(req: NextRequest) {
       ? `${queueSettings.currentServingNumber}`
       : '—';
 
+    // Performance metrics
+    const avgRating = ratingAgg._avg.rating ? Math.round(ratingAgg._avg.rating * 10) / 10 : 0;
+    const totalRatings = ratingAgg._count.rating;
+    const completionRate = totalAllTime > 0 ? Math.round((completedAllTime / totalAllTime) * 100) : 0;
+    const noShowRate = totalAllTime > 0 ? Math.round((noShowAllTime / totalAllTime) * 100) : 0;
+
     return NextResponse.json({
       todayReservations,
       currentlyWaiting: waitingCount,
@@ -81,6 +105,11 @@ export async function GET(req: NextRequest) {
       currentQueueNumber,
       isPaused: queueSettings?.isPaused ?? false,
       peakHour,
+      // Performance metrics
+      avgRating,
+      totalRatings,
+      completionRate,
+      noShowRate,
     });
   } catch (error) {
     console.error('Agency stats error:', error);

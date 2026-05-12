@@ -92,7 +92,7 @@ export function LandingPage() {
   const stats = [
     { icon: Building2, value: landingStats?.agencies ?? 10, suffix: '+', labelKey: 'landingStatAgencies' as const },
     { icon: Users, value: landingStats?.users ?? 1000, suffix: '+', labelKey: 'landingStatUsers' as const },
-    { icon: MapPin, value: 1, suffix: '', displayValue: "M'Sila", labelKey: 'landingStatLocation' as const },
+    { icon: MapPin, value: 1, suffix: '', displayValue: t('landingLocation'), labelKey: 'landingStatLocation' as const },
   ];
 
   const testimonials = [
@@ -110,7 +110,7 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Animated gradient pattern background */}
+      {/* Animated gradient mesh background */}
       <div className="absolute inset-0 -z-10">
         <motion.div
           animate={{ backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'] }}
@@ -124,10 +124,12 @@ export function LandingPage() {
             backgroundSize: '32px 32px',
           }}
         />
+        {/* Mesh gradient blobs */}
         <motion.div
-          animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
+          animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
           transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute top-0 start-1/4 w-96 h-96 bg-emerald-200/40 dark:bg-emerald-800/15 rounded-full blur-3xl"
+          style={{ animation: 'mesh-drift-1 20s ease-in-out infinite' }}
         />
         <motion.div
           animate={{ x: [0, -20, 0], y: [0, 30, 0] }}
@@ -141,28 +143,41 @@ export function LandingPage() {
         />
       </div>
 
-      {/* Floating decorative elements */}
+      {/* Floating glass orbs with glass-morphism */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Large glass orbs with slow drift */}
         <motion.div
-          animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
-          transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute top-[15%] start-[8%] w-3 h-3 rounded-full bg-emerald-300/40 dark:bg-emerald-600/20"
+          animate={{ y: [0, -25, 0], x: [0, 15, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-[12%] start-[5%] w-20 h-20 rounded-full glass-orb shadow-lg"
         />
         <motion.div
-          animate={{ y: [0, 15, 0], x: [0, -8, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-          className="absolute top-[25%] end-[12%] w-4 h-4 rounded-full bg-teal-300/30 dark:bg-teal-600/15"
+          animate={{ y: [0, 20, 0], x: [0, -12, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          className="absolute top-[22%] end-[10%] w-16 h-16 rounded-full glass-orb shadow-lg"
         />
+        <motion.div
+          animate={{ y: [0, -15, 0], x: [0, 8, 0] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+          className="absolute top-[55%] end-[6%] w-14 h-14 rounded-full glass-orb shadow-lg"
+        />
+        <motion.div
+          animate={{ y: [0, 18, 0], x: [0, -10, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          className="absolute top-[70%] start-[12%] w-12 h-12 rounded-full glass-orb shadow-lg"
+        />
+        {/* Small decorative dots */}
         <motion.div
           animate={{ y: [0, -12, 0] }}
           transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
           className="absolute top-[40%] start-[15%] w-2 h-2 rounded-full bg-emerald-400/30 dark:bg-emerald-500/20"
         />
         <motion.div
-          animate={{ y: [0, 18, 0], x: [0, 5, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-          className="absolute top-[60%] end-[8%] w-5 h-5 rounded-full bg-teal-200/30 dark:bg-teal-700/15"
+          animate={{ y: [0, 10, 0], x: [0, -6, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+          className="absolute top-[35%] start-[30%] w-1.5 h-1.5 rounded-full bg-teal-400/25 dark:bg-teal-500/10"
         />
+        {/* Floating diamonds */}
         <motion.div
           animate={{ y: [0, -10, 0], rotate: [0, 180, 360] }}
           transition={{ duration: 12, repeat: Infinity, ease: 'linear', delay: 3 }}
@@ -172,16 +187,6 @@ export function LandingPage() {
           animate={{ y: [0, 14, 0], rotate: [0, -180, -360] }}
           transition={{ duration: 10, repeat: Infinity, ease: 'linear', delay: 1.5 }}
           className="absolute top-[50%] start-[5%] w-4 h-4 rounded-md border border-teal-300/25 dark:border-teal-700/15 rotate-12"
-        />
-        <motion.div
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 2.5 }}
-          className="absolute top-[70%] start-[20%] w-2.5 h-2.5 rounded-full bg-emerald-200/40 dark:bg-emerald-600/15"
-        />
-        <motion.div
-          animate={{ y: [0, 12, 0], x: [0, -6, 0] }}
-          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-          className="absolute top-[35%] start-[30%] w-1.5 h-1.5 rounded-full bg-teal-400/25 dark:bg-teal-500/10"
         />
       </div>
 
@@ -262,7 +267,7 @@ export function LandingPage() {
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-10 py-7 text-lg rounded-2xl shadow-xl shadow-emerald-500/30 min-h-14 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300"
+                className="cta-glow bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-10 py-7 text-lg rounded-2xl shadow-xl shadow-emerald-500/30 min-h-14 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300"
                 onClick={() => setView('register')}
               >
                 {t('getStarted')}
@@ -278,7 +283,7 @@ export function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="font-bold px-10 py-7 text-lg rounded-2xl min-h-14 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all duration-300 border-2"
+                className="cta-glow font-bold px-10 py-7 text-lg rounded-2xl min-h-14 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all duration-300 border-2 hover:border-emerald-300 dark:hover:border-emerald-700"
                 onClick={() => setView('login')}
               >
                 {t('login')}
@@ -300,11 +305,11 @@ export function LandingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.3 + idx * 0.1 }}
-              whileHover={{ scale: 1.03, y: -4 }}
+              whileHover={{ scale: 1.03, y: -6 }}
               className="cursor-default"
             >
               <div className="relative rounded-2xl p-[1.5px] bg-gradient-to-br from-emerald-200/50 via-transparent to-teal-200/50 dark:from-emerald-700/30 dark:via-transparent dark:to-teal-700/30 group-hover:from-emerald-300/80 dark:group-hover:from-emerald-600/50 group-hover:to-teal-300/80 dark:group-hover:to-teal-600/50 transition-all duration-300">
-                <Card className="h-full border-0 shadow-sm group-hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-900 dark:to-gray-950 overflow-hidden rounded-[13px]">
+                <Card className="h-full border-0 shadow-sm group-hover:shadow-2xl group-hover:shadow-emerald-500/10 transition-all duration-300 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-900 dark:to-gray-950 overflow-hidden rounded-[13px]">
                   <div className="absolute top-0 start-0 w-full h-[2px] bg-gradient-to-r from-transparent via-emerald-400/0 to-transparent group-hover:via-emerald-400/60 transition-all duration-500" />
                   <CardContent className="p-5 flex items-start gap-4">
                     <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center group-hover:from-emerald-200 group-hover:to-teal-200 dark:group-hover:from-emerald-800/50 dark:group-hover:to-teal-800/50 group-hover:shadow-lg group-hover:shadow-emerald-500/10 transition-all duration-300">
@@ -397,18 +402,18 @@ export function LandingPage() {
                 transition={{ duration: 0.4, delay: 0.5 + idx * 0.15 }}
                 className="flex-1 flex flex-col items-center text-center relative"
               >
-                {/* Dotted connecting line between steps (desktop) */}
+                {/* Gradient step connector line (desktop) */}
                 {idx < steps.length - 1 && (
                   <div className="hidden md:block absolute top-8 start-[calc(50%+2rem)] end-[calc(-50%+2rem)]">
-                    <div className="w-full border-t-2 border-dashed border-emerald-300 dark:border-emerald-700" />
-                    <ArrowRight className="absolute -top-3 end-[-8px] h-5 w-5 text-emerald-400 dark:text-emerald-600 rotate-[-45deg]" />
+                    <div className="w-full h-[2px] step-connector rounded-full" />
+                    <div className="absolute -top-[3px] end-[-6px] h-2 w-2 rounded-full bg-teal-400 dark:bg-teal-500 shadow-sm shadow-teal-400/50" />
                   </div>
                 )}
-                {/* Dotted connecting line between steps (mobile) */}
+                {/* Gradient step connector line (mobile) */}
                 {idx < steps.length - 1 && (
                   <div className="md:hidden flex flex-col items-center mt-4 mb-2">
-                    <div className="w-0.5 h-8 border-s-2 border-dashed border-emerald-300 dark:border-emerald-700" />
-                    <ArrowRight className="h-4 w-4 text-emerald-400 dark:text-emerald-600 rotate-90 -mt-2" />
+                    <div className="w-[2px] h-8 bg-gradient-to-b from-emerald-400/50 to-teal-400/20 dark:from-emerald-600/30 dark:to-teal-600/10 rounded-full" />
+                    <div className="h-2 w-2 rounded-full bg-teal-400 dark:bg-teal-500 -mt-1 shadow-sm shadow-teal-400/50" />
                   </div>
                 )}
 
@@ -432,8 +437,10 @@ export function LandingPage() {
         </motion.div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* Testimonials Section with gradient overlay */}
       <section className="w-full px-4 py-16 relative z-10">
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-emerald-50/30 to-emerald-50/50 dark:from-transparent dark:via-emerald-950/10 dark:to-emerald-950/20" />
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

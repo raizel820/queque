@@ -184,7 +184,7 @@ export function CustomerNotifications() {
           </motion.div>
           <h2 className="text-lg font-semibold text-foreground mb-2">{t('noNotifications')}</h2>
           <p className="text-sm text-muted-foreground text-center max-w-xs">
-            {t('notifTurnApproaching')}
+            {t('noNotificationsDesc')}
           </p>
         </div>
       ) : (

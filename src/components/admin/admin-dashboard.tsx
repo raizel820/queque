@@ -5,6 +5,7 @@ import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -25,10 +26,11 @@ import {
   BarChart3,
   ClipboardList,
   Megaphone,
- Pin,
- X,
- Info,
- AlertTriangle,
+  Pin,
+  Trash2,
+   X,
+  Info,
+  AlertTriangle,
   Download,
   Loader2,
 } from 'lucide-react';
@@ -83,17 +85,63 @@ function ActivityIcon({ action }: { action: string }) {
 }
 
 export function AdminDashboard() {
-  const { setView } = useAppStore();
+  const { setView, user } = useAppStore();
   const { t, lang } = useLanguage();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState<Set<string>>(new Set());
   const [exportLoading, setExportLoading] = useState<string | null>(null);
+  const [realAnnouncements, setRealAnnouncements] = useState<Array<{ id: string; message: string; type: string; createdAt: string }>>([]);
+  const [newAnnMsg, setNewAnnMsg] = useState('');
+  const [newAnnType, setNewAnnType] = useState<'INFO' | 'WARNING' | 'URGENT'>('INFO');
+  const [annLoading, setAnnLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+    fetchRealAnnouncements();
+ }, []);
+
+  const fetchRealAnnouncements = async () => {
+    try {
+      const res = await fetch('/api/admin/announcements');
+      if (res.ok) {
+        const data = await res.json();
+        setRealAnnouncements(data.announcements ?? []);
+      }
+    } catch { toast.error(t('error')); }
+  };
+
+  const handleCreateAnnouncement = async () => {
+    if (!newAnnMsg.trim() || !user?.id) return;
+    setAnnLoading(true);
+    try {
+      const res = await fetch('/api/admin/announcements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: newAnnMsg.trim(), type: newAnnType, createdBy: user.id }),
+      });
+      if (res.ok) {
+        toast.success(t('announcementCreatedSuccess'));
+        setNewAnnMsg('');
+        fetchRealAnnouncements();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch { toast.error(t('error')); }
+    finally { setAnnLoading(false); }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/announcements?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success(t('announcementDeletedSuccess'));
+        fetchRealAnnouncements();
+      } else { toast.error(t('error')); }
+    } catch { toast.error(t('error')); }
+  };
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -216,151 +264,194 @@ export function AdminDashboard() {
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
-      {/* Title with Weekly Growth Badge */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-foreground">{t('adminDashboard')}</h1>
-          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs font-medium px-2 py-0.5">
-            <TrendingUp className="h-3 w-3 me-1" />
-            {dailyActivity} {t('todayLabel')}
-          </Badge>
+      {/* Premium header gradient banner with branding */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="relative rounded-2xl overflow-hidden mb-2"
+      >
+        <div className="premium-header-gradient p-5 md:p-6 text-white">
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10" />
+            <div className="absolute -bottom-8 -start-8 w-32 h-32 rounded-full bg-white/5" />
+          </div>
+          <div className="relative flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <ShieldCheck className="h-5 w-5 text-white" />
+                </div>
+                {t('adminDashboard')}
+              </h1>
+              <p className="text-sm text-emerald-100 mt-1 ms-[52px]">QueueWise Platform Management</p>
+            </div>
+            <div className="hidden sm:flex items-center gap-2">
+              <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm text-xs px-3 py-1">
+                <TrendingUp className="h-3 w-3 me-1" />
+                {dailyActivity} {t('todayLabel')}
+              </Badge>
+              <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm text-xs px-2 py-1">
+                <ShieldCheck className="h-3 w-3 me-1" />
+                {t('superAdmin')}
+              </Badge>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleAdminExport('agencies')}
-            disabled={exportLoading === 'agencies'}
-            className="h-8 px-3 rounded-lg gap-1.5 text-xs"
-          >
-            {exportLoading === 'agencies' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">{t('exportAgencies')}</span>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleAdminExport('users')}
-            disabled={exportLoading === 'users'}
-            className="h-8 px-3 rounded-lg gap-1.5 text-xs"
-          >
-            {exportLoading === 'users' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">{t('exportUsers')}</span>
-          </Button>
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200">
-            <ShieldCheck className="h-3 w-3 me-1" />
-            {t('superAdmin')}
-          </Badge>
-        </div>
+      </motion.div>
+
+      {/* Mobile badges */}
+      <div className="flex sm:hidden items-center gap-2 mb-1">
+        <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs font-medium px-2 py-0.5">
+          <TrendingUp className="h-3 w-3 me-1" />
+          {dailyActivity} {t('todayLabel')}
+        </Badge>
+        <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200">
+          <ShieldCheck className="h-3 w-3 me-1" />
+          {t('superAdmin')}
+        </Badge>
       </div>
 
-      {/* System Announcements Banner */}
+      {/* Export buttons */}
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleAdminExport('agencies')}
+          disabled={exportLoading === 'agencies'}
+          className="h-8 px-3 rounded-lg gap-1.5 text-xs"
+        >
+          {exportLoading === 'agencies' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+          <span className="hidden sm:inline">{t('exportAgencies')}</span>
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleAdminExport('users')}
+          disabled={exportLoading === 'users'}
+          className="h-8 px-3 rounded-lg gap-1.5 text-xs"
+        >
+          {exportLoading === 'users' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+          <span className="hidden sm:inline">{t('exportUsers')}</span>
+        </Button>
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
- >
-        <div className="flex items-center gap-2 mb-4">
-          <Megaphone className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <h2 className="text-sm font-semibold text-foreground">{t('systemAnnouncements')}</h2>
+      >
+        <>
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <Megaphone className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <h2 className="text-sm font-semibold text-foreground">{t('systemAnnouncements')}</h2>
+          </div>
         </div>
+        {/* Create Announcement Form */}
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 mb-4">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Info className="h-4 w-4 text-emerald-600" />
+              <h3 className="text-sm font-semibold text-foreground">{t('createAnnouncement')}</h3>
+            </div>
+            <Textarea
+              value={newAnnMsg}
+              onChange={(e) => setNewAnnMsg(e.target.value)}
+              placeholder={t('announcementMessagePlaceholder')}
+              className="min-h-[80px] resize-none"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">{t('announcementType')}:</span>
+              <select
+                value={newAnnType}
+                onChange={(e) => setNewAnnType(e.target.value as 'INFO' | 'WARNING' | 'URGENT')}
+                className="h-9 px-3 py-1.5 rounded-lg border border-border bg-background text-sm"
+              >
+                <option value="INFO">{t('announcementTypeInfo')}</option>
+                <option value="WARNING">{t('announcementTypeWarning')}</option>
+                <option value="URGENT">{t('announcementTypeUrgent')}</option>
+              </select>
+            </div>
+            <Button
+              onClick={handleCreateAnnouncement}
+              disabled={annLoading || !newAnnMsg.trim()}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl h-10"
+            >
+              {annLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Plus className="h-4 w-4 me-2" />}
+              {t('createAnnouncement')}
+            </Button>
+          </CardContent>
+        </Card>
+
         <div className="space-y-2">
-          {/* Announcement 1 - Pinned */}
-          {(!dismissedAnnouncements.has('sys-1')) && (
-            <motion.div
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 border border-amber-200/50 dark:border-amber-800/30">
-                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-amber-200 to-amber-300 dark:from-amber-900/40 dark:to-amber-800/40 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-semibold text-foreground truncate">{t('announcement')}: Scheduled Maintenance</p>
-                    <span className="flex-shrink-0 h-5 w-5 flex items-center justify-center" title={t('pinned')}>
-                      <Pin className="h-3 w-3 text-amber-500" />
-                    </span>
+          {realAnnouncements
+            .filter(a => !dismissedAnnouncements.has(a.id))
+            .slice(0, 5)
+            .map((announcement, idx) => (
+              <motion.div
+                key={announcement.id}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+              >
+                <div className={`flex items-start gap-3 p-3 rounded-xl border backdrop-blur-sm ${
+                  announcement.type === 'URGENT'
+                    ? 'bg-rose-50 dark:bg-rose-900/10 border-rose-200/50 dark:border-rose-800/30'
+                    : announcement.type === 'WARNING'
+                    ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200/50 dark:border-amber-800/30'
+                    : 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200/50 dark:border-emerald-800/30'
+                }`}>
+                  <div className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    announcement.type === 'URGENT'
+                      ? 'bg-rose-200 dark:bg-rose-900/30'
+                      : announcement.type === 'WARNING'
+                      ? 'bg-amber-200 dark:bg-amber-900/30'
+                      : 'bg-emerald-200 dark:bg-emerald-900/30'
+                  }`}>
+                    <AlertTriangle className={`h-4 w-4 ${
+                      announcement.type === 'URGENT'
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : announcement.type === 'WARNING'
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    }`} />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">The platform will undergo scheduled maintenance on Saturday from 2:00 AM to 4:00 AM (GMT+1).</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">2 hours ago</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => setDismissedAnnouncements(prev => { const n = new Set(prev); n.add('sys-1'); return n; })}
-                  aria-label={t('dismiss')}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </motion.div>
-          )}
-          {/* Announcement 2 */}
-          {(!dismissedAnnouncements.has('sys-2')) && (
-            <motion.div
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-            >
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/10 dark:to-teal-900/10 border border-emerald-200/50 dark:border-emerald-800/30">
-                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40 flex items-center justify-center flex-shrink-0">
-                  <Info className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-semibold text-foreground truncate">New Feature: QR Code Integration</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground line-clamp-2">{announcement.message}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      {announcement.type === 'URGENT' ? t('announcementTypeUrgent') : announcement.type === 'WARNING' ? t('announcementTypeWarning') : t('announcementTypeInfo')}
+                      {' · '}{new Date(announcement.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { month: 'short', day: 'numeric' })}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">Agencies can now generate unique QR codes for quick customer access to queues.</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">5 hours ago</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => setDismissedAnnouncements(prev => { const n = new Set(prev); n.add('sys-2'); return n; })}
-                  aria-label={t('dismiss')}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </motion.div>
-          )}
-          {/* Announcement 3 - Pinned */}
-          {(!dismissedAnnouncements.has('sys-3')) && (
-            <motion.div
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-900/10 dark:to-pink-900/10 border border-rose-200/50 dark:border-rose-800/30">
-                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-rose-200 to-rose-300 dark:from-rose-900/40 dark:to-rose-800/40 flex items-center justify-center flex-shrink-0">
-                  <ShieldCheck className="h-4 w-4 text-rose-600 dark:text-rose-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-semibold text-foreground truncate">{t('announcement')}: Security Update</p>
-                    <span className="flex-shrink-0 h-5 w-5 flex items-center justify-center" title={t('pinned')}>
-                      <Pin className="h-3 w-3 text-rose-500" />
-                    </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-red-500"
+                      onClick={() => handleDeleteAnnouncement(announcement.id)}
+                      aria-label={t('delete')}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => setDismissedAnnouncements(prev => { const n = new Set(prev); n.add(announcement.id); return n; })}
+                      aria-label={t('dismiss')}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">Two-factor authentication is now available for all admin accounts. Enable it from your profile settings.</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">1 day ago</p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => setDismissedAnnouncements(prev => { const n = new Set(prev); n.add('sys-3'); return n; })}
-                  aria-label={t('dismiss')}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </motion.div>
+              </motion.div>
+          ))}
+          {realAnnouncements.filter(a => !dismissedAnnouncements.has(a.id)).length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">{t('noAnnouncements')}</p>
           )}
         </div>
+        </>
       </motion.div>
 
       {/* Stats Grid with gradient borders + sparklines */}
@@ -382,7 +473,7 @@ export function AdminDashboard() {
               className="cursor-default"
             >
               <div className="rounded-2xl p-[1px] bg-gradient-to-br from-emerald-200/40 via-transparent to-teal-200/40 dark:from-emerald-700/20 dark:via-transparent dark:to-teal-700/20">
-                <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-gray-900/90 rounded-[14px]">
+                <Card className="border-0 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 hover:-translate-y-1.5 bg-white dark:bg-gray-900/90 rounded-[14px]">
                   <CardContent className={`p-4 rounded-t-[14px] ${stat.color}`}>
                     <div className="flex items-start justify-between mb-2">
                       <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${
@@ -400,7 +491,7 @@ export function AdminDashboard() {
                         <polyline points={`${points} ${80},${28} 0,28`} fill={stat.sparkColor} fillOpacity="0.08" />
                       </svg>
                     </div>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">{stat.value}</p>
+                    <p className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent number-animate">{stat.value}</p>
                     <p className="text-xs text-muted-foreground">{stat.label}</p>
                   </CardContent>
                 </Card>
@@ -505,7 +596,7 @@ export function AdminDashboard() {
                 whileHover={{ y: -4, scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setView('admin-agencies')}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border-0 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/30 dark:hover:to-teal-900/30 shadow-sm hover:shadow-lg transition-all duration-300"
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border-0 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/30 dark:hover:to-teal-900/30 shadow-sm hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300 quick-action-card"
               >
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-800/40 dark:to-emerald-700/40 flex items-center justify-center shadow-sm">
                   <Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -516,7 +607,7 @@ export function AdminDashboard() {
                 whileHover={{ y: -4, scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setView('admin-analytics')}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border-0 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 hover:from-teal-100 hover:to-cyan-100 dark:hover:from-teal-900/30 dark:hover:to-cyan-900/30 shadow-sm hover:shadow-lg transition-all duration-300"
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border-0 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 hover:from-teal-100 hover:to-cyan-100 dark:hover:from-teal-900/30 dark:hover:to-cyan-900/30 shadow-sm hover:shadow-lg hover:shadow-teal-500/5 transition-all duration-300 quick-action-card"
               >
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-teal-200 to-teal-300 dark:from-teal-800/40 dark:to-teal-700/40 flex items-center justify-center shadow-sm">
                   <BarChart3 className="h-5 w-5 text-teal-600 dark:text-teal-400" />
@@ -527,7 +618,7 @@ export function AdminDashboard() {
                 whileHover={{ y: -4, scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setView('admin-users')}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 shadow-sm hover:shadow-lg transition-all duration-300"
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border-0 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 hover:from-amber-100 hover:to-orange-100 dark:hover:from-amber-900/30 dark:hover:to-orange-900/30 shadow-sm hover:shadow-lg hover:shadow-amber-500/5 transition-all duration-300 quick-action-card"
               >
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-200 to-amber-300 dark:from-amber-800/40 dark:to-amber-700/40 flex items-center justify-center shadow-sm">
                   <ClipboardList className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -538,7 +629,7 @@ export function AdminDashboard() {
                 whileHover={{ y: -4, scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setView('admin-transactions')}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border-0 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 hover:from-rose-100 hover:to-pink-100 dark:hover:from-rose-900/30 dark:hover:to-pink-900/30 shadow-sm hover:shadow-lg transition-all duration-300"
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border-0 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 hover:from-rose-100 hover:to-pink-100 dark:hover:from-rose-900/30 dark:hover:to-pink-900/30 shadow-sm hover:shadow-lg hover:shadow-rose-500/5 transition-all duration-300 quick-action-card"
               >
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-200 to-rose-300 dark:from-rose-800/40 dark:to-rose-700/40 flex items-center justify-center shadow-sm">
                   <CreditCard className="h-5 w-5 text-rose-600 dark:text-rose-400" />
@@ -573,8 +664,8 @@ export function AdminDashboard() {
                     key={item.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    whileHover={{ x: 4, backgroundColor: 'rgba(236,253,245,0.3)' }}
-                    className={`flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-all duration-200 hover:shadow-sm cursor-default border-s-3 ${
+                    whileHover={{ x: 4 }}
+                    className={`flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 transition-all duration-200 hover:shadow-sm cursor-default border-s-3 activity-item-hover ${
                       item.action.toUpperCase().includes('LOGIN') ? 'border-s-emerald-500'
                       : item.action.toUpperCase().includes('APPROVE') ? 'border-s-amber-500'
                       : item.action.toUpperCase().includes('CALL') ? 'border-s-teal-500'

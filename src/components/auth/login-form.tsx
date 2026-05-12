@@ -82,29 +82,15 @@ export function LoginForm() {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Animated background gradient + decorative pattern */}
+      {/* Animated background gradient + dot-grid pattern */}
       <div className="absolute inset-0 -z-10">
         <motion.div
           animate={{ backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
           className="absolute inset-0 bg-[length:400%_400%] bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/80 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/25"
         />
-        {/* Subtle grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(16,185,129,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.1) 1px, transparent 1px)`,
-            backgroundSize: '40px 40px',
-          }}
-        />
-        {/* Subtle dot grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.035] dark:opacity-[0.045]"
-          style={{
-            backgroundImage: `radial-gradient(circle, rgba(16,185,129,0.15) 1px, transparent 1px)`,
-            backgroundSize: '24px 24px',
-          }}
-        />
+        {/* Subtle dot-grid pattern */}
+        <div className="absolute inset-0 dot-grid-pattern" />
         {/* Gradient orbs */}
         <motion.div
           animate={{ x: [0, 20, 0], y: [0, -15, 0] }}
@@ -291,7 +277,7 @@ export function LoginForm() {
                       className="w-full"
                     >
                       <Button
-                        className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-base rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 hover:scale-[1.01]"
+                        className="w-full h-12 cta-glow bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-base rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300 hover:scale-[1.01]"
                         onClick={handleLogin}
                         disabled={loading}
                       >

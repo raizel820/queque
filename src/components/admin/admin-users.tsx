@@ -15,12 +15,9 @@ import {
   Loader2,
   Ban,
   CheckCircle2,
-  Filter,
   Eye,
   Phone,
   Building2,
-  ChevronDown,
-  ChevronUp,
   Mail,
   KeyRound,
 } from 'lucide-react';
@@ -67,7 +64,6 @@ export function AdminUsers() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
-  const [roleDropdown, setRoleDropdown] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetUserId, setResetUserId] = useState<string | null>(null);
 

@@ -56,6 +56,7 @@ import {
   Heart,
   BarChart3,
   MoreHorizontal,
+  AlertTriangle,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -518,7 +519,47 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
 
 export default function Home() {
   const { user, currentView, sidebarOpen, toggleSidebar } = useAppStore();
-  const { t, lang } = useLanguage();
+ const { t, lang } = useLanguage();
+  const [globalAnnouncements, setGlobalAnnouncements] = useState<Array<{ id: string; message: string; type: string; createdAt: string }>>([]);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+
+  // Fetch global announcements
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchAnnouncements = async () => {
+      try {
+        const res = await fetch('/api/admin/announcements');
+        if (res.ok) {
+          const data = await res.json();
+          setGlobalAnnouncements(data.announcements ?? []);
+        }
+      } catch { /* silent */ }
+    };
+    fetchAnnouncements();
+    const interval = setInterval(fetchAnnouncements, 60000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  // Load dismissed announcements from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('queuewise-dismissed-announcements');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Use setTimeout to avoid setState-in-effect lint warning
+        setTimeout(() => setDismissedIds(new Set(parsed)), 0);
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  const dismissAnnouncement = (id: string) => {
+    setDismissedIds(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      localStorage.setItem('queuewise-dismissed-announcements', JSON.stringify([...next]));
+      return next;
+    });
+  };
 
   // Dynamic document title based on current view
   useEffect(() => {
@@ -612,6 +653,65 @@ export default function Home() {
               <ThemeToggle />
             </div>
           </header>
+        )}
+
+        {/* Global Announcements Banner */}
+        {isAuthenticated && globalAnnouncements.length > 0 && (
+          <div className="px-4 pt-3">
+            <AnimatePresence>
+              {globalAnnouncements
+                .filter(a => !dismissedIds.has(a.id))
+                .slice(0, 3)
+                .map((announcement) => (
+                  <motion.div
+                    key={announcement.id}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="mb-2 last:mb-0"
+                  >
+                    <div className={`flex items-start gap-3 p-3 rounded-xl border backdrop-blur-sm ${
+                      announcement.type === 'URGENT'
+                        ? 'bg-rose-50 dark:bg-rose-900/10 border-rose-200/50 dark:border-rose-800/30'
+                        : announcement.type === 'WARNING'
+                        ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200/50 dark:border-amber-800/30'
+                        : 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200/50 dark:border-emerald-800/30'
+                    }`}>
+                      <div className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        announcement.type === 'URGENT'
+                          ? 'bg-rose-200 dark:bg-rose-900/30'
+                          : announcement.type === 'WARNING'
+                          ? 'bg-amber-200 dark:bg-amber-900/30'
+                          : 'bg-emerald-200 dark:bg-emerald-900/30'
+                      }`}>
+                        <AlertTriangle className={`h-4 w-4 ${
+                          announcement.type === 'URGENT'
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : announcement.type === 'WARNING'
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-emerald-600 dark:text-emerald-400'
+                        }`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground line-clamp-2">{announcement.message}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {announcement.type === 'URGENT' ? t('announcementTypeUrgent') : announcement.type === 'WARNING' ? t('announcementTypeWarning') : t('announcementTypeInfo')}
+                          {' · '}{new Date(announcement.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { month: 'short', day: 'numeric' })}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => dismissAnnouncement(announcement.id)}
+                        className="flex-shrink-0 h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                        aria-label={t('dismiss')}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+            </AnimatePresence>
+          </div>
         )}
 
         {/* Page content */}

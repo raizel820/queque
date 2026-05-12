@@ -40,7 +40,6 @@ import {
   CheckCircle2,
   Trash2,
   Loader2,
-  Edit3,
   Filter,
   Clock,
 } from 'lucide-react';

@@ -276,7 +276,15 @@ const en: Record<TranslationKeys, string> = {
   // ─── Notifications Center ─────────────────
   notifications: "Notifications",
   noNotifications: "No notifications",
+  noNotificationsDesc: "Notifications about your queue status will appear here",
   markAllRead: "Mark all as read",
+  weak: "Weak",
+  fair: "Fair",
+  good: "Good",
+  strong: "Strong",
+  veryStrong: "Very Strong",
+  usernameMinLength: "Username must be at least 3 characters",
+  landingLocation: "M'Sila",
   
   // ─── Audit Logs ────────────────────────────
   auditLogsPage: "Audit Logs",
@@ -717,6 +725,47 @@ const en: Record<TranslationKeys, string> = {
   averageRating: "Average Rating",
   totalRatings: "Total Ratings",
   ratingDistribution: "Rating Distribution",
+
+  // ─── Task 18-b: Staff Management ──────
+  staffManagement: "Staff Management",
+  addStaff: "Add Staff",
+  staffList: "Staff List",
+  staffUsername: "Username",
+  staffRole: "Role",
+  staffJoinDate: "Joined",
+  removeStaff: "Remove",
+  staffAdded: "Staff member added",
+  staffRemoved: "Staff member removed",
+  userNotFound: "User not found",
+  staffAlreadyExists: "Staff already exists in this agency",
+  enterUsername: "Enter username",
+
+  // ─── Task 18-b: Queue Share ──────
+  queueShareText: "I'm #{position} in queue at {agency} - {service}. Ticket: {number}",
+
+  // ─── Task 18-b: Global Announcements ──────
+  globalAnnouncements: "Platform Announcements",
+  createAnnouncement: "Create Announcement",
+  announcementCreatedSuccess: "Announcement created successfully",
+  announcementDeletedSuccess: "Announcement deleted successfully",
+  announcementMessagePlaceholder: "Write an announcement...",
+  announcementTypeInfo: "Info",
+  announcementTypeWarning: "Warning",
+  announcementTypeUrgent: "Urgent",
+
+  // ─── Task 18-b: Feedback ──────
+  commentFeedback: "How was your experience?",
+  feedbackComment: "Add a comment (optional)",
+  submitFeedback: "Submit Rating",
+  thankYouFeedback: "Thank you for your feedback!",
+  feedbackSubmitted: "Rating submitted successfully",
+
+  // ─── Task 18-b: Performance Metrics ──────
+  performanceMetrics: "Performance Metrics",
+  avgRatingStat: "Avg. Rating",
+  totalRatingsStat: "Total Ratings",
+  completionRateStat: "Completion Rate",
+  noShowRateStat: "No-Show Rate",
 };
 
 export default en;

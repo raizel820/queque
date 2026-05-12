@@ -40,6 +40,8 @@ import {
   Download,
   Plus,
   Trash2,
+  Star,
+  AlertTriangle,
 } from 'lucide-react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -505,7 +507,10 @@ export function AgencyDashboard() {
   ];
 
   return (
-    <div className="p-4 lg:p-6 space-y-5" ref={sectionRef}>
+    <div className="p-4 lg:p-6 space-y-5 relative" ref={sectionRef}>
+      {/* Gradient top border */}
+      <div className="absolute top-0 start-0 end-0 h-[4px] bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 rounded-full" />
+
       {/* Title with Live Indicator */}
       <div className="flex items-center justify-between">
         <div>
@@ -514,9 +519,9 @@ export function AgencyDashboard() {
             <motion.span
               animate={{ opacity: [1, 0.3, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400"
+              className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400"
             >
-              <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+              <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block live-pulse" />
               {t('live')}
             </motion.span>
           </h1>
@@ -634,7 +639,7 @@ export function AgencyDashboard() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: idx * 0.05 }}
             >
-              <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white/80 dark:bg-gray-900/60 dark:border-gray-800/50 dark:backdrop-blur-md dark:shadow-gray-900/50 overflow-hidden relative group">
+              <Card className="border-0 shadow-sm hover:shadow-xl hover:shadow-emerald-500/8 transition-all duration-300 hover:-translate-y-1.5 bg-white/80 dark:bg-gray-900/60 dark:border-gray-800/50 dark:backdrop-blur-md dark:shadow-gray-900/50 overflow-hidden relative group">
                 {/* Subtle gradient overlay on hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-transparent via-white/50 to-transparent dark:from-transparent dark:via-white/5 dark:to-transparent pointer-events-none" />
                 <CardContent className={`p-4 rounded-xl ${stat.color} relative`}>
@@ -644,7 +649,7 @@ export function AgencyDashboard() {
                     </div>
                     <MiniSparkline data={stat.sparkData} color={stat.sparkColor} />
                   </div>
-                  <p className="text-2xl font-bold bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">{stat.value}</p>
+                  <p className="text-2xl font-bold bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent number-animate">{stat.value}</p>
                   <p className="text-xs opacity-80">{stat.label}</p>
                 </CardContent>
               </Card>
@@ -805,6 +810,77 @@ export function AgencyDashboard() {
         </motion.div>
       </div>
 
+      {/* Performance Overview - Glass-morphism Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ delay: 0.3 }}
+      >
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600/90 via-teal-600/90 to-cyan-600/90 p-5 text-white shadow-lg shadow-emerald-500/20 backdrop-blur-xl border border-white/10">
+          {/* Decorative circles */}
+          <div className="absolute top-0 end-0 h-32 w-32 rounded-full bg-white/10 -translate-y-10 translate-x-10" />
+          <div className="absolute bottom-0 start-0 h-24 w-24 rounded-full bg-white/5 translate-y-8 -translate-x-8" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="h-4 w-4 text-emerald-200" />
+              <p className="text-sm font-semibold text-emerald-100">{t('performanceMetrics')}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Avg Rating */}
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Star className="h-3.5 w-3.5 text-amber-300" />
+                  <span className="text-[10px] text-emerald-200">{t('avgRatingStat')}</span>
+                </div>
+                <p className="text-2xl font-bold">{(stats?.avgRating ?? 0).toFixed(1)}</p>
+                <div className="flex items-center gap-0.5 mt-1">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star
+                      key={s}
+                      className={`h-3 w-3 ${s <= Math.round(stats?.avgRating ?? 0) ? 'text-amber-300 fill-amber-300' : 'text-white/30'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* Total Ratings */}
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Users className="h-3.5 w-3.5 text-emerald-200" />
+                  <span className="text-[10px] text-emerald-200">{t('totalRatingsStat')}</span>
+                </div>
+                <p className="text-2xl font-bold">{stats?.totalRatings ?? 0}</p>
+                <p className="text-[10px] text-emerald-300/70 mt-1">{t('totalRatings')}</p>
+              </div>
+              {/* Completion Rate */}
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-200" />
+                  <span className="text-[10px] text-emerald-200">{t('completionRateStat')}</span>
+                </div>
+                <p className="text-2xl font-bold">{completionRate.toFixed(0)}%</p>
+                <div className="h-1.5 w-full rounded-full bg-white/20 mt-1.5 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(completionRate, 100)}%` }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-300 to-cyan-300"
+                  />
+                </div>
+              </div>
+              {/* No-Show Rate */}
+              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-200" />
+                  <span className="text-[10px] text-emerald-200">{t('noShowRateStat')}</span>
+                </div>
+                <p className="text-2xl font-bold">{stats?.noShowRate ?? 0}%</p>
+                <p className="text-[10px] text-emerald-300/70 mt-1">{t('noShowRate')}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Wait Time Chart + Rating Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <motion.div
@@ -874,8 +950,8 @@ export function AgencyDashboard() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.03 }}
                   className={idx % 2 === 0
-                    ? "flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:shadow-sm transition-all duration-200 group"
-                    : "flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-900/30 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:shadow-sm transition-all duration-200 group"
+                    ? "flex items-center justify-between p-3 rounded-xl bg-gray-50/80 dark:bg-gray-900/50 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:shadow-md hover:shadow-emerald-500/5 transition-all duration-200 group"
+                    : "flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-900/30 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 hover:shadow-md hover:shadow-emerald-500/5 transition-all duration-200 group"
                   }
                 >
                   <div className="flex items-center gap-3">

@@ -276,7 +276,15 @@ const fr: Record<TranslationKeys, string> = {
   // ─── Notifications Center ─────────────────
   notifications: "Notifications",
   noNotifications: "Aucune notification",
+  noNotificationsDesc: "Les notifications sur l'état de votre file apparaîtront ici",
   markAllRead: "Tout marquer comme lu",
+  weak: "Faible",
+  fair: "Passable",
+  good: "Bon",
+  strong: "Fort",
+  veryStrong: "Très fort",
+  usernameMinLength: "Le nom d'utilisateur doit comporter au moins 3 caractères",
+  landingLocation: "M'Sila",
   
   // ─── Audit Logs ────────────────────────────
   auditLogsPage: "Journal d'audit",
@@ -717,6 +725,47 @@ const fr: Record<TranslationKeys, string> = {
   averageRating: "Note moyenne",
   totalRatings: "Total des notes",
   ratingDistribution: "Distribution des notes",
+
+  // ─── Task 18-b: Staff Management ──────
+  staffManagement: "Gestion du personnel",
+  addStaff: "Ajouter un employé",
+  staffList: "Liste du personnel",
+  staffUsername: "Nom d'utilisateur",
+  staffRole: "Rôle",
+  staffJoinDate: "Date d'ajout",
+  removeStaff: "Retirer",
+  staffAdded: "Employé ajouté",
+  staffRemoved: "Employé retiré",
+  userNotFound: "Utilisateur introuvable",
+  staffAlreadyExists: "Cet employé existe déjà dans cet établissement",
+  enterUsername: "Entrez le nom d'utilisateur",
+
+  // ─── Task 18-b: Queue Share ──────
+  queueShareText: "Je suis #{position} dans la file à {agency} - {service}. Ticket : {number}",
+
+  // ─── Task 18-b: Global Announcements ──────
+  globalAnnouncements: "Annonces de la plateforme",
+  createAnnouncement: "Créer une annonce",
+  announcementCreatedSuccess: "Annonce créée avec succès",
+  announcementDeletedSuccess: "Annonce supprimée avec succès",
+  announcementMessagePlaceholder: "Écrivez une annonce...",
+  announcementTypeInfo: "Info",
+  announcementTypeWarning: "Avertissement",
+  announcementTypeUrgent: "Urgent",
+
+  // ─── Task 18-b: Feedback ──────
+  commentFeedback: "Comment était votre expérience ?",
+  feedbackComment: "Ajouter un commentaire (facultatif)",
+  submitFeedback: "Envoyer l'évaluation",
+  thankYouFeedback: "Merci pour votre retour !",
+  feedbackSubmitted: "Évaluation envoyée avec succès",
+
+  // ─── Task 18-b: Performance Metrics ──────
+  performanceMetrics: "Indicateurs de performance",
+  avgRatingStat: "Note moyenne",
+  totalRatingsStat: "Total des notes",
+  completionRateStat: "Taux d'achèvement",
+  noShowRateStat: "Taux d'absence",
 };
 
 export default fr;

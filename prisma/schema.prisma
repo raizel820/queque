@@ -228,6 +228,17 @@ model Announcement {
   @@index([agencyId, isActive])
 }
 
+// ─── Global Announcement ──────────────────────────────────
+model GlobalAnnouncement {
+  id        String   @id @default(cuid())
+  message   String
+  type      String   @default("INFO")     // INFO | WARNING | URGENT
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 // ─── Audit Log ────────────────────────────────────────────
 model AuditLog {
   id        String   @id @default(cuid())

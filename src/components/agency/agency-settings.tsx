@@ -87,6 +87,7 @@ const SECTIONS: SettingsSection[] = [
   { id: 'hours', icon: Clock, titleKey: 'workingHours' },
   { id: 'services', icon: Settings, titleKey: 'manageServices' },
   { id: 'capacity', icon: Gauge, titleKey: 'queueCapacity' },
+  { id: 'staff', icon: Users, titleKey: 'staffManagement' },
   { id: 'danger', icon: AlertTriangle, titleKey: 'deleteAccount', danger: true },
 ];
 
@@ -104,10 +105,18 @@ export function AgencySettings() {
     hours: true,
     services: true,
     capacity: true,
+    staff: false,
     danger: false,
   });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const originalSettingsRef = useRef<AgencySettingsData | null>(null);
+
+  // Staff state
+  const [staffList, setStaffList] = useState<Array<{ id: string; role: string; joinedAt: string; user: { username: string; fullName: string; role: string } }>>([]);
+  const [staffLoading, setStaffLoading] = useState(false);
+  const [addStaffOpen, setAddStaffOpen] = useState(false);
+  const [newStaffUsername, setNewStaffUsername] = useState('');
+  const [addStaffLoading, setAddStaffLoading] = useState(false);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -119,7 +128,71 @@ export function AgencySettings() {
 
   useEffect(() => {
     fetchSettings();
+    fetchStaff();
   }, []);
+
+  const fetchStaff = async () => {
+    if (!user?.agencyId) return;
+    setStaffLoading(true);
+    try {
+      const res = await fetch(`/api/agency/staff?agencyId=${user.agencyId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setStaffList(data.staff ?? []);
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
+  const handleAddStaff = async () => {
+    if (!newStaffUsername.trim() || !user?.agencyId) return;
+    setAddStaffLoading(true);
+    try {
+      const res = await fetch('/api/agency/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agencyId: user.agencyId, username: newStaffUsername.trim() }),
+      });
+      if (res.ok) {
+        toast.success(t('staffAdded'));
+        setNewStaffUsername('');
+        setAddStaffOpen(false);
+        fetchStaff();
+      } else {
+        const data = await res.json();
+        if (res.status === 404) {
+          toast.error(t('userNotFound'));
+        } else if (res.status === 409) {
+          toast.error(t('staffAlreadyExists'));
+        } else {
+          toast.error(data.error || t('error'));
+        }
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setAddStaffLoading(false);
+    }
+  };
+
+  const handleRemoveStaff = async (staffId: string) => {
+    if (!user?.agencyId) return;
+    try {
+      const res = await fetch(`/api/agency/staff?staffId=${staffId}&agencyId=${user.agencyId}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success(t('staffRemoved'));
+        fetchStaff();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    }
+  };
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -530,6 +603,113 @@ export function AgencySettings() {
                               className="w-full"
                             />
                           </div>
+                        </div>
+                      )}
+
+                      {/* Staff Management Section */}
+                      {section.id === 'staff' && (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-sm flex items-center gap-2">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                              {t('staffList')}
+                            </Label>
+                            <Dialog open={addStaffOpen} onOpenChange={setAddStaffOpen}>
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-8 text-xs"
+                                >
+                                  <Plus className="h-3.5 w-3.5 me-1" />
+                                  {t('addStaff')}
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle>{t('addStaff')}</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-2">
+                                  <div className="space-y-2">
+                                    <Label>{t('staffUsername')}</Label>
+                                    <Input
+                                      value={newStaffUsername}
+                                      onChange={(e) => setNewStaffUsername(e.target.value)}
+                                      placeholder={t('enterUsername')}
+                                      className="h-11"
+                                      dir="ltr"
+                                    />
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button variant="outline" onClick={() => { setAddStaffOpen(false); setNewStaffUsername(''); }}>
+                                    {t('cancel')}
+                                  </Button>
+                                  <Button
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    onClick={handleAddStaff}
+                                    disabled={addStaffLoading || !newStaffUsername.trim()}
+                                  >
+                                    {addStaffLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
+                                    {t('submit')}
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                          {staffLoading ? (
+                            <div className="space-y-2">
+                              {[...Array(2)].map((_, i) => (
+                                <Skeleton key={i} className="h-14 rounded-xl" />
+                              ))}
+                            </div>
+                          ) : staffList.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">{t('noData')}</p>
+                          ) : (
+                            <div className="space-y-2 max-h-72 overflow-y-auto">
+                              {staffList.map((staff) => {
+                                const isOwner = staff.role === 'OWNER';
+                                return (
+                                  <div
+                                    key={staff.id}
+                                    className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
+                                        isOwner
+                                          ? 'bg-amber-100 dark:bg-amber-900/30'
+                                          : 'bg-emerald-100 dark:bg-emerald-900/30'
+                                      }`}>
+                                        <Shield className={`h-4 w-4 ${
+                                          isOwner
+                                            ? 'text-amber-700 dark:text-amber-400'
+                                            : 'text-emerald-700 dark:text-emerald-400'
+                                        }`} />
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-medium text-foreground">{staff.user.fullName}</p>
+                                        <p className="text-xs text-muted-foreground">@{staff.user.username} · {staff.role}</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                                        {new Date(staff.joinedAt).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US')}
+                                      </span>
+                                      {!isOwner && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                                          onClick={() => handleRemoveStaff(staff.id)}
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       )}
 
