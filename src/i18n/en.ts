@@ -679,6 +679,44 @@ const en: Record<TranslationKeys, string> = {
   exportUsers: "Export Users (CSV)",
   exportSuccess: "Export started",
   exportFailed: "Export failed",
+
+  // ─── Phase 17: Wait Time Chart ──────
+  waitTimeChart: "Wait Time Today",
+  waitTimeMinutes: "min",
+  hourlyData: "Hourly Data",
+  avgServiceTimeLabel: "Avg Service Time",
+  throughputLabel: "Throughput",
+  customersPerHour: "customers/hr",
+
+  // ─── Phase 17: Customer Growth ──────
+  customerGrowth: "Customer Growth",
+  newCustomers: "New Customers",
+  totalCustomers: "Total Customers",
+  growthRate: "Growth Rate",
+  monthOverMonth: "Month over Month",
+
+  // ─── Phase 17: Queue Insights ──────
+  queueInsights: "Queue Insights",
+  averageServiceDuration: "Avg. Service Duration",
+  fastestService: "Fastest Service",
+  slowestService: "Slowest Service",
+  waitTimeTrend: "Wait Time Trend",
+  improving: "Improving",
+  worsening: "Worsening",
+  stable: "Stable",
+
+  // ─── Phase 17: Enhanced Dashboard ──────
+  performanceOverview: "Performance Overview",
+  realTimeMetrics: "Real-Time Metrics",
+  dailySummary: "Daily Summary",
+  weeklyComparison: "Weekly Comparison",
+  monthlyReport: "Monthly Report",
+  servicePerformance: "Service Performance",
+  staffPerformance: "Staff Performance",
+  customerSatisfaction: "Customer Satisfaction",
+  averageRating: "Average Rating",
+  totalRatings: "Total Ratings",
+  ratingDistribution: "Rating Distribution",
 };
 
 export default en;

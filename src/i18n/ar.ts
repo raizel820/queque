@@ -679,6 +679,44 @@ const ar = {
   exportUsers: 'تصدير المستخدمين (CSV)',
   exportSuccess: 'بدأ التصدير',
   exportFailed: 'فشل التصدير',
+
+  // ─── Phase 17: Wait Time Chart ──────
+  waitTimeChart: 'وقت الانتظار اليوم',
+  waitTimeMinutes: 'دقيقة',
+  hourlyData: 'بيانات بالساعة',
+  avgServiceTimeLabel: 'متوسط مدة الخدمة',
+  throughputLabel: 'معدل الإنجاز',
+  customersPerHour: 'زبون/ساعة',
+
+  // ─── Phase 17: Customer Growth ──────
+  customerGrowth: 'نمو العملاء',
+  newCustomers: 'عملاء جدد',
+  totalCustomers: 'إجمالي العملاء',
+  growthRate: 'معدل النمو',
+  monthOverMonth: 'شهر بشهر',
+
+  // ─── Phase 17: Queue Insights ──────
+  queueInsights: 'رؤى الطابور',
+  averageServiceDuration: 'متوسط مدة الخدمة',
+  fastestService: 'أسرع خدمة',
+  slowestService: 'أبطأ خدمة',
+  waitTimeTrend: 'اتجاه وقت الانتظار',
+  improving: 'يتحسن',
+  worsening: 'يتدهور',
+  stable: 'مستقر',
+
+  // ─── Phase 17: Enhanced Dashboard ──────
+  performanceOverview: 'نظرة عامة على الأداء',
+  realTimeMetrics: 'مقاييس في الوقت الحقيقي',
+  dailySummary: 'ملخص اليوم',
+  weeklyComparison: 'مقارنة أسبوعية',
+  monthlyReport: 'التقرير الشهري',
+  servicePerformance: 'أداء الخدمات',
+  staffPerformance: 'أداء الموظفين',
+  customerSatisfaction: 'رضا العملاء',
+  averageRating: 'متوسط التقييم',
+  totalRatings: 'إجمالي التقييمات',
+  ratingDistribution: 'توزيع التقييمات',
 };
 
 export default ar;

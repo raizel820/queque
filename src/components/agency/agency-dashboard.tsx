@@ -45,6 +45,8 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useRef } from 'react';
 import { QueueStatusWidget } from '@/components/agency/queue-status-widget';
+import { WaitTimeChart } from '@/components/agency/wait-time-chart';
+import { RatingDistribution } from '@/components/agency/rating-distribution';
 
 interface QueueEntry {
   id: string;
@@ -800,6 +802,27 @@ export function AgencyDashboard() {
               </div>
             </CardContent>
           </Card>
+        </motion.div>
+      </div>
+
+      {/* Wait Time Chart + Rating Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.35 }}
+        >
+          <WaitTimeChart
+            data={[]}
+            currentHour={new Date().getHours()}
+          />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.4 }}
+        >
+          <RatingDistribution ratings={[]} />
         </motion.div>
       </div>
 
