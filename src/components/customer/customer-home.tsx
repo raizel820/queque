@@ -606,10 +606,18 @@ export function CustomerHome() {
   return (
     <div className="px-4 py-4 pb-24">
       {/* Header */}
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold text-foreground mb-1">{t('home')}</h1>
-        <p className="text-sm text-muted-foreground">{t('welcomeSubtitle')}</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mb-5 relative"
+      >
+        <div className="flex items-center gap-3 mb-1">
+          <div className="h-1.5 w-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">{t('home')}</h1>
+        </div>
+        <p className="text-sm text-muted-foreground ms-[44px]">{t('welcomeSubtitle')}</p>
+      </motion.div>
 
       {/* Quick Stats Banner — Glass-morphism */}
       {!loading && agencies.length > 0 && (

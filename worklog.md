@@ -891,3 +891,32 @@ Stage Summary:
 - **3 export buttons**: Agency CSV export, Admin Agencies CSV export, Admin Users CSV export
 - **7 new i18n keys** added across all 3 languages (`leaving`, `exportCsv`, `announcementPlaceholder` + duplicates removed)
 - **Quality**: TypeScript 0 errors, ESLint 0 errors
+
+---
+Task ID: 17 - Phase 17: API Route Fixes, New Endpoints & Styling Polish
+Agent: Main Developer
+Task: Fix critical API route mismatches, create missing endpoints, improve styling across the platform
+
+Work Log:
+- Server restart via cron watchdog (port 3000, HTTP 200 verified)
+- Conducted comprehensive API audit: discovered 6 broken frontend-to-backend route mismatches
+- Fixed agency-dashboard.tsx: Changed announcement API calls from `/api/agencies/${id}/announcements` to `/api/agency/announcements?agencyId=${id}` (3 endpoints: GET/POST/DELETE)
+- Fixed agency-dashboard.tsx: Changed announcement create body from `{ content }` to `{ agencyId, message }` matching API schema
+- Fixed agency-dashboard.tsx: Changed export CSV call from `/api/agencies/${id}/export-csv` to `/api/agency/export-csv?agencyId=${id}`
+- Fixed agency-dashboard.tsx: Changed announcement display field from `a.content` to `a.message`
+- Fixed agency-dashboard.tsx: Updated announcement state type from `{ content }` to `{ message, type? }`
+- Fixed admin-dashboard.tsx: Changed export CSV call from `/api/admin/export-csv?type=${type}` to `/api/admin/export/${type}` matching actual backend routes
+- Created `/api/agency/export-csv/route.ts` — new endpoint for agency-level CSV export of reservations with user and service data
+- Styling improvements across 5 components:
+  - customer-home.tsx: Gradient text heading with emerald accent bar + motion fade-in
+  - customer-queue.tsx: Gradient text heading on both empty state and active queue views
+  - customer-history.tsx: Gradient text heading + motion entrance + active pill shadow effect
+  - agency-dashboard.tsx: Glassmorphism stat cards with gradient overlay on hover + gradient text values + shadow-sm on icon containers
+  - admin-dashboard.tsx: Gradient text on stat card values
+- Verified: TypeScript 0 errors (project src/), ESLint 0 errors
+
+Stage Summary:
+- **6 API route mismatches fixed** (3 agency announcements + 1 agency export + 1 admin export + 1 field name)
+- **1 new API endpoint created** (/api/agency/export-csv)
+- **5 components styled** with gradient text, glassmorphism, and motion animations
+- **Quality**: TypeScript 0 errors, ESLint 0 errors

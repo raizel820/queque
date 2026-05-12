@@ -174,8 +174,18 @@ export function CustomerHistory() {
 
   return (
     <div className="px-4 py-4 pb-24">
-      <h1 className="text-2xl font-bold text-foreground mb-1">{t('history')}</h1>
-      <p className="text-sm text-muted-foreground mb-5">{t('reservations')}</p>
+      <div className="mb-5">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center gap-3 mb-1"
+        >
+          <div className="h-1.5 w-8 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500" />
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 bg-clip-text text-transparent">{t('history')}</h1>
+        </motion.div>
+        <p className="text-sm text-muted-foreground ms-[44px] mb-5">{t('reservations')}</p>
+      </div>
 
       {/* Filter */}
       <div className="flex gap-2 overflow-x-auto pb-3 mb-5 no-scrollbar">
@@ -183,9 +193,9 @@ export function CustomerHistory() {
           <button
             key={f.value}
             onClick={() => setFilter(f.value)}
-            className={`px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-colors min-h-9 active:scale-95 ${
+            className={`px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-200 min-h-9 active:scale-95 ${
               filter === f.value
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/25'
                 : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
             }`}
           >

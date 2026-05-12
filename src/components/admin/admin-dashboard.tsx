@@ -114,7 +114,7 @@ export function AdminDashboard() {
   const handleAdminExport = async (type: 'agencies' | 'users') => {
     setExportLoading(type);
     try {
-      const res = await fetch(`/api/admin/export-csv?type=${type}`);
+      const res = await fetch(`/api/admin/export/${type}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
@@ -400,7 +400,7 @@ export function AdminDashboard() {
                         <polyline points={`${points} ${80},${28} 0,28`} fill={stat.sparkColor} fillOpacity="0.08" />
                       </svg>
                     </div>
-                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    <p className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">{stat.value}</p>
                     <p className="text-xs text-muted-foreground">{stat.label}</p>
                   </CardContent>
                 </Card>

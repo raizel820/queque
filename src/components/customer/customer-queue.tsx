@@ -415,7 +415,7 @@ export function CustomerQueue() {
           backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
           backgroundSize: '24px 24px',
         }} />
-        <h1 className="text-2xl font-bold text-foreground mb-1 relative">{t('myQueue')}</h1>
+        <h1 className="text-2xl font-bold mb-1 relative bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">{t('myQueue')}</h1>
         <div className="flex flex-col items-center justify-center py-20 relative">
           <div className="relative mb-6">
             {/* Pulsing background ring */}
@@ -519,7 +519,7 @@ export function CustomerQueue() {
       )}
 
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold text-foreground">{t('myQueue')}</h1>
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">{t('myQueue')}</h1>
         <Button
           variant="outline"
           size="sm"

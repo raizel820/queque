@@ -173,7 +173,7 @@ export function AgencyDashboard() {
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchLoading, setBatchLoading] = useState(false);
-  const [announcements, setAnnouncements] = useState<Array<{ id: string; content: string; createdAt: string }>>([]);
+  const [announcements, setAnnouncements] = useState<Array<{ id: string; message: string; createdAt: string; type?: string }>>([]);
   const [newAnnouncement, setNewAnnouncement] = useState('');
   const [announcementLoading, setAnnouncementLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -328,7 +328,7 @@ export function AgencyDashboard() {
   const fetchAnnouncements = useCallback(async () => {
     if (!agencyId) return;
     try {
-      const res = await fetch(`/api/agencies/${encodeURIComponent(agencyId)}/announcements`);
+      const res = await fetch(`/api/agency/announcements?agencyId=${encodeURIComponent(agencyId)}`);
       if (res.ok) {
         const data = await res.json();
         setAnnouncements(data.announcements ?? []);
@@ -347,10 +347,10 @@ export function AgencyDashboard() {
     if (!newAnnouncement.trim() || !agencyId) return;
     setAnnouncementLoading(true);
     try {
-      const res = await fetch(`/api/agencies/${encodeURIComponent(agencyId)}/announcements`, {
+      const res = await fetch(`/api/agency/announcements`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newAnnouncement.trim() }),
+        body: JSON.stringify({ agencyId, message: newAnnouncement.trim() }),
       });
       if (res.ok) {
         setNewAnnouncement('');
@@ -370,7 +370,7 @@ export function AgencyDashboard() {
   const handleDeleteAnnouncement = async (id: string) => {
     if (!agencyId) return;
     try {
-      const res = await fetch(`/api/agencies/${encodeURIComponent(agencyId)}/announcements?id=${id}`, {
+      const res = await fetch(`/api/agency/announcements?id=${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -386,7 +386,7 @@ export function AgencyDashboard() {
     if (!agencyId) return;
     setExportLoading(true);
     try {
-      const res = await fetch(`/api/agencies/${encodeURIComponent(agencyId)}/export-csv`);
+      const res = await fetch(`/api/agency/export-csv?agencyId=${encodeURIComponent(agencyId)}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
@@ -632,15 +632,17 @@ export function AgencyDashboard() {
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: idx * 0.05 }}
             >
-              <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-                <CardContent className={`p-4 rounded-xl ${stat.color}`}>
+              <Card className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white/80 dark:bg-gray-900/60 dark:border-gray-800/50 dark:backdrop-blur-md dark:shadow-gray-900/50 overflow-hidden relative group">
+                {/* Subtle gradient overlay on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-transparent via-white/50 to-transparent dark:from-transparent dark:via-white/5 dark:to-transparent pointer-events-none" />
+                <CardContent className={`p-4 rounded-xl ${stat.color} relative`}>
                   <div className="flex items-center justify-between mb-2">
-                    <div className={`h-8 w-8 rounded-lg ${stat.iconBg} flex items-center justify-center`}>
+                    <div className={`h-8 w-8 rounded-lg ${stat.iconBg} flex items-center justify-center shadow-sm`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <MiniSparkline data={stat.sparkData} color={stat.sparkColor} />
                   </div>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <p className="text-2xl font-bold bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">{stat.value}</p>
                   <p className="text-xs opacity-80">{stat.label}</p>
                 </CardContent>
               </Card>
@@ -1060,7 +1062,7 @@ export function AgencyDashboard() {
                         <Megaphone className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground leading-relaxed">{a.content}</p>
+                        <p className="text-sm text-foreground leading-relaxed">{a.message}</p>
                         <p className="text-[10px] text-muted-foreground mt-1">
                           {new Date(a.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', {
                             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
