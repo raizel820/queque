@@ -3,254 +3,226 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// ─── User Model ───────────────────────────────────────────
-// Supports: CUSTOMER, AGENCY_STAFF, AGENCY_OWNER, SUPER_ADMIN
 model User {
-  id           String   @id @default(cuid())
-  username     String   @unique
-  fullName     String
-  email        String?  @unique
-  phoneNumber  String?  @unique
-  passwordHash String
-  role         String   @default("CUSTOMER") // CUSTOMER | AGENCY_STAFF | AGENCY_OWNER | SUPER_ADMIN
-  language     String   @default("ar")       // ar | fr | en
-  avatarUrl    String?
-  freeSmsCount Int      @default(10)
-  notificationPreferences String @default("{\"queue_called\":true,\"turn_approaching\":true,\"completed\":true}")
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  reservations    Reservation[]
-  smsPurchases    SmsPurchase[]
-  staffAgencies   AgencyStaff[]
-  ownedAgencies   Agency[]
-  auditLogs       AuditLog[]
-  notifications   Notification[]
-  managedTransactions Transaction[] @relation("ReviewedBy")
-  favorites        Favorite[]
+  id                      String         @id @default(cuid())
+  username                String         @unique
+  fullName                String
+  email                   String?        @unique
+  phoneNumber             String?        @unique
+  passwordHash            String
+  role                    String         @default("CUSTOMER")
+  language                String         @default("ar")
+  avatarUrl               String?
+  freeSmsCount            Int            @default(10)
+  notificationPreferences String         @default("{\"queue_called\":true,\"turn_approaching\":true,\"completed\":true}")
+  isActive                Boolean        @default(true)
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  ownedAgencies           Agency[]
+  staffAgencies           AgencyStaff[]
+  auditLogs               AuditLog[]
+  favorites               Favorite[]
+  notifications           Notification[]
+  reservations            Reservation[]
+  smsPurchases            SmsPurchase[]
+  managedTransactions     Transaction[]  @relation("ReviewedBy")
 }
 
-// ─── Agency Model ─────────────────────────────────────────
 model Agency {
-  id                 String   @id @default(cuid())
-  name               String
-  nameFr             String?
-  nameAr             String?
-  customCode         String   @unique           // Short code for manual entry
-  category           String                     // clinic | agency | law_firm | laboratory | government | other
-  address            String?
-  city               String   @default("M'Sila")
-  wilaya             String   @default("28")    // M'Sila wilaya code
-  phone              String?
-  email              String?
-  website            String?
-  logoUrl            String?
-  coverUrl           String?
-  description        String?
-  descriptionFr      String?
-  descriptionAr      String?
-  averageServiceTime Int      @default(10)      // minutes
-  maxActiveReservations Int   @default(50)
-  autoPauseWhenFull     Boolean @default(false)
-  isSponsored        Boolean  @default(false)
-  subscriptionTier   String   @default("BASIC")  // BASIC | PREMIUM
-  subscriptionStatus String   @default("INACTIVE") // ACTIVE | INACTIVE | SUSPENDED | PENDING
-  workingHoursStart  String   @default("08:00")
-  workingHoursEnd    String   @default("17:00")
-  isQueueOpen        Boolean  @default(true)
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  // Relations
-  services      Service[]
-  reservations  Reservation[]
-  staff         AgencyStaff[]
-  transactions  Transaction[]
-  queueSettings QueueSettings[]
-  favorites     Favorite[]
-  announcements Announcement[]
-  owner         User          @relation(fields: [ownerId], references: [id])
-  ownerId       String
+  id                    String          @id @default(cuid())
+  name                  String
+  nameFr                String?
+  nameAr                String?
+  customCode            String          @unique
+  category              String
+  address               String?
+  city                  String          @default("M'Sila")
+  wilaya                String          @default("28")
+  phone                 String?
+  email                 String?
+  website               String?
+  logoUrl               String?
+  coverUrl              String?
+  description           String?
+  descriptionFr         String?
+  descriptionAr         String?
+  averageServiceTime    Int             @default(10)
+  maxActiveReservations Int             @default(50)
+  autoPauseWhenFull     Boolean         @default(false)
+  isSponsored           Boolean         @default(false)
+  subscriptionTier      String          @default("BASIC")
+  subscriptionStatus    String          @default("INACTIVE")
+  workingHoursStart     String          @default("08:00")
+  workingHoursEnd       String          @default("17:00")
+  isQueueOpen           Boolean         @default(true)
+  isActive              Boolean         @default(true)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  ownerId               String
+  owner                 User            @relation(fields: [ownerId], references: [id])
+  staff                 AgencyStaff[]
+  announcements         Announcement[]
+  favorites             Favorite[]
+  queueSettings         QueueSettings[]
+  reservations          Reservation[]
+  services              Service[]
+  transactions          Transaction[]
 }
 
-// ─── Agency Staff ─────────────────────────────────────────
 model AgencyStaff {
-  id       String @id @default(cuid())
+  id       String   @id @default(cuid())
   userId   String
   agencyId String
-  role     String @default("STAFF") // STAFF | MANAGER | OWNER
-  isActive Boolean @default(true)
+  role     String   @default("STAFF")
+  isActive Boolean  @default(true)
   joinedAt DateTime @default(now())
-
-  user   User   @relation(fields: [userId], references: [id])
-  agency Agency @relation(fields: [agencyId], references: [id])
+  agency   Agency   @relation(fields: [agencyId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, agencyId])
 }
 
-// ─── Service Model ────────────────────────────────────────
 model Service {
-  id          String   @id @default(cuid())
-  agencyId    String
-  name        String
-  nameFr      String?
-  nameAr      String?
-  description String?
-  prefix      String   @default("A")    // Queue number prefix
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  agency       Agency        @relation(fields: [agencyId], references: [id])
+  id           String        @id @default(cuid())
+  agencyId     String
+  name         String
+  nameFr       String?
+  nameAr       String?
+  description  String?
+  prefix       String        @default("A")
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   reservations Reservation[]
+  agency       Agency        @relation(fields: [agencyId], references: [id])
 
   @@unique([agencyId, name])
 }
 
-// ─── Queue Settings ───────────────────────────────────────
 model QueueSettings {
-  id                  String   @id @default(cuid())
-  agencyId            String
-  currentServingNumber Int     @default(0)
-  lastIssuedNumber    Int      @default(0)
-  isPaused            Boolean  @default(false)
-  pausedAt            DateTime?
-  openedAt            DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-
-  agency Agency @relation(fields: [agencyId], references: [id])
+  id                   String    @id @default(cuid())
+  agencyId             String
+  currentServingNumber Int       @default(0)
+  lastIssuedNumber     Int       @default(0)
+  isPaused             Boolean   @default(false)
+  pausedAt             DateTime?
+  openedAt             DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  agency               Agency    @relation(fields: [agencyId], references: [id])
 }
 
-// ─── Reservation Model ────────────────────────────────────
 model Reservation {
-  id              String    @id @default(cuid())
-  userId          String
-  agencyId        String
-  serviceId       String
-  queueNumber     Int
-  displayNumber   String                   // e.g. "A-042"
-  status          String    @default("WAITING") // WAITING | CALLED | SERVED | COMPLETED | CANCELLED | NO_SHOW
-  estimatedWait   Int?                        // minutes
-  reservedDate    String?                     // ISO date string YYYY-MM-DD, null = today
-  joinedAt        DateTime  @default(now())
-  calledAt        DateTime?
-  completedAt     DateTime?
-  cancelledAt     DateTime?
-  rating          Int?
-  notes           String?
-
-  user    User    @relation(fields: [userId], references: [id])
-  agency  Agency  @relation(fields: [agencyId], references: [id])
-  service Service @relation(fields: [serviceId], references: [id])
+  id            String    @id @default(cuid())
+  userId        String
+  agencyId      String
+  serviceId     String
+  queueNumber   Int
+  displayNumber String
+  status        String    @default("WAITING")
+  estimatedWait Int?
+  reservedDate  String?
+  joinedAt      DateTime  @default(now())
+  calledAt      DateTime?
+  completedAt   DateTime?
+  cancelledAt   DateTime?
+  rating        Int?
+  notes         String?
+  agency        Agency    @relation(fields: [agencyId], references: [id])
+  service       Service   @relation(fields: [serviceId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
 
   @@index([agencyId, status])
   @@index([userId, status])
   @@index([serviceId, status])
 }
 
-// ─── Transaction Model ────────────────────────────────────
 model Transaction {
-  id          String    @id @default(cuid())
-  agencyId    String
-  amount      Int                          // in DZD
-  plan        String                      // BASIC | PREMIUM
-  paymentMethod String                    // CCP | BANK_TRANSFER | ELECTRONIC
-  receiptUrl  String?
-  status      String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  id              String    @id @default(cuid())
+  agencyId        String
+  amount          Int
+  plan            String
+  paymentMethod   String
+  receiptUrl      String?
+  status          String    @default("PENDING")
   rejectionReason String?
-  reviewedBy  String?
-  reviewedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  agency    Agency @relation(fields: [agencyId], references: [id])
-  reviewer  User?  @relation("ReviewedBy", fields: [reviewedBy], references: [id])
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  agency          Agency    @relation(fields: [agencyId], references: [id])
+  reviewer        User?     @relation("ReviewedBy", fields: [reviewedBy], references: [id])
 }
 
-// ─── SMS Purchase ─────────────────────────────────────────
 model SmsPurchase {
-  id          String   @id @default(cuid())
-  userId      String
-  quantity    Int
-  price       Int                          // in DZD
-  createdAt   DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  userId    String
+  quantity  Int
+  price     Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
-// ─── Notification Model ───────────────────────────────────
 model Notification {
-  id         String   @id @default(cuid())
-  userId     String
-  type       String                      // QUEUE_JOINED | TURN_APPROACHING | QUEUE_CALLED | COMPLETED | CANCELLED | NO_SHOW | SYSTEM
-  title      String
-  message    String
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId, isRead])
 }
 
-// ─── Favorite ───────────────────────────────────────────
 model Favorite {
-  id         String   @id @default(cuid())
-  userId     String
-  agencyId   String
-  createdAt  DateTime @default(now())
-
-  user   User   @relation(fields: [userId], references: [id])
-  agency Agency @relation(fields: [agencyId], references: [id])
+  id        String   @id @default(cuid())
+  userId    String
+  agencyId  String
+  createdAt DateTime @default(now())
+  agency    Agency   @relation(fields: [agencyId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, agencyId])
 }
 
-// ─── Announcement ────────────────────────────────────────
 model Announcement {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   agencyId  String
   message   String
-  type      String   @default("INFO")     // INFO | WARNING | URGENT
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  type      String    @default("INFO")
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
   expiresAt DateTime?
-
-  agency Agency @relation(fields: [agencyId], references: [id])
+  agency    Agency    @relation(fields: [agencyId], references: [id])
 
   @@index([agencyId, isActive])
 }
 
-// ─── Global Announcement ──────────────────────────────────
 model GlobalAnnouncement {
   id        String   @id @default(cuid())
   message   String
-  type      String   @default("INFO")     // INFO | WARNING | URGENT
+  type      String   @default("INFO")
   createdBy String
   createdAt DateTime @default(now())
 
   @@index([createdAt])
 }
 
-// ─── Audit Log ────────────────────────────────────────────
 model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  action    String                      // LOGIN | LOGOUT | QUEUE_CALL | QUEUE_COMPLETE | QUEUE_CANCEL | QUEUE_NOSHOW | PAYMENT_APPROVE | PAYMENT_REJECT | AGENCY_CREATE | AGENCY_SUSPEND | SUBSCRIPTION_CHANGE | SETTINGS_UPDATE
-  entityType String?                    // USER | AGENCY | RESERVATION | TRANSACTION
-  entityId  String?
-  details   String?                     // JSON string of additional data
-  ipAddress String?
-  createdAt DateTime @default(now())
-
-  user User? @relation(fields: [userId], references: [id])
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String?
+  entityId   String?
+  details    String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([action])

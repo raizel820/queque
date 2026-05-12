@@ -53,34 +53,6 @@ async function seed() {
     },
   });
 
-  const customer2 = await db.user.create({
-    data: {
-      username: 'fatima',
-      fullName: 'فاطمة الزهراء',
-      passwordHash: hashPassword('user123'),
-      role: 'CUSTOMER',
-      language: 'ar',
-      phoneNumber: '0661987654',
-      email: 'fatima@email.com',
-      freeSmsCount: 8,
-      isActive: true,
-    },
-
-  });
-
-  const customer3 = await db.user.create({
-    data: {
-      username: 'youssef',
-      fullName: 'Youssef Benmoussa',
-      passwordHash: hashPassword('user123'),
-      role: 'CUSTOMER',
-      language: 'fr',
-      phoneNumber: '0770345678',
-      email: 'youssef@email.com',
-      freeSmsCount: 5,
-      isActive: true,
-    },
-  });
 
   const agencyOwner = await db.user.create({
     data: {
@@ -137,75 +109,7 @@ async function seed() {
     },
   });
 
-  const lab1 = await db.agency.create({
-    data: {
-      name: 'مختبر التحاليل الطبية',
-      nameFr: 'Laboratoire d\'Analyses Médicales',
-      nameAr: 'مختبر التحاليل الطبية',
-      customCode: 'LAB01',
-      category: 'laboratory',
-      address: 'Rue de la Liberté, M\'Sila',
-      city: 'M\'Sila',
-      wilaya: '28',
-      phone: '0555000003',
-      email: 'lab@queuewise.dz',
-      description: 'Full-service medical laboratory with fast results.',
-      descriptionAr: 'مختبر طبي متكامل مع نتائج سريعة',
-      descriptionFr: 'Laboratoire médical complet avec résultats rapides',
-      averageServiceTime: 10,
-      maxActiveReservations: 30,
-      isSponsored: false,
-      subscriptionTier: 'BASIC',
-      subscriptionStatus: 'ACTIVE',
-      isQueueOpen: true,
-      isActive: true,
-      ownerId: agencyOwner.id,
-    },
-  });
 
-  const agency3 = await db.agency.create({
-    data: {
-      name: 'مكتب المحامي خالد',
-      nameFr: 'Cabinet d\'Avocat Khaled',
-      nameAr: 'مكتب المحامي خالد',
-      customCode: 'LAW01',
-      category: 'law_firm',
-      address: 'Cité Administrative, M\'Sila',
-      city: 'M\'Sila',
-      wilaya: '28',
-      phone: '0555000004',
-      averageServiceTime: 20,
-      maxActiveReservations: 20,
-      isSponsored: false,
-      subscriptionTier: 'BASIC',
-      subscriptionStatus: 'PENDING',
-      isQueueOpen: true,
-      isActive: true,
-      ownerId: agencyOwner.id,
-    },
-  });
-
-  const govtAgency = await db.agency.create({
-    data: {
-      name: 'مديرية الضرائب',
-      nameFr: 'Direction des Impôts',
-      nameAr: 'مديرية الضرائب',
-      customCode: 'GOV01',
-      category: 'government',
-      address: 'Cité Administrative, M\'Sila',
-      city: 'M\'Sila',
-      wilaya: '28',
-      phone: '0555000005',
-      averageServiceTime: 8,
-      maxActiveReservations: 100,
-      isSponsored: true,
-      subscriptionTier: 'PREMIUM',
-      subscriptionStatus: 'ACTIVE',
-      isQueueOpen: true,
-      isActive: true,
-      ownerId: agencyOwner.id,
-    },
-  });
 
   // ─── Create Agency Staff Relations ─────────────────
   console.log('👷 Creating agency staff...');
@@ -241,256 +145,31 @@ async function seed() {
     },
   });
 
-  const labAnalysis = await db.service.create({
-    data: {
-      agencyId: lab1.id,
-      name: 'Lab Analysis',
-      nameAr: 'تحليل مخبري',
-      nameFr: 'Analyse de Laboratoire',
-      prefix: 'L',
-      isActive: true,
-    },
-  });
 
-  const bloodTest = await db.service.create({
-    data: {
-      agencyId: lab1.id,
-      name: 'Blood Test',
-      nameAr: 'تحليل الدم',
-      nameFr: 'Prise de Sang',
-      prefix: 'S',
-      isActive: true,
-    },
-  });
 
-  const legalConsultation = await db.service.create({
-    data: {
-      agencyId: agency3.id,
-      name: 'Legal Consultation',
-      nameAr: 'استشارة قانونية',
-      nameFr: 'Consultation Juridique',
-      prefix: 'J',
-      isActive: true,
-    },
-  });
-
-  const taxService = await db.service.create({
-    data: {
-      agencyId: govtAgency.id,
-      name: 'Tax Service',
-      nameAr: 'خدمة ضريبية',
-      nameFr: 'Service Fiscal',
-      prefix: 'T',
-      isActive: true,
-    },
-  });
 
   // ─── Create Queue Settings ─────────────────────────
   console.log('⚙️ Creating queue settings...');
 
-  await db.queueSettings.create({
-    data: {
-      agencyId: clinic1.id,
-      currentServingNumber: 3,
-      lastIssuedNumber: 8,
-      isPaused: false,
-      openedAt: new Date(),
-    },
-  });
-
-  await db.queueSettings.create({
-    data: {
-      agencyId: lab1.id,
-      currentServingNumber: 1,
-      lastIssuedNumber: 4,
-      isPaused: false,
-      openedAt: new Date(),
-    },
-  });
-
-  await db.queueSettings.create({
-    data: {
-      agencyId: agency3.id,
-      currentServingNumber: 0,
-      lastIssuedNumber: 0,
-      isPaused: false,
-      openedAt: new Date(),
-    },
-  });
-
-  await db.queueSettings.create({
-    data: {
-      agencyId: govtAgency.id,
-      currentServingNumber: 12,
-      lastIssuedNumber: 25,
-      isPaused: false,
-      openedAt: new Date(),
-    },
-  });
 
   // ─── Create Sample Reservations ────────────────────
   console.log('🎫 Creating reservations...');
 
-  await db.reservation.create({
-    data: {
-      userId: customer1.id,
-      agencyId: clinic1.id,
-      serviceId: generalConsultation.id,
-      queueNumber: 1,
-      displayNumber: 'A-001',
-      status: 'COMPLETED',
-      estimatedWait: 15,
-      joinedAt: new Date(Date.now() - 3600000),
-      calledAt: new Date(Date.now() - 2700000),
-      completedAt: new Date(Date.now() - 1800000),
-    },
-  });
-
-  await db.reservation.create({
-    data: {
-      userId: customer2.id,
-      agencyId: clinic1.id,
-      serviceId: specialistConsultation.id,
-      queueNumber: 1,
-      displayNumber: 'B-001',
-      status: 'CALLED',
-      estimatedWait: 20,
-      joinedAt: new Date(Date.now() - 900000),
-      calledAt: new Date(Date.now() - 60000),
-    },
-  });
-
-  await db.reservation.create({
-    data: {
-      userId: customer3.id,
-      agencyId: clinic1.id,
-      serviceId: generalConsultation.id,
-      queueNumber: 5,
-      displayNumber: 'A-005',
-      status: 'WAITING',
-      estimatedWait: 30,
-      joinedAt: new Date(Date.now() - 300000),
-    },
-  });
-
-  await db.reservation.create({
-    data: {
-      userId: customer1.id,
-      agencyId: lab1.id,
-      serviceId: labAnalysis.id,
-      queueNumber: 2,
-      displayNumber: 'L-002',
-      status: 'WAITING',
-      estimatedWait: 10,
-      joinedAt: new Date(Date.now() - 600000),
-    },
-  });
-
-  await db.reservation.create({
-    data: {
-      userId: customer2.id,
-      agencyId: govtAgency.id,
-      serviceId: taxService.id,
-      queueNumber: 20,
-      displayNumber: 'T-020',
-      status: 'WAITING',
-      estimatedWait: 64,
-      joinedAt: new Date(Date.now() - 120000),
-    },
-  });
 
   // ─── Create Transactions ───────────────────────────
   console.log('💰 Creating transactions...');
 
-  await db.transaction.create({
-    data: {
-      agencyId: agency3.id,
-      amount: 2000,
-      plan: 'BASIC',
-      paymentMethod: 'CCP',
-      receiptUrl: null,
-      status: 'PENDING',
-    },
-  });
 
-  await db.transaction.create({
-    data: {
-      agencyId: clinic1.id,
-      amount: 3000,
-      plan: 'PREMIUM',
-      paymentMethod: 'BANK_TRANSFER',
-      receiptUrl: null,
-      status: 'APPROVED',
-      reviewedBy: admin.id,
-      reviewedAt: new Date(Date.now() - 86400000 * 7),
-    },
-  });
-
-  await db.transaction.create({
-    data: {
-      agencyId: govtAgency.id,
-      amount: 3000,
-      plan: 'PREMIUM',
-      paymentMethod: 'CCP',
-      receiptUrl: null,
-      status: 'APPROVED',
-      reviewedBy: admin.id,
-      reviewedAt: new Date(Date.now() - 86400000 * 3),
-    },
-  });
 
   // ─── Create Notifications ──────────────────────────
   console.log('🔔 Creating notifications...');
 
-  await db.notification.create({
-    data: {
-      userId: customer2.id,
-      type: 'QUEUE_CALLED',
-      title: 'Your turn!',
-      message: 'Your number B-001 has been called at عيادة الشفاء. Please proceed.',
-      isRead: false,
-    },
-  });
 
-  await db.notification.create({
-    data: {
-      userId: customer1.id,
-      type: 'QUEUE_JOINED',
-      title: 'Queue Joined',
-      message: 'You joined the queue at مختبر التحاليل الطبية. Your number: L-002.',
-      isRead: true,
-    },
-  });
 
   // ─── Create Audit Logs ─────────────────────────────
   console.log('📝 Creating audit logs...');
 
-  await db.auditLog.create({
-    data: {
-      userId: admin.id,
-      action: 'PAYMENT_APPROVE',
-      entityType: 'TRANSACTION',
-      details: JSON.stringify({ plan: 'PREMIUM', agency: 'عيادة الشفاء' }),
-    },
-  });
 
-  await db.auditLog.create({
-    data: {
-      userId: agencyOwner.id,
-      action: 'QUEUE_CALL',
-      entityType: 'RESERVATION',
-      details: JSON.stringify({ displayNumber: 'B-001', agency: 'عيادة الشفاء' }),
-    },
-  });
-
-  await db.auditLog.create({
-    data: {
-      userId: customer1.id,
-      action: 'LOGIN',
-      entityType: 'USER',
-      details: JSON.stringify({ username: 'ahmed' }),
-    },
-  });
 
   console.log('✅ Seeding complete!');
   console.log('');
