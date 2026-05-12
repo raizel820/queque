@@ -26,6 +26,7 @@ import {
   Sparkles,
   QrCode,
   ShieldAlert,
+  Star,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -70,6 +71,7 @@ interface Reservation {
   serviceNameFr?: string;
   joinedAt: string;
   reservedDate?: string;
+  rating?: number | null;
 }
 
 // Confetti particle component
@@ -128,6 +130,9 @@ export function CustomerQueue() {
   const [qrReservation, setQrReservation] = useState<Reservation | null>(null);
   const [emergencyDialogOpen, setEmergencyDialogOpen] = useState(false);
   const [emergencyResId, setEmergencyResId] = useState<string | null>(null);
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
+  const [userRating, setUserRating] = useState<Record<string, number>>({});
+  const [submittingRating, setSubmittingRating] = useState<string | null>(null);
   const prevStatusRef = useRef<Record<string, string>>({});
   const soundStartedRef = useRef(false);
 
@@ -156,6 +161,7 @@ export function CustomerQueue() {
             serviceNameFr: service?.nameFr,
             joinedAt: r.joinedAt,
             reservedDate: (r.reservedDate as string) || undefined,
+            rating: (r.rating as number) ?? null,
           };
         });
 
@@ -324,6 +330,51 @@ export function CustomerQueue() {
       toast.error(t('error'));
     } finally {
       setCancelling(null);
+    }
+  };
+
+  const handleLeaveQueue = async () => {
+    setCancelling('leaving');
+    try {
+      const res = await fetch(`/api/reservations/cancel-active?userId=${user?.id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        toast.success(t('queueLeft'));
+        setLeaveDialogOpen(false);
+        stopNotificationSound();
+        soundStartedRef.current = false;
+        setView('customer-home');
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setCancelling(null);
+    }
+  };
+
+  const handleSubmitRating = async (resId: string, rating: number) => {
+    setSubmittingRating(resId);
+    try {
+      const res = await fetch(`/api/reservations/${resId}/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating }),
+      });
+      if (res.ok) {
+        setUserRating((prev) => ({ ...prev, [resId]: rating }));
+        toast.success(t('rateSubmitted'));
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setSubmittingRating(null);
     }
   };
 
@@ -1012,6 +1063,64 @@ export function CustomerQueue() {
                         )}
                         {t('cancelReservation')}
                       </Button>
+                    )}
+
+                    {/* Leave Queue Button */}
+                    {res.status === 'WAITING' && (
+                      <Button
+                        variant="outline"
+                        className="w-full h-11 rounded-xl border-2 border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 font-semibold transition-all duration-300 gap-2"
+                        onClick={() => setLeaveDialogOpen(true)}
+                      >
+                        <XCircle className="h-4 w-4" />
+                        {t('leaveQueue')}
+                      </Button>
+                    )}
+
+                    {/* Rating for COMPLETED reservations */}
+                    {res.status === 'COMPLETED' && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-3"
+                      >
+                        {userRating[res.id] ? (
+                          <div className="flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/50">
+                            <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+                            <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                              {t('yourRating')}: {userRating[res.id]}/5
+                            </span>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-sm font-medium text-foreground mb-2">{t('rateExperience')}</p>
+                            <div className="flex justify-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  className="p-1 transition-transform hover:scale-125 disabled:opacity-30"
+                                  disabled={submittingRating === res.id}
+                                  onClick={() => handleSubmitRating(res.id, star)}
+                                >
+                                  <Star
+                                    className={`h-7 w-7 ${
+                                      star <= (userRating[res.id] || 0)
+                                        ? 'text-amber-400 fill-amber-400'
+                                        : 'text-gray-300 dark:text-gray-600'
+                                    }`}
+                                  />
+                                </button>
+                              ))}
+                            </div>
+                            {submittingRating === res.id && (
+                              <div className="flex justify-center mt-1">
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </motion.div>
                     )}
 
                     {/* Emergency Cancel Button - shown only for WAITING status */}

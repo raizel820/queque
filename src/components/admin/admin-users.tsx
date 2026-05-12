@@ -22,7 +22,18 @@ import {
   ChevronDown,
   ChevronUp,
   Mail,
+  KeyRound,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -57,6 +68,8 @@ export function AdminUsers() {
   const [total, setTotal] = useState(0);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [roleDropdown, setRoleDropdown] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [resetUserId, setResetUserId] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -127,6 +140,29 @@ export function AdminUsers() {
       case 'AGENCY_STAFF': return t('agencyStaffRole');
       case 'CUSTOMER': return t('customerRole');
       default: return role;
+    }
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    setActionLoading(userId);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+        method: 'POST',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setResetDialogOpen(false);
+        toast.success(`${t('newPasswordIs')}: ${data.newPassword}`, {
+          duration: 8000,
+        });
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -307,6 +343,23 @@ export function AdminUsers() {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-8 rounded-lg text-xs border-amber-200 text-amber-600 dark:border-amber-800 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                        onClick={() => {
+                          setResetUserId(user.id);
+                          setResetDialogOpen(true);
+                        }}
+                        disabled={actionLoading === user.id || user.role === 'SUPER_ADMIN'}
+                      >
+                        {actionLoading === user.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin me-1" />
+                        ) : (
+                          <KeyRound className="h-3 w-3 me-1" />
+                        )}
+                        {t('resetPassword')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className={`h-8 rounded-lg text-xs ${
                           user.isActive
                             ? 'border-red-200 text-red-600 dark:border-red-800 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
@@ -402,6 +455,27 @@ export function AdminUsers() {
           ))}
         </div>
       )}
+
+      {/* Reset Password Confirmation Dialog */}
+      <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('resetPassword')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('resetPasswordConfirm')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => resetUserId && handleResetPassword(resetUserId)}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {t('confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

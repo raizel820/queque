@@ -109,6 +109,9 @@ const fr: Record<TranslationKeys, string> = {
   queueFull: "La file est actuellement pleine",
   cancelReservation: "Annuler la réservation",
   leaveQueue: "Quitter la file",
+  leaveQueueConfirm: "Êtes-vous sûr de vouloir quitter la file ?",
+  leaveQueueDesc: "Votre réservation sera annulée et vous ne pourrez pas la récupérer.",
+  queueLeft: "Vous avez quitté la file avec succès",
   confirmCancel: "Êtes-vous sûr de vouloir annuler ?",
   sponsored: "Sponsorisé",
   openNow: "Ouvert",
@@ -643,6 +646,41 @@ const fr: Record<TranslationKeys, string> = {
   emergencyCancel: "Annulation d'urgence",
   emergencyCancelDesc: "Êtes-vous sûr de vouloir annuler votre réservation immédiatement ? Cette action est irréversible.",
   emergencyCancelConfirm: "Oui, annuler ma réservation",
+
+  // ─── Leave Queue ─────────────
+  leaveQueueConfirm: "Êtes-vous sûr de vouloir quitter la file ? Votre réservation sera annulée.",
+  leaveQueueDesc: "Vous perdrez votre position dans la file.",
+  queueLeft: "Vous avez quitté la file avec succès",
+
+  // ─── Admin Reset Password ─────────────
+  resetPassword: "Réinitialiser le mot de passe",
+  resetPasswordConfirm: "Êtes-vous sûr de vouloir réinitialiser le mot de passe de cet utilisateur ? Un mot de passe par défaut sera défini.",
+  passwordReset: "Mot de passe réinitialisé",
+  newPasswordIs: "Le nouveau mot de passe est",
+
+  // ─── Agency Rating ─────────────
+  rateExperience: "Évaluez votre expérience",
+  rateSubmitted: "Merci pour votre évaluation !",
+  yourRating: "Votre note",
+
+  // ─── Agency Announcements ──────
+  announcements: "Annonces",
+  addAnnouncement: "Ajouter une annonce",
+  announcementMessage: "Message",
+  announcementType: "Type",
+  announcementInfo: "Info",
+  announcementWarning: "Avertissement",
+  announcementUrgent: "Urgent",
+  announcementCreated: "Annonce créée",
+  announcementDeleted: "Annonce supprimée",
+  noAnnouncements: "Aucune annonce",
+  agencyAnnouncement: "Annonce de l'établissement",
+
+  // ─── CSV Export ────────────────
+  exportAgencies: "Exporter les établissements (CSV)",
+  exportUsers: "Exporter les utilisateurs (CSV)",
+  exportSuccess: "Export démarré",
+  exportFailed: "Échec de l'export",
 };
 
 export default fr;

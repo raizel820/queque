@@ -75,6 +75,7 @@ model Agency {
   transactions  Transaction[]
   queueSettings QueueSettings[]
   favorites     Favorite[]
+  announcements Announcement[]
   owner         User          @relation(fields: [ownerId], references: [id])
   ownerId       String
 }
@@ -142,6 +143,7 @@ model Reservation {
   calledAt        DateTime?
   completedAt     DateTime?
   cancelledAt     DateTime?
+  rating          Int?
   notes           String?
 
   user    User    @relation(fields: [userId], references: [id])
@@ -209,6 +211,21 @@ model Favorite {
   agency Agency @relation(fields: [agencyId], references: [id])
 
   @@unique([userId, agencyId])
+}
+
+// ─── Announcement ────────────────────────────────────────
+model Announcement {
+  id        String   @id @default(cuid())
+  agencyId  String
+  message   String
+  type      String   @default("INFO")     // INFO | WARNING | URGENT
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+
+  agency Agency @relation(fields: [agencyId], references: [id])
+
+  @@index([agencyId, isActive])
 }
 
 // ─── Audit Log ────────────────────────────────────────────

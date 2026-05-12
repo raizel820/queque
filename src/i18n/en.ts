@@ -109,6 +109,9 @@ const en: Record<TranslationKeys, string> = {
   queueFull: "Queue is currently full",
   cancelReservation: "Cancel Reservation",
   leaveQueue: "Leave Queue",
+  leaveQueueConfirm: "Are you sure you want to leave the queue?",
+  leaveQueueDesc: "Your reservation will be cancelled and you won't be able to recover it.",
+  queueLeft: "You have left the queue successfully",
   confirmCancel: "Are you sure you want to cancel?",
   sponsored: "Sponsored",
   openNow: "Open Now",
@@ -643,6 +646,41 @@ const en: Record<TranslationKeys, string> = {
   emergencyCancel: "Emergency Cancel",
   emergencyCancelDesc: "Are you sure you want to cancel your reservation immediately? This action cannot be undone.",
   emergencyCancelConfirm: "Yes, cancel my reservation",
+
+  // ─── Leave Queue ─────────────
+  leaveQueueConfirm: "Are you sure you want to leave the queue? Your reservation will be cancelled.",
+  leaveQueueDesc: "You will lose your position in the queue.",
+  queueLeft: "You have left the queue successfully",
+
+  // ─── Admin Reset Password ─────────────
+  resetPassword: "Reset Password",
+  resetPasswordConfirm: "Are you sure you want to reset this user's password? A default password will be set.",
+  passwordReset: "Password has been reset",
+  newPasswordIs: "The new password is",
+
+  // ─── Agency Rating ─────────────
+  rateExperience: "Rate your experience",
+  rateSubmitted: "Thanks for your rating!",
+  yourRating: "Your rating",
+
+  // ─── Agency Announcements ──────
+  announcements: "Announcements",
+  addAnnouncement: "Add Announcement",
+  announcementMessage: "Message",
+  announcementType: "Type",
+  announcementInfo: "Info",
+  announcementWarning: "Warning",
+  announcementUrgent: "Urgent",
+  announcementCreated: "Announcement created",
+  announcementDeleted: "Announcement deleted",
+  noAnnouncements: "No announcements",
+  agencyAnnouncement: "Agency Announcement",
+
+  // ─── CSV Export ────────────────
+  exportAgencies: "Export Agencies (CSV)",
+  exportUsers: "Export Users (CSV)",
+  exportSuccess: "Export started",
+  exportFailed: "Export failed",
 };
 
 export default en;

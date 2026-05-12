@@ -641,6 +641,41 @@ const ar = {
   emergencyCancel: 'إلغاء طوارئ',
   emergencyCancelDesc: 'هل أنت متأكد أنك تريد إلغاء حجزك فوراً؟ لا يمكن التراجع عن هذا الإجراء.',
   emergencyCancelConfirm: 'نعم، إلغاء الحجز',
+
+  // ─── Leave Queue ─────────────
+  leaveQueueConfirm: 'هل أنت متأكد أنك تريد مغادرة الطابور؟ سيتم إلغاء حجزك الحالي.',
+  leaveQueueDesc: 'سيتم فقدان موقعك في الطابور ولن تتمكن من استعادته.',
+  queueLeft: 'تم مغادرة الطابور بنجاح',
+
+  // ─── Admin Reset Password ─────────────
+  resetPassword: 'إعادة تعيين كلمة المرور',
+  resetPasswordConfirm: 'هل أنت متأكد من إعادة تعيين كلمة المرور لهذا المستخدم؟ سيتم تعيين كلمة مرور افتراضية.',
+  passwordReset: 'تم إعادة تعيين كلمة المرور',
+  newPasswordIs: 'كلمة المرور الجديدة هي',
+
+  // ─── Agency Rating ─────────────
+  rateExperience: 'قيّم تجربتك',
+  rateSubmitted: 'شكراً لتقييمك!',
+  yourRating: 'تقييمك',
+
+  // ─── Agency Announcements ──────
+  announcements: 'الإعلانات',
+  addAnnouncement: 'إضافة إعلان',
+  announcementMessage: 'الرسالة',
+  announcementType: 'النوع',
+  announcementInfo: 'معلومة',
+  announcementWarning: 'تحذير',
+  announcementUrgent: 'عاجل',
+  announcementCreated: 'تم إنشاء الإعلان',
+  announcementDeleted: 'تم حذف الإعلان',
+  noAnnouncements: 'لا توجد إعلانات',
+  agencyAnnouncement: 'إعلان المؤسسة',
+
+  // ─── CSV Export ────────────────
+  exportAgencies: 'تصدير المؤسسات (CSV)',
+  exportUsers: 'تصدير المستخدمين (CSV)',
+  exportSuccess: 'بدأ التصدير',
+  exportFailed: 'فشل التصدير',
 };
 
 export default ar;
