@@ -107,6 +107,7 @@ const ar = {
   queueFull: "الطابور ممتلئ حالياً",
   cancelReservation: "إلغاء الحجز",
   leaveQueue: "مغادرة الطابور",
+  leaving: "جارٍ المغادرة...",
   confirmCancel: "هل أنت متأكد من إلغاء الحجز؟",
   sponsored: "ممول",
   openNow: "مفتوح الآن",
@@ -668,10 +669,12 @@ const ar = {
   announcementUrgent: 'عاجل',
   announcementCreated: 'تم إنشاء الإعلان',
   announcementDeleted: 'تم حذف الإعلان',
+  announcementPlaceholder: 'اكتب إعلاناً لعملائك...',
   noAnnouncements: 'لا توجد إعلانات',
   agencyAnnouncement: 'إعلان المؤسسة',
 
   // ─── CSV Export ────────────────
+  exportCsv: 'تصدير CSV',
   exportAgencies: 'تصدير المؤسسات (CSV)',
   exportUsers: 'تصدير المستخدمين (CSV)',
   exportSuccess: 'بدأ التصدير',

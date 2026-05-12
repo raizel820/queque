@@ -112,6 +112,7 @@ const en: Record<TranslationKeys, string> = {
   leaveQueueConfirm: "Are you sure you want to leave the queue?",
   leaveQueueDesc: "Your reservation will be cancelled and you won't be able to recover it.",
   queueLeft: "You have left the queue successfully",
+  leaving: "Leaving...",
   confirmCancel: "Are you sure you want to cancel?",
   sponsored: "Sponsored",
   openNow: "Open Now",
@@ -647,11 +648,6 @@ const en: Record<TranslationKeys, string> = {
   emergencyCancelDesc: "Are you sure you want to cancel your reservation immediately? This action cannot be undone.",
   emergencyCancelConfirm: "Yes, cancel my reservation",
 
-  // ─── Leave Queue ─────────────
-  leaveQueueConfirm: "Are you sure you want to leave the queue? Your reservation will be cancelled.",
-  leaveQueueDesc: "You will lose your position in the queue.",
-  queueLeft: "You have left the queue successfully",
-
   // ─── Admin Reset Password ─────────────
   resetPassword: "Reset Password",
   resetPasswordConfirm: "Are you sure you want to reset this user's password? A default password will be set.",
@@ -673,10 +669,12 @@ const en: Record<TranslationKeys, string> = {
   announcementUrgent: "Urgent",
   announcementCreated: "Announcement created",
   announcementDeleted: "Announcement deleted",
+  announcementPlaceholder: "Write an announcement for your customers...",
   noAnnouncements: "No announcements",
   agencyAnnouncement: "Agency Announcement",
 
   // ─── CSV Export ────────────────
+  exportCsv: "Export CSV",
   exportAgencies: "Export Agencies (CSV)",
   exportUsers: "Export Users (CSV)",
   exportSuccess: "Export started",

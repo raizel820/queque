@@ -1310,6 +1310,38 @@ export function CustomerQueue() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Leave Queue Confirmation AlertDialog */}
+      <AlertDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-rose-500" />
+              {t('leaveQueueConfirm') || 'Leave Queue?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('leaveQueueDesc') || 'Are you sure you want to leave the queue? This action cannot be undone and you will lose your position.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-600 hover:bg-rose-700 text-white"
+              onClick={handleLeaveQueue}
+              disabled={cancelling === 'leaving'}
+            >
+              {cancelling === 'leaving' ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('leaving') || 'Leaving...'}
+                </span>
+              ) : (
+                t('leaveQueue') || 'Leave Queue'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

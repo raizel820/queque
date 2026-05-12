@@ -112,6 +112,7 @@ const fr: Record<TranslationKeys, string> = {
   leaveQueueConfirm: "Êtes-vous sûr de vouloir quitter la file ?",
   leaveQueueDesc: "Votre réservation sera annulée et vous ne pourrez pas la récupérer.",
   queueLeft: "Vous avez quitté la file avec succès",
+  leaving: "Départ en cours...",
   confirmCancel: "Êtes-vous sûr de vouloir annuler ?",
   sponsored: "Sponsorisé",
   openNow: "Ouvert",
@@ -647,11 +648,6 @@ const fr: Record<TranslationKeys, string> = {
   emergencyCancelDesc: "Êtes-vous sûr de vouloir annuler votre réservation immédiatement ? Cette action est irréversible.",
   emergencyCancelConfirm: "Oui, annuler ma réservation",
 
-  // ─── Leave Queue ─────────────
-  leaveQueueConfirm: "Êtes-vous sûr de vouloir quitter la file ? Votre réservation sera annulée.",
-  leaveQueueDesc: "Vous perdrez votre position dans la file.",
-  queueLeft: "Vous avez quitté la file avec succès",
-
   // ─── Admin Reset Password ─────────────
   resetPassword: "Réinitialiser le mot de passe",
   resetPasswordConfirm: "Êtes-vous sûr de vouloir réinitialiser le mot de passe de cet utilisateur ? Un mot de passe par défaut sera défini.",
@@ -673,10 +669,12 @@ const fr: Record<TranslationKeys, string> = {
   announcementUrgent: "Urgent",
   announcementCreated: "Annonce créée",
   announcementDeleted: "Annonce supprimée",
+  announcementPlaceholder: "Écrivez une annonce pour vos clients...",
   noAnnouncements: "Aucune annonce",
   agencyAnnouncement: "Annonce de l'établissement",
 
   // ─── CSV Export ────────────────
+  exportCsv: "Exporter CSV",
   exportAgencies: "Exporter les établissements (CSV)",
   exportUsers: "Exporter les utilisateurs (CSV)",
   exportSuccess: "Export démarré",

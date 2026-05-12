@@ -29,6 +29,8 @@ import {
  X,
  Info,
  AlertTriangle,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -87,6 +89,7 @@ export function AdminDashboard() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState<Set<string>>(new Set());
+  const [exportLoading, setExportLoading] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboard();
@@ -105,6 +108,29 @@ export function AdminDashboard() {
       toast.error(t('error'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAdminExport = async (type: 'agencies' | 'users') => {
+    setExportLoading(type);
+    try {
+      const res = await fetch(`/api/admin/export-csv?type=${type}`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `queuewise-${type}-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success(t('exportSuccess'));
+      } else {
+        toast.error(t('exportFailed'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setExportLoading(null);
     }
   };
 
@@ -199,10 +225,32 @@ export function AdminDashboard() {
             {dailyActivity} {t('todayLabel')}
           </Badge>
         </div>
-        <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200">
-          <ShieldCheck className="h-3 w-3 me-1" />
-          {t('superAdmin')}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleAdminExport('agencies')}
+            disabled={exportLoading === 'agencies'}
+            className="h-8 px-3 rounded-lg gap-1.5 text-xs"
+          >
+            {exportLoading === 'agencies' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{t('exportAgencies')}</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleAdminExport('users')}
+            disabled={exportLoading === 'users'}
+            className="h-8 px-3 rounded-lg gap-1.5 text-xs"
+          >
+            {exportLoading === 'users' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{t('exportUsers')}</span>
+          </Button>
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200">
+            <ShieldCheck className="h-3 w-3 me-1" />
+            {t('superAdmin')}
+          </Badge>
+        </div>
       </div>
 
       {/* System Announcements Banner */}

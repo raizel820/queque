@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Users,
   Clock,
@@ -34,6 +36,10 @@ import {
   CheckSquare,
   Square,
   X,
+  Megaphone,
+  Download,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -167,6 +173,10 @@ export function AgencyDashboard() {
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [batchLoading, setBatchLoading] = useState(false);
+  const [announcements, setAnnouncements] = useState<Array<{ id: string; content: string; createdAt: string }>>([]);
+  const [newAnnouncement, setNewAnnouncement] = useState('');
+  const [announcementLoading, setAnnouncementLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true });
   const agencyId = user?.agencyId || '';
@@ -211,12 +221,6 @@ export function AgencyDashboard() {
       setLoading(false);
     }
   }, [agencyId]);
-
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 10000);
-    return () => clearInterval(interval);
-  }, [fetchData, agencyId]);
 
   const handleCallNext = async () => {
     setActionLoading('call');
@@ -319,6 +323,87 @@ export function AgencyDashboard() {
   const exitBatchMode = () => {
     setBatchMode(false);
     setSelectedIds(new Set());
+  };
+
+  const fetchAnnouncements = useCallback(async () => {
+    if (!agencyId) return;
+    try {
+      const res = await fetch(`/api/agencies/${encodeURIComponent(agencyId)}/announcements`);
+      if (res.ok) {
+        const data = await res.json();
+        setAnnouncements(data.announcements ?? []);
+      }
+    } catch { /* silent */ }
+  }, [agencyId]);
+
+  useEffect(() => {
+    fetchData();
+    fetchAnnouncements();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, [fetchData, fetchAnnouncements, agencyId]);
+
+  const handleCreateAnnouncement = async () => {
+    if (!newAnnouncement.trim() || !agencyId) return;
+    setAnnouncementLoading(true);
+    try {
+      const res = await fetch(`/api/agencies/${encodeURIComponent(agencyId)}/announcements`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newAnnouncement.trim() }),
+      });
+      if (res.ok) {
+        setNewAnnouncement('');
+        toast.success(t('announcementCreated') || 'Announcement created');
+        fetchAnnouncements();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setAnnouncementLoading(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!agencyId) return;
+    try {
+      const res = await fetch(`/api/agencies/${encodeURIComponent(agencyId)}/announcements?id=${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        toast.success(t('announcementDeleted') || 'Announcement deleted');
+        fetchAnnouncements();
+      }
+    } catch {
+      toast.error(t('error'));
+    }
+  };
+
+  const handleExportCsv = async () => {
+    if (!agencyId) return;
+    setExportLoading(true);
+    try {
+      const res = await fetch(`/api/agencies/${encodeURIComponent(agencyId)}/export-csv`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `queuewise-reservations-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success(t('exportSuccess'));
+      } else {
+        toast.error(t('exportFailed'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   const getServiceName = (entry: QueueEntry) => {
@@ -435,14 +520,26 @@ export function AgencyDashboard() {
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">{t('autoRefresh')}</p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={fetchData}
-          className="h-10 w-10"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportCsv}
+            disabled={exportLoading}
+            className="h-9 px-3 rounded-lg gap-1.5 text-xs"
+          >
+            {exportLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{t('exportCsv') || 'Export CSV'}</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={fetchData}
+            className="h-10 w-10"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Today's Summary Card */}
@@ -903,6 +1000,84 @@ export function AgencyDashboard() {
                     </motion.div>
                   );
                 })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Announcements Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ delay: 0.38 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Megaphone className="h-4 w-4 text-emerald-600" />
+              {t('announcements')}
+              <Badge variant="secondary" className="text-xs">{announcements.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-3">
+            {/* Create new announcement */}
+            <div className="flex gap-2">
+              <Textarea
+                value={newAnnouncement}
+                onChange={(e) => setNewAnnouncement(e.target.value)}
+                placeholder={t('announcementPlaceholder') || 'Write an announcement...'}
+                className="min-h-[60px] text-sm rounded-xl border-border resize-none"
+                rows={2}
+              />
+              <Button
+                size="sm"
+                onClick={handleCreateAnnouncement}
+                disabled={!newAnnouncement.trim() || announcementLoading}
+                className="self-end h-9 px-3 rounded-xl gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+              >
+                {announcementLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+              </Button>
+            </div>
+            {/* Announcements list */}
+            {announcements.length === 0 ? (
+              <div className="text-center py-4">
+                <Megaphone className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+                <p className="text-sm text-muted-foreground">{t('noAnnouncements')}</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                <AnimatePresence>
+                  {announcements.map((a) => (
+                    <motion.div
+                      key={a.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      className="flex items-start gap-3 p-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 border border-amber-100 dark:border-amber-900/20 group"
+                    >
+                      <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Megaphone className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground leading-relaxed">{a.content}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {new Date(a.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                        onClick={() => handleDeleteAnnouncement(a.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             )}
           </CardContent>
