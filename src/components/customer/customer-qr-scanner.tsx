@@ -162,15 +162,25 @@ export function CustomerQrScanner({ open, onOpenChange, onAgencyFound }: Custome
 
     if (code && code.data) {
       // Parse QR code data - extract agency code
-      // Supports: "QW:CLINIC01", "QW: LAB001", or plain "CLINIC01"
+      // Supports URLs like: https://queuewise.dz/?code=CLINIC01
+      // Supports legacy: "QW:CLINIC01", or plain "CLINIC01"
       let agencyCode = code.data.trim();
+      
+      // Try URL with ?code= parameter
+      const codeParamMatch = agencyCode.match(/[?&]code=([A-Za-z0-9_-]+)/);
+      if (codeParamMatch) {
+        agencyCode = codeParamMatch[1];
+      }
+      // Try /join/{code} path format
+      else {
+        const urlMatch = agencyCode.match(/\/join\/([A-Za-z0-9_-]+)(?:\?|$)/);
+        if (urlMatch) {
+          agencyCode = urlMatch[1];
+        }
+      }
+      // Handle legacy QW: prefix
       if (agencyCode.startsWith('QW:')) {
         agencyCode = agencyCode.slice(3).trim();
-      }
-      // Also handle legacy URLs like https://queuewise.dz/join/CLINIC01
-      const urlMatch = agencyCode.match(/\/join\/([A-Za-z0-9_-]+)$/);
-      if (urlMatch) {
-        agencyCode = urlMatch[1];
       }
       
       if (!agencyCode) {

@@ -518,7 +518,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
 }
 
 export default function Home() {
-  const { user, currentView, sidebarOpen, toggleSidebar } = useAppStore();
+  const { user, currentView, sidebarOpen, toggleSidebar, setView, setPendingAgencyCode, pendingAgencyCode } = useAppStore();
  const { t, lang } = useLanguage();
   const [globalAnnouncements, setGlobalAnnouncements] = useState<Array<{ id: string; message: string; type: string; createdAt: string }>>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -606,6 +606,25 @@ export default function Home() {
       updateDocumentDirection('ar');
     }
   }, []);
+
+  // Handle QR code deep link: ?code=CLINIC01
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      setPendingAgencyCode(code);
+      // Clean up URL without reload
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [setPendingAgencyCode]);
+
+  // When user is authenticated as customer and has pending agency code, navigate to customer-home
+  // The customer-home component will pick up the code and auto-fetch agency detail
+  useEffect(() => {
+    if (user?.role === 'CUSTOMER' && pendingAgencyCode && currentView !== 'customer-home') {
+      setView('customer-home');
+    }
+  }, [user?.role, pendingAgencyCode, currentView, setView]);
 
   const isAuthenticated = !!user;
   const isCustomer = user?.role === 'CUSTOMER';
@@ -725,7 +744,7 @@ export default function Home() {
         )}
 
         {/* Page content */}
-        <div className={isCustomer ? 'pb-24 pt-2' : ''}>
+        <div className={isCustomer ? 'pt-2' : ''}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentView}

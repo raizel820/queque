@@ -767,6 +767,24 @@ const fr: Record<TranslationKeys, string> = {
   completionRateStat: "Taux d'achèvement",
   noShowRateStat: "Taux d'absence",
 
+  // ─── Feature: Smart Polling ────────────────
+  smartPollingActive: "Suivi rapide de votre tour",
+  smartPollingDesc: "Vérification toutes les 3s pendant que vous êtes le prochain",
+
+  // ─── Feature: Service Analytics ──────────
+  serviceAnalytics: "Analytique des services",
+  serviceAnalyticsDesc: "Temps d'attente moyen par service sur les 7 derniers jours",
+  avgWaitTimePerService: "Att. Moy.",
+  totalServed: "Total servis",
+  avgRatingPerService: "Note moy.",
+  noAnalyticsForPeriod: "Aucune donnée pour les 7 derniers jours",
+  last7Days: "7 derniers jours",
+
+  // ─── Feature: Quick Stats ──────────────
+  todaysQuickStats: "Stats rapides du jour",
+  queueLength: "Longueur de la file",
+  noShowRateToday: "Taux d'absence",
+
   // ─── QR Code Scanner ────────────────
   scanQrCode: "Scanner le code QR",
   cameraPermissionDenied: "Permission de caméra refusée. Veuillez l'activer dans les paramètres du navigateur.",

@@ -767,6 +767,24 @@ const en: Record<TranslationKeys, string> = {
   completionRateStat: "Completion Rate",
   noShowRateStat: "No-Show Rate",
 
+  // ─── Feature: Smart Polling ────────────────
+  smartPollingActive: "Fast-tracking your turn",
+  smartPollingDesc: "Checking every 3s while you're next",
+
+  // ─── Feature: Service Analytics ──────────
+  serviceAnalytics: "Service Analytics",
+  serviceAnalyticsDesc: "Average wait time per service over the last 7 days",
+  avgWaitTimePerService: "Avg. Wait",
+  totalServed: "Total Served",
+  avgRatingPerService: "Avg. Rating",
+  noAnalyticsForPeriod: "No data for the last 7 days",
+  last7Days: "Last 7 Days",
+
+  // ─── Feature: Quick Stats ──────────────
+  todaysQuickStats: "Today's Quick Stats",
+  queueLength: "Queue Length",
+  noShowRateToday: "No-Show Rate",
+
   // ─── QR Code Scanner ────────────────
   scanQrCode: "Scan QR Code",
   cameraPermissionDenied: "Camera permission denied. Please enable it in your browser settings.",

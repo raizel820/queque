@@ -99,7 +99,7 @@ export function SlideToConfirm({ onConfirm, label }: SlideToConfirmProps) {
         aria-valuemax={100}
         aria-valuenow={Math.round(progress)}
         aria-label={label || t('slideToConfirm') || 'Slide to confirm'}
-        className="relative h-14 rounded-2xl bg-white/15 backdrop-blur-sm overflow-hidden select-none touch-none outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+        className="relative h-12 sm:h-14 rounded-2xl bg-white/15 backdrop-blur-sm overflow-hidden select-none touch-none outline-none focus-visible:ring-2 focus-visible:ring-white/50"
         onMouseDown={(e) => handleStart(e.clientX)}
         onMouseMove={(e) => handleMove(e.clientX)}
         onMouseUp={handleEnd}
@@ -147,7 +147,7 @@ export function SlideToConfirm({ onConfirm, label }: SlideToConfirmProps) {
 
         {/* Slider thumb */}
         <motion.div
-          className="absolute top-1 start-1 h-12 w-12 rounded-xl bg-white shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing z-10"
+          className="absolute top-1 start-1 h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-white shadow-lg flex items-center justify-center cursor-grab active:cursor-grabbing z-10"
           animate={{ x: sliderX }}
           transition={isSliding ? { type: 'tween', duration: 0 } : { type: 'spring', stiffness: 400, damping: 30 }}
           style={{ touchAction: 'none' }}

@@ -767,6 +767,24 @@ const ar = {
   completionRateStat: 'معدل الإنجاز',
   noShowRateStat: 'معدل عدم الحضور',
 
+  // ─── Feature: Smart Polling ────────────────
+  smartPollingActive: 'تتبع سريع لدورك',
+  smartPollingDesc: 'فحص كل 3 ثوانٍ وأنت التالي',
+
+  // ─── Feature: Service Analytics ──────────
+  serviceAnalytics: 'تحليلات الخدمات',
+  serviceAnalyticsDesc: 'متوسط وقت الانتظار لكل خدمة خلال آخر 7 أيام',
+  avgWaitTimePerService: 'متوسط الانتظار',
+  totalServed: 'إجمالي المخدمين',
+  avgRatingPerService: 'متوسط التقييم',
+  noAnalyticsForPeriod: 'لا توجد بيانات خلال آخر 7 أيام',
+  last7Days: 'آخر 7 أيام',
+
+  // ─── Feature: Quick Stats ──────────────
+  todaysQuickStats: 'إحصائيات سريعة اليوم',
+  queueLength: 'طول الطابور',
+  noShowRateToday: 'معدل عدم الحضور',
+
   // ─── QR Code Scanner ────────────────
   scanQrCode: 'مسح رمز QR',
   cameraPermissionDenied: 'تم رفض إذن الكاميرا. يرجى تفعيله من إعدادات المتصفح.',

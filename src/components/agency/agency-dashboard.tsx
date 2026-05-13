@@ -42,10 +42,13 @@ import {
   Trash2,
   Star,
   AlertTriangle,
+  ChevronDown,
+  BarChart3,
 } from 'lucide-react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useRef } from 'react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { QueueStatusWidget } from '@/components/agency/queue-status-widget';
 import { WaitTimeChart } from '@/components/agency/wait-time-chart';
 import { RatingDistribution } from '@/components/agency/rating-distribution';
@@ -186,6 +189,17 @@ export function AgencyDashboard() {
   const [newAnnouncement, setNewAnnouncement] = useState('');
   const [announcementLoading, setAnnouncementLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [serviceAnalytics, setServiceAnalytics] = useState<Array<{
+    serviceId: string;
+    serviceName: string;
+    serviceNameAr?: string;
+    serviceNameFr?: string;
+    avgWaitTime: number;
+    totalServed: number;
+    avgRating: number;
+  }>>([]);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true });
   const agencyId = user?.agencyId || '';
@@ -317,8 +331,15 @@ export function AgencyDashboard() {
           body: JSON.stringify({ action: 'complete' }),
         })
       );
-      await Promise.all(promises);
-      toast.success(t('success'));
+      const results = await Promise.allSettled(promises);
+      const failedCount = results.filter(r => r.status === 'rejected').length;
+      if (failedCount === 0) {
+        toast.success(t('success'));
+      } else if (failedCount < results.length) {
+        toast.warning(t('batchPartialFail') || `${failedCount}/${results.length} actions failed, rest succeeded`);
+      } else {
+        toast.error(t('error'));
+      }
       setSelectedIds(new Set());
       setBatchMode(false);
       fetchData();
@@ -391,6 +412,21 @@ export function AgencyDashboard() {
     }
   };
 
+  const fetchServiceAnalytics = useCallback(async () => {
+    if (!agencyId) return;
+    setAnalyticsLoading(true);
+    try {
+      const res = await fetch(`/api/agency/analytics?agencyId=${encodeURIComponent(agencyId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setServiceAnalytics(data.services ?? []);
+      }
+    } catch { /* silent */ }
+    finally {
+      setAnalyticsLoading(false);
+    }
+  }, [agencyId]);
+
   const handleExportCsv = async () => {
     if (!agencyId) return;
     setExportLoading(true);
@@ -425,6 +461,12 @@ export function AgencyDashboard() {
     if (lang === 'ar' && s.nameAr) return s.nameAr;
     if (lang === 'fr' && s.nameFr) return s.nameFr;
     return s.name;
+  };
+
+  const getAnalyticsServiceName = (s: { serviceName: string; serviceNameAr?: string; serviceNameFr?: string }) => {
+    if (lang === 'ar' && s.serviceNameAr) return s.serviceNameAr;
+    if (lang === 'fr' && s.serviceNameFr) return s.serviceNameFr;
+    return s.serviceName;
   };
 
   const formatTime = (dateStr: string) => {
@@ -552,6 +594,46 @@ export function AgencyDashboard() {
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
+      </div>
+
+      {/* Today's Quick Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden">
+          <CardContent className="p-4 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-900/10 rounded-xl">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">{t('servedToday')}</span>
+            </div>
+            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{stats?.servedToday ?? 0}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden">
+          <CardContent className="p-4 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-900/10 rounded-xl">
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="h-4 w-4 text-amber-600" />
+              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">{t('avgWaitTime')}</span>
+            </div>
+            <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{stats?.avgWaitTime ?? 0}<span className="text-sm font-normal ms-0.5">{t('min')}</span></p>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden">
+          <CardContent className="p-4 bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-900/20 dark:to-teal-900/10 rounded-xl">
+            <div className="flex items-center gap-2 mb-1">
+              <Users className="h-4 w-4 text-teal-600" />
+              <span className="text-[11px] font-medium text-teal-700 dark:text-teal-400">{t('queueLength')}</span>
+            </div>
+            <p className="text-2xl font-bold text-teal-700 dark:text-teal-400">{stats?.currentlyWaiting ?? 0}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden">
+          <CardContent className="p-4 bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-900/20 dark:to-rose-900/10 rounded-xl">
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle className="h-4 w-4 text-rose-600" />
+              <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400">{t('noShowRateToday')}</span>
+            </div>
+            <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{stats?.noShowRate ?? 0}%</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Today's Summary Card */}
@@ -886,6 +968,82 @@ export function AgencyDashboard() {
         </div>
       </motion.div>
 
+      {/* Service Analytics — Collapsible Section */}
+      <Collapsible open={analyticsOpen} onOpenChange={(open) => { setAnalyticsOpen(open); if (open) fetchServiceAnalytics(); }}>
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/30 rounded-t-xl transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-emerald-600" />
+                  {t('serviceAnalytics')}
+                  <Badge variant="secondary" className="text-[10px] px-1.5">{t('last7Days')}</Badge>
+                </CardTitle>
+                <motion.div
+                  animate={{ rotate: analyticsOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </motion.div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{t('serviceAnalyticsDesc')}</p>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              {analyticsLoading ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : serviceAnalytics.length === 0 ? (
+                <div className="text-center py-6">
+                  <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">{t('noAnalyticsForPeriod')}</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-start py-2.5 px-3 text-xs font-semibold text-muted-foreground">{t('serviceName')}</th>
+                        <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground">{t('avgWaitTimePerService')}</th>
+                        <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground">{t('totalServed')}</th>
+                        <th className="text-center py-2.5 px-3 text-xs font-semibold text-muted-foreground">{t('avgRatingPerService')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {serviceAnalytics.map((s, idx) => (
+                        <tr key={s.serviceId} className={idx % 2 === 0 ? 'bg-gray-50/50 dark:bg-gray-800/20' : ''}>
+                          <td className="py-2.5 px-3 font-medium text-foreground">{getAnalyticsServiceName(s)}</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className="inline-flex items-center gap-1">
+                              <Clock className="h-3 w-3 text-amber-500" />
+                              <span className="font-semibold text-amber-700 dark:text-amber-400">{s.avgWaitTime} {t('min')}</span>
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className="inline-flex items-center gap-1">
+                              <Users className="h-3 w-3 text-emerald-500" />
+                              <span className="font-semibold">{s.totalServed}</span>
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <span className="inline-flex items-center gap-1">
+                              <Star className="h-3 w-3 text-amber-500" />
+                              <span className="font-semibold">{s.avgRating > 0 ? s.avgRating.toFixed(1) : '—'}</span>
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
       {/* Wait Time Chart + Rating Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <motion.div
@@ -937,14 +1095,22 @@ export function AgencyDashboard() {
         </CardHeader>
         <CardContent className="pt-0">
           {waitingList.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-10">
               <motion.div
                 animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                <Users className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                <div className="relative inline-block mb-3">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.05, 0.1] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-20 w-20 rounded-full bg-emerald-200 dark:bg-emerald-800"
+                  />
+                  <Users className="h-10 w-10 text-muted-foreground mx-auto relative" />
+                </div>
               </motion.div>
-              <p className="text-sm text-muted-foreground">{t('noQueue')}</p>
+              <p className="text-sm font-medium text-foreground mb-1">{t('noQueue')}</p>
+              <p className="text-xs text-muted-foreground">{t('noQueueHint') || 'All customers have been served. Great job!'}</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">

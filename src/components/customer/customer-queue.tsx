@@ -27,6 +27,7 @@ import {
   QrCode,
   ShieldAlert,
   Star,
+  Search,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -138,6 +139,8 @@ export function CustomerQueue() {
   const [hoveredStar, setHoveredStar] = useState<Record<string, number>>({});
   const prevStatusRef = useRef<Record<string, string>>({});
   const soundStartedRef = useRef(false);
+  const turnAlertRef = useRef<HTMLDivElement>(null);
+  const [isFastPolling, setIsFastPolling] = useState(false);
 
   const fetchReservations = useCallback(async () => {
     if (!user?.id) return;
@@ -277,14 +280,33 @@ export function CustomerQueue() {
     };
   }, []);
 
-  // Auto-refresh with configurable interval
+  // Smart polling: dynamically adjust interval based on position
+  useEffect(() => {
+    const waitingRes = reservations.find((r) => r.status === 'WAITING');
+    if (waitingRes && waitingRes.peopleAhead <= 3 && waitingRes.peopleAhead > 0 && refreshInterval > 0) {
+      // Position is close — use fast polling (3s)
+      setIsFastPolling(true);
+    } else {
+      setIsFastPolling(false);
+    }
+  }, [reservations, refreshInterval]);
+
+  // Auto-refresh with smart polling override
   useEffect(() => {
     fetchReservations();
-    if (refreshInterval > 0) {
-      const interval = setInterval(fetchReservations, refreshInterval);
+    const effectiveInterval = isFastPolling ? 3000 : refreshInterval;
+    if (effectiveInterval > 0) {
+      const interval = setInterval(fetchReservations, effectiveInterval);
       return () => clearInterval(interval);
     }
-  }, [fetchReservations, refreshInterval]);
+  }, [fetchReservations, refreshInterval, isFastPolling]);
+
+  // Auto-scroll to turn alert banner when it appears
+  useEffect(() => {
+    if (showTurnAlert && turnAlertRef.current) {
+      turnAlertRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [showTurnAlert]);
 
   // Time ago helper
   const getTimeAgo = () => {
@@ -442,13 +464,19 @@ export function CustomerQueue() {
           backgroundSize: '24px 24px',
         }} />
         <h1 className="text-2xl font-bold mb-1 relative bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">{t('myQueue')}</h1>
-        <div className="flex flex-col items-center justify-center py-20 relative">
-          <div className="relative mb-6">
+        <div className="flex flex-col items-center justify-center py-16 relative">
+          <div className="relative mb-8">
             {/* Pulsing background ring */}
             <motion.div
               animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.05, 0.15] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-28 w-28 rounded-full bg-emerald-200 dark:bg-emerald-800"
+              className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-32 w-32 rounded-full bg-emerald-200 dark:bg-emerald-800"
+            />
+            {/* Decorative dashed circle */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+              className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-28 w-28 rounded-full border-2 border-dashed border-emerald-200/60 dark:border-emerald-700/40"
             />
             <motion.div
               initial={{ scale: 0 }}
@@ -479,17 +507,22 @@ export function CustomerQueue() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
+            className="text-center max-w-xs"
           >
             <h2 className="text-lg font-semibold text-foreground mb-2">
               {t('noActiveReservations')}
             </h2>
-            <p className="text-sm text-muted-foreground mb-6 text-center max-w-sm">
+            <p className="text-sm text-muted-foreground mb-2">
               {t('welcomeSubtitle')}
             </p>
+            <p className="text-xs text-muted-foreground/70 mb-6">
+              {t('joinQueueHint') || 'Find an agency nearby and join their queue to save time'}
+            </p>
             <Button
-              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 rounded-xl h-11 shadow-lg shadow-emerald-500/20"
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 rounded-xl h-11 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all duration-300"
               onClick={() => setView('customer-home')}
             >
+              <Search className="h-4 w-4 me-2" />
               {t('joinQueue')}
             </Button>
           </motion.div>
@@ -584,17 +617,42 @@ export function CustomerQueue() {
         </motion.div>
       </div>
 
+      {/* Fast Polling Pulse Indicator */}
+      <AnimatePresence>
+        {isFastPolling && activeRes?.status === 'WAITING' && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30"
+          >
+            <motion.div
+              animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+              className="h-2.5 w-2.5 rounded-full bg-amber-500"
+            />
+            <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+              {t('smartPollingActive')}
+            </span>
+            <span className="text-[10px] text-amber-600/70 dark:text-amber-400/70">
+              · {t('smartPollingDesc')}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* YOUR TURN! Alert Banner — Prominent with Slide to Confirm */}
       <AnimatePresence>
         {showTurnAlert && activeRes?.status === 'CALLED' && (
           <motion.div
+            ref={turnAlertRef}
             initial={{ opacity: 0, y: -20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 200, damping: 20 }}
             className="mb-4"
           >
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 p-5 text-white shadow-2xl shadow-emerald-500/40">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 p-4 sm:p-5 text-white shadow-2xl shadow-emerald-500/40">
               {/* Confetti on CALLED */}
               <ConfettiParticles key={confettiKey} active={true} />
               {/* Animated background pattern */}
@@ -620,20 +678,20 @@ export function CustomerQueue() {
               />
 
               <div className="relative">
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                   <motion.div
                     animate={{ scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="flex-shrink-0 h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-emerald-900/20"
+                    className="flex-shrink-0 h-10 w-10 sm:h-16 sm:w-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-emerald-900/20"
                   >
-                    <BellRing className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                    <BellRing className="h-5 w-5 sm:h-8 sm:w-8 text-white" />
                   </motion.div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs sm:text-sm font-medium text-emerald-100">{t('yourTurnAlert')}</p>
                     <motion.p
                       animate={{ scale: [1, 1.08, 1] }}
                       transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
-                      className="text-2xl sm:text-4xl font-black tracking-tight drop-shadow-lg"
+                      className="text-xl sm:text-4xl font-black tracking-tight drop-shadow-lg"
                     >
                       {activeRes.queueNumber}
                     </motion.p>
@@ -644,13 +702,13 @@ export function CustomerQueue() {
                   {/* Sound toggle */}
                   <button
                     onClick={soundMuted ? handleUnmuteSound : handleMuteSound}
-                    className="flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                    className="flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
                     title={soundMuted ? t('notificationSoundOn') : t('notificationSoundOff')}
                   >
                     {soundMuted ? (
-                      <VolumeX className="h-4 w-4 sm:h-5 sm:w-5 text-white/70" />
+                      <VolumeX className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-white/70" />
                     ) : (
-                      <Volume2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                      <Volume2 className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-white" />
                     )}
                   </button>
                 </div>
@@ -684,8 +742,8 @@ export function CustomerQueue() {
           <motion.div
             key={res.id}
             initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
+            animate={isCalled ? { opacity: 1, scale: 1, x: [0, -3, 3, -3, 3, 0] } : { opacity: 1, scale: 1 }}
+            transition={isCalled ? { duration: 0.5, repeat: Infinity, repeatDelay: 1, ease: 'easeInOut' } : { duration: 0.3 }}
             className="mb-4"
           >
             {/* Ticket-style card with torn edges */}
@@ -703,9 +761,9 @@ export function CustomerQueue() {
               </svg>
 
               {/* Left perforation circle */}
-              <div className="absolute start-0 top-1/2 -translate-y-1/2 -translate-x-1/2 h-4 w-4 rounded-full bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/20 z-10 shadow-inner" />
+              <div className="absolute start-0 top-1/2 -translate-y-1/2 -translate-x-1/2 h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/20 z-10 shadow-inner" />
               {/* Right perforation circle */}
-              <div className="absolute end-0 top-1/2 -translate-y-1/2 translate-x-1/2 h-4 w-4 rounded-full bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/20 z-10 shadow-inner" />
+              <div className="absolute end-0 top-1/2 -translate-y-1/2 translate-x-1/2 h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-900 dark:to-emerald-950/20 z-10 shadow-inner" />
 
               {/* Gradient border wrapper for called status */}
               <div
@@ -738,22 +796,24 @@ export function CustomerQueue() {
                       <span className="font-semibold text-sm">
                         {isCalled ? t('statusCalled') : t('statusWaiting')}
                       </span>
-                      {isCalled && (
-                        <motion.span
-                          initial={{ opacity: 0, x: 10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="ms-auto text-xs font-medium bg-white/20 px-2.5 py-0.5 rounded-full"
-                        >
-                          <Sparkles className="h-3 w-3 inline me-1" />
-                          {t('statusCalled')}!
-                        </motion.span>
-                      )}
-                      {/* Reserved date badge */}
-                      {res.reservedDate && (
-                        <span className="ms-auto text-xs bg-white/20 px-2 py-0.5 rounded-full">
-                          📅 {new Date(res.reservedDate + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { month: 'short', day: 'numeric' })}
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5 ms-auto flex-shrink-0">
+                        {isCalled && (
+                          <motion.span
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="text-xs font-medium bg-white/20 px-2.5 py-0.5 rounded-full whitespace-nowrap"
+                          >
+                            <Sparkles className="h-3 w-3 inline me-1" />
+                            {t('statusCalled')}!
+                          </motion.span>
+                        )}
+                        {/* Reserved date badge */}
+                        {res.reservedDate && (
+                          <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full whitespace-nowrap">
+                            📅 {new Date(res.reservedDate + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -930,16 +990,16 @@ export function CustomerQueue() {
                           <Timer className="h-4 w-4 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">{t('estimatedWait') || ''}</span>
                         </div>
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                           <div className="flex flex-col items-center">
                             <motion.div
                               key={`h-${countdown.hours}`}
                               initial={{ y: -8, opacity: 0 }}
                               animate={{ y: 0, opacity: 1 }}
                               transition={{ duration: 0.2 }}
-                              className="h-12 w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50"
+                              className="h-10 w-12 sm:h-12 sm:w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50"
                             >
-                              <span className="text-xl font-bold tabular-nums text-foreground">
+                              <span className="text-lg sm:text-xl font-bold tabular-nums text-foreground">
                                 {padZero(countdown.hours)}
                               </span>
                             </motion.div>
@@ -956,9 +1016,9 @@ export function CustomerQueue() {
                               initial={{ y: -8, opacity: 0 }}
                               animate={{ y: 0, opacity: 1 }}
                               transition={{ duration: 0.2 }}
-                              className="h-12 w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50"
+                              className="h-10 w-12 sm:h-12 sm:w-14 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200/50 dark:border-gray-700/50"
                             >
-                              <span className="text-xl font-bold tabular-nums text-foreground">
+                              <span className="text-lg sm:text-xl font-bold tabular-nums text-foreground">
                                 {padZero(countdown.minutes)}
                               </span>
                             </motion.div>
@@ -975,9 +1035,9 @@ export function CustomerQueue() {
                               initial={{ y: -8, opacity: 0 }}
                               animate={{ y: 0, opacity: 1 }}
                               transition={{ duration: 0.15 }}
-                              className="h-12 w-14 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center border border-emerald-200/50 dark:border-emerald-800/50"
+                              className="h-10 w-12 sm:h-12 sm:w-14 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center border border-emerald-200/50 dark:border-emerald-800/50"
                             >
-                              <span className="text-xl font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
+                              <span className="text-lg sm:text-xl font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
                                 {padZero(countdown.seconds)}
                               </span>
                             </motion.div>

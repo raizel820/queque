@@ -56,7 +56,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user's role matches the expected role from login tab
-    if (expectedRole && user.role !== expectedRole) {
+    // Agency tab allows both AGENCY_OWNER and AGENCY_STAFF
+    const agencyRoles = ['AGENCY_OWNER', 'AGENCY_STAFF'];
+    if (
+      expectedRole &&
+      user.role !== expectedRole &&
+      !(agencyRoles.includes(expectedRole) && agencyRoles.includes(user.role))
+    ) {
       return NextResponse.json(
         { success: false, error: 'wrongRoleError' },
         { status: 403 }

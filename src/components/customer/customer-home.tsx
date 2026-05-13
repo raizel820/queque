@@ -93,7 +93,7 @@ const categoryKeys: { key: TranslationKeys; value: string; icon: React.ElementTy
 ];
 
 export function CustomerHome() {
-  const { setView, user } = useAppStore();
+  const { setView, user, pendingAgencyCode, setPendingAgencyCode } = useAppStore();
   const { t, lang } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -125,6 +125,14 @@ export function CustomerHome() {
       if (stored) setRecentSearches(JSON.parse(stored));
     } catch { /* silent */ }
   }, []);
+
+  // Handle pending agency code from QR deep link
+  useEffect(() => {
+    if (pendingAgencyCode) {
+      fetchAgencyDetail(pendingAgencyCode);
+      setPendingAgencyCode(null);
+    }
+  }, [pendingAgencyCode, setPendingAgencyCode]);
 
   const fetchFavorites = async () => {
     if (!user?.id) return;
@@ -424,7 +432,7 @@ export function CustomerHome() {
               selected={selectedDate}
               onSelect={setSelectedDate}
               disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-              className="rounded-xl border"
+              className="rounded-xl border w-full max-w-[300px] sm:max-w-none"
             />
           </div>
           {/* Quick date buttons */}
@@ -746,7 +754,7 @@ export function CustomerHome() {
         />
         {/* Search Suggestions Dropdown */}
         {(searchFocused || showSuggestions) && (searchSuggestions.length > 0 || (searchQuery === '' && recentSearches.length > 0)) && (
-          <div className="absolute top-full mt-1 start-0 end-0 z-50 bg-white dark:bg-gray-900 border border-border rounded-xl shadow-lg overflow-hidden">
+          <div className="absolute top-full mt-1 start-0 end-0 z-[60] bg-white dark:bg-gray-900 border border-border rounded-xl shadow-lg overflow-hidden">
             {searchQuery === '' && recentSearches.length > 0 ? (
               <>
                 <div className="flex items-center justify-between px-3 py-2 border-b border-border">

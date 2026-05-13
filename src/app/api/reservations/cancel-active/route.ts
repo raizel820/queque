@@ -10,11 +10,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
-    // Find the user's active (WAITING) reservation
+    // Find the user's active (WAITING or CALLED) reservation
     const reservation = await db.reservation.findFirst({
       where: {
         userId,
-        status: 'WAITING',
+        status: { in: ['WAITING', 'CALLED'] },
       },
       orderBy: { joinedAt: 'desc' },
     });

@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { useDebounce } from '@/hooks/use-debounce';
 
 interface UserItem {
   id: string;
@@ -61,6 +62,7 @@ export function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 400);
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export function AdminUsers() {
     }
     try {
       const params = new URLSearchParams();
-      if (search) params.set('search', search);
+      if (debouncedSearch) params.set('search', debouncedSearch);
       if (roleFilter) params.set('role', roleFilter);
       if (statusFilter) params.set('status', statusFilter);
       params.set('page', String(targetPage));
@@ -105,7 +107,7 @@ export function AdminUsers() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [search, roleFilter, statusFilter, t]);
+  }, [debouncedSearch, roleFilter, statusFilter, t]);
 
   useEffect(() => {
     fetchUsers(1, false);

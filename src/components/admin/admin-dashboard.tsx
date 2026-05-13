@@ -455,7 +455,7 @@ export function AdminDashboard() {
       </motion.div>
 
       {/* Stats Grid with gradient borders + sparklines */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 lg:gap-4">
         {statCards.map((stat, idx) => {
           const Icon = stat.icon;
           const spark = sparklines[idx] ?? sparklines[0];
@@ -472,11 +472,11 @@ export function AdminDashboard() {
               whileHover={{ scale: 1.03, y: -4 }}
               className="cursor-default"
             >
-              <div className="rounded-2xl p-[1px] bg-gradient-to-br from-emerald-200/40 via-transparent to-teal-200/40 dark:from-emerald-700/20 dark:via-transparent dark:to-teal-700/20">
-                <Card className="border-0 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 hover:-translate-y-1.5 bg-white dark:bg-gray-900/90 rounded-[14px]">
+              <div className="rounded-2xl p-[1px] bg-gradient-to-br from-emerald-200/40 via-transparent to-teal-200/40 dark:from-emerald-700/20 dark:via-transparent dark:to-teal-700/20 group">
+                <Card className="border-0 shadow-sm hover:shadow-xl hover:shadow-emerald-500/8 transition-all duration-300 hover:-translate-y-1.5 bg-white dark:bg-gray-900/90 rounded-[14px]">
                   <CardContent className={`p-4 rounded-t-[14px] ${stat.color}`}>
                     <div className="flex items-start justify-between mb-2">
-                      <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${
+                      <div className={`h-10 w-10 rounded-xl bg-gradient-to-br transition-transform duration-300 group-hover:scale-110 ${
                         idx === 0 ? 'from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40'
                         : idx === 1 ? 'from-teal-200 to-teal-300 dark:from-teal-900/40 dark:to-teal-800/40'
                         : idx === 2 ? 'from-teal-200 to-emerald-200 dark:from-teal-900/40 dark:to-emerald-900/40'

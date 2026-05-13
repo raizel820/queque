@@ -9,6 +9,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'agencyId required' }, { status: 400 });
     }
 
+    // Check if queue is paused
+    const queueSettings = await db.queueSettings.findFirst({ where: { agencyId } });
+    if (queueSettings?.isPaused) {
+      return NextResponse.json({ error: 'Queue is paused' }, { status: 400 });
+    }
+
     // Find the next WAITING reservation
     const where: Record<string, unknown> = {
       agencyId,
@@ -22,6 +28,9 @@ export async function POST(req: NextRequest) {
       where,
       include: {
         service: true,
+        user: {
+          select: { fullName: true },
+        },
       },
       orderBy: { queueNumber: 'asc' },
     });
@@ -40,7 +49,6 @@ export async function POST(req: NextRequest) {
     });
 
     // Update queue settings
-    const queueSettings = await db.queueSettings.findFirst({ where: { agencyId } });
     if (queueSettings) {
       await db.queueSettings.update({
         where: { id: queueSettings.id },
@@ -78,7 +86,7 @@ export async function POST(req: NextRequest) {
       reservation: {
         id: nextReservation.id,
         displayNumber: nextReservation.displayNumber,
-        customerName: '', // Would need user lookup
+        customerName: (nextReservation as { user?: { fullName: string } }).user?.fullName ?? '',
       },
     });
   } catch (error) {

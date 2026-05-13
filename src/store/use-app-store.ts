@@ -50,12 +50,16 @@ interface AppState {
   // UI
   sidebarOpen: boolean;
 
+  // QR Code deep link
+  pendingAgencyCode: string | null;
+
   // Actions
   setUser: (user: UserState | null) => void;
   setView: (view: ViewName) => void;
   goBack: () => void;
   toggleSidebar: () => void;
   logout: () => void;
+  setPendingAgencyCode: (code: string | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -66,6 +70,7 @@ export const useAppStore = create<AppState>()(
       currentView: 'landing',
       previousView: null,
       sidebarOpen: false,
+      pendingAgencyCode: null,
 
       setUser: (user) =>
         set({
@@ -98,6 +103,8 @@ export const useAppStore = create<AppState>()(
       toggleSidebar: () =>
         set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 
+      setPendingAgencyCode: (code) => set({ pendingAgencyCode: code }),
+
       logout: () => {
         set({
           user: null,
@@ -105,6 +112,7 @@ export const useAppStore = create<AppState>()(
           currentView: 'landing',
           previousView: null,
           sidebarOpen: false,
+          pendingAgencyCode: null,
         });
         // Clear persisted storage AFTER set (persist middleware writes during set)
         setTimeout(() => {
@@ -121,6 +129,7 @@ export const useAppStore = create<AppState>()(
       partialize: (state) => ({
         user: state.user,
         currentView: state.currentView,
+        pendingAgencyCode: state.pendingAgencyCode,
       }),
     }
   )

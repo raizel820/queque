@@ -400,7 +400,7 @@ export function LandingPage() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.4, delay: 0.5 + idx * 0.15 }}
-                className="flex-1 flex flex-col items-center text-center relative"
+                className="flex-1 flex flex-col items-center text-center relative group cursor-default"
               >
                 {/* Gradient step connector line (desktop) */}
                 {idx < steps.length - 1 && (
@@ -417,7 +417,7 @@ export function LandingPage() {
                   </div>
                 )}
 
-                <div className="relative">
+                <div className="relative group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-emerald-500/25 transition-all duration-300">
                   <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                     <step.icon className="h-7 w-7 text-white" />
                   </div>
@@ -425,7 +425,7 @@ export function LandingPage() {
                     {idx + 1}
                   </div>
                 </div>
-                <h3 className="mt-4 font-semibold text-base text-foreground">
+                <h3 className="mt-4 font-semibold text-base text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">
                   {t(step.titleKey)}
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground max-w-[200px]">
@@ -462,14 +462,14 @@ export function LandingPage() {
                 viewport={{ once: true, margin: '-30px' }}
                 transition={{ duration: 0.4, delay: idx * 0.12 }}
               >
-                <Card className="h-full border-0 shadow-sm hover:shadow-md transition-all duration-300 bg-white dark:bg-gray-900">
+                <Card className="h-full border-0 shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-gray-900 group">
                   <CardContent className="p-5 flex flex-col h-full">
-                    <Quote className="h-8 w-8 text-emerald-200 dark:text-emerald-800 mb-3 flex-shrink-0" />
+                    <Quote className="h-8 w-8 text-emerald-200 dark:text-emerald-800 mb-3 flex-shrink-0 group-hover:text-emerald-300 dark:group-hover:text-emerald-700 transition-colors duration-300" />
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">
                       &ldquo;{t(testimonial.textKey)}&rdquo;
                     </p>
                     <div className="flex items-center gap-3 pt-3 border-t border-border">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
                         {t(testimonial.nameKey).charAt(0)}
                       </div>
                       <div>
