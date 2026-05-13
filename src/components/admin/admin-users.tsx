@@ -59,11 +59,14 @@ export function AdminUsers() {
   const { t, lang } = useLanguage();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetUserId, setResetUserId] = useState<string | null>(null);
@@ -71,30 +74,46 @@ export function AdminUsers() {
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
+  const fetchUsers = useCallback(async (targetPage: number, loadMore: boolean) => {
+    if (loadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
       if (roleFilter) params.set('role', roleFilter);
       if (statusFilter) params.set('status', statusFilter);
+      params.set('page', String(targetPage));
+      params.set('limit', String(PAGE_SIZE));
 
       const res = await fetch(`/api/admin/users?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        setUsers(data.users ?? []);
+        if (loadMore) {
+          setUsers((prev) => [...prev, ...(data.users ?? [])]);
+        } else {
+          setUsers(data.users ?? []);
+        }
         setTotal(data.total ?? 0);
+        setPage(targetPage);
       }
     } catch {
       toast.error(t('error'));
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
-  }, [search, roleFilter, statusFilter]);
+  }, [search, roleFilter, statusFilter, t]);
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(1, false);
   }, [fetchUsers]);
+
+  const handleLoadMore = () => {
+    fetchUsers(page + 1, true);
+  };
 
   const handleToggleStatus = async (userId: string, currentActive: boolean) => {
     setActionLoading(userId);
@@ -109,7 +128,7 @@ export function AdminUsers() {
         toast.success(
           currentActive ? t('suspendUser') : t('activateUser')
         );
-        fetchUsers();
+        fetchUsers(1, false);
       } else {
         toast.error(t('error'));
       }
@@ -156,7 +175,7 @@ export function AdminUsers() {
         setDeleteUserId(null);
         setDeleteConfirmText('');
         toast.success(t('accountDeleted') || 'Account deleted successfully');
-        fetchUsers();
+        fetchUsers(1, false);
       } else {
         const data = await res.json();
         toast.error(data.error || t('error'));
@@ -492,6 +511,26 @@ export function AdminUsers() {
               </Card>
             </motion.div>
           ))}
+
+          {/* Load More Button */}
+          {users.length < total && (
+            <div className="flex justify-center pt-4">
+              <Button
+                variant="outline"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="rounded-full px-8 border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+              >
+                {loadingMore ? (
+                  <Loader2 className="h-4 w-4 animate-spin me-2" />
+                ) : null}
+                {t('loadMore') || 'Load More'}
+                <span className="ms-2 text-xs opacity-70">
+                  ({total - users.length} {t('moreUsersRemaining') || 'more users remaining'})
+                </span>
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

@@ -95,6 +95,33 @@ export async function GET(req: NextRequest) {
     const completionRate = totalAllTime > 0 ? Math.round((completedAllTime / totalAllTime) * 100) : 0;
     const noShowRate = totalAllTime > 0 ? Math.round((noShowAllTime / totalAllTime) * 100) : 0;
 
+    // Hourly wait time data (today)
+    const todayCompleted = await db.reservation.findMany({
+      where: { agencyId, status: 'COMPLETED', completedAt: { gte: todayStart, lte: todayEnd } },
+      select: { joinedAt: true, completedAt: true, calledAt: true },
+    });
+    const hourlyWaitTime: number[] = new Array(24).fill(0);
+    const hourlyCount: number[] = new Array(24).fill(0);
+    todayCompleted.forEach((r) => {
+      if (r.calledAt && r.completedAt) {
+        const waitMinutes = Math.round((r.completedAt.getTime() - r.joinedAt.getTime()) / 60000);
+        const h = r.joinedAt.getHours();
+        hourlyWaitTime[h] += waitMinutes;
+        hourlyCount[h]++;
+      }
+    });
+    const avgHourlyWait = hourlyWaitTime.map((total, i) => hourlyCount[i] > 0 ? Math.round(total / hourlyCount[i]) : 0);
+
+    // Rating distribution
+    const ratingDist = [0, 0, 0, 0, 0]; // 1-5 stars
+    const allRated = await db.reservation.findMany({
+      where: { agencyId, rating: { not: null } },
+      select: { rating: true },
+    });
+    allRated.forEach((r) => {
+      if (r.rating && r.rating >= 1 && r.rating <= 5) ratingDist[r.rating - 1]++;
+    });
+
     return NextResponse.json({
       todayReservations,
       currentlyWaiting: waitingCount,
@@ -110,6 +137,9 @@ export async function GET(req: NextRequest) {
       totalRatings,
       completionRate,
       noShowRate,
+      // Chart data
+      hourlyWaitTime: avgHourlyWait,
+      ratingDistribution: ratingDist,
     });
   } catch (error) {
     console.error('Agency stats error:', error);

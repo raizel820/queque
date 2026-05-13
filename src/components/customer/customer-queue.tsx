@@ -620,37 +620,37 @@ export function CustomerQueue() {
               />
 
               <div className="relative">
-                <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center gap-3 mb-4">
                   <motion.div
                     animate={{ scale: [1, 1.3, 1], rotate: [0, 15, -15, 0] }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="flex-shrink-0 h-16 w-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-emerald-900/20"
+                    className="flex-shrink-0 h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg shadow-emerald-900/20"
                   >
-                    <BellRing className="h-8 w-8 text-white" />
+                    <BellRing className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                   </motion.div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-emerald-100">{t('yourTurnAlert')}</p>
+                    <p className="text-xs sm:text-sm font-medium text-emerald-100">{t('yourTurnAlert')}</p>
                     <motion.p
                       animate={{ scale: [1, 1.08, 1] }}
                       transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
-                      className="text-4xl font-black tracking-tight drop-shadow-lg"
+                      className="text-2xl sm:text-4xl font-black tracking-tight drop-shadow-lg"
                     >
                       {activeRes.queueNumber}
                     </motion.p>
-                    <p className="text-sm text-emerald-100 truncate">
+                    <p className="text-xs text-emerald-100 truncate">
                       {getAgencyName(activeRes)}
                     </p>
                   </div>
                   {/* Sound toggle */}
                   <button
                     onClick={soundMuted ? handleUnmuteSound : handleMuteSound}
-                    className="flex-shrink-0 h-10 w-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                    className="flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
                     title={soundMuted ? t('notificationSoundOn') : t('notificationSoundOff')}
                   >
                     {soundMuted ? (
-                      <VolumeX className="h-5 w-5 text-white/70" />
+                      <VolumeX className="h-4 w-4 sm:h-5 sm:w-5 text-white/70" />
                     ) : (
-                      <Volume2 className="h-5 w-5 text-white" />
+                      <Volume2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     )}
                   </button>
                 </div>
@@ -757,11 +757,11 @@ export function CustomerQueue() {
                     </div>
                   </div>
 
-                  <CardContent className="p-5">
+                  <CardContent className="p-4 sm:p-5">
                     {/* Progress Ring with Queue Number */}
-                    <div className="flex justify-center mb-5">
+                    <div className="flex justify-center mb-4">
                       <div className="relative">
-                        <svg className="h-32 w-32" viewBox="0 0 120 120">
+                        <svg className="h-28 w-28 sm:h-32 sm:w-32" viewBox="0 0 120 120">
                           <defs>
                             <linearGradient
                               id={`ring-grad-${res.id}`}
@@ -842,11 +842,11 @@ export function CustomerQueue() {
                     </div>
 
                     {/* Agency & Service */}
-                    <div className="text-center mb-5 space-y-1">
-                      <p className="text-sm font-medium text-foreground">
+                    <div className="text-center mb-4 space-y-0.5">
+                      <p className="text-sm font-medium text-foreground truncate px-2">
                         {getAgencyName(res)}
                       </p>
-                      <p className="text-xs text-muted-foreground">{getServiceName(res)}</p>
+                      <p className="text-xs text-muted-foreground truncate px-2">{getServiceName(res)}</p>
                       {res.reservedDate && (
                         <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                           📅 {t('reservedFor')} {new Date(res.reservedDate + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { month: 'short', day: 'numeric' })}
@@ -854,12 +854,12 @@ export function CustomerQueue() {
                       )}
                     </div>
 
-                    {/* Stats Row */}
-                    <div className="grid grid-cols-3 gap-3 mb-5">
+                    {/* Stats Row - responsive 3 cols */}
+                    <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
                       {/* People Ahead */}
-                      <div className="text-center p-3 rounded-xl bg-teal-50 dark:bg-teal-900/20">
+                      <div className="text-center p-2 sm:p-3 rounded-xl bg-teal-50 dark:bg-teal-900/20">
                         <div className="relative inline-block">
-                          <Users className="h-4 w-4 text-teal-600 dark:text-teal-400 mx-auto mb-1" />
+                          <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-teal-600 dark:text-teal-400 mx-auto mb-0.5" />
                           {res.peopleAhead > 0 && (
                             <motion.div
                               animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
@@ -873,16 +873,16 @@ export function CustomerQueue() {
                           initial={{ scale: 1.3, color: '#0d9488' }}
                           animate={{ scale: 1, color: '#0f766e' }}
                           transition={{ duration: 0.4 }}
-                          className="text-lg font-bold text-teal-700 dark:text-teal-400"
+                          className="text-base sm:text-lg font-bold text-teal-700 dark:text-teal-400"
                         >
                           {res.peopleAhead}
                         </motion.p>
-                        <p className="text-[10px] text-muted-foreground">{t('peopleAhead')}</p>
+                        <p className="text-[9px] sm:text-[10px] text-muted-foreground">{t('peopleAhead')}</p>
                       </div>
                       {/* Animated circular countdown */}
-                      <div className="text-center p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex flex-col items-center justify-center">
-                        <div className="relative h-14 w-14">
-                          <svg className="h-14 w-14 -rotate-90" viewBox="0 0 80 80">
+                      <div className="text-center p-2 sm:p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex flex-col items-center justify-center">
+                        <div className="relative h-12 w-12 sm:h-14 sm:w-14">
+                          <svg className="h-12 w-12 sm:h-14 sm:w-14 -rotate-90" viewBox="0 0 80 80">
                             <circle cx="40" cy="40" r={countdownRadius} fill="none" strokeWidth="4" className="stroke-amber-200 dark:stroke-amber-800/50" />
                             <motion.circle
                               cx="40"
@@ -905,17 +905,17 @@ export function CustomerQueue() {
                             </defs>
                           </svg>
                           <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-sm font-bold text-amber-700 dark:text-amber-400">~{res.estimatedWait}</span>
-                            <span className="text-[8px] text-muted-foreground">{t('min')}</span>
+                            <span className="text-xs sm:text-sm font-bold text-amber-700 dark:text-amber-400">~{res.estimatedWait}</span>
+                            <span className="text-[7px] sm:text-[8px] text-muted-foreground">{t('min')}</span>
                           </div>
                         </div>
                       </div>
-                      <div className="text-center p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20">
-                        <TicketCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mx-auto mb-1" />
-                        <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+                      <div className="text-center p-2 sm:p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20">
+                        <TicketCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600 dark:text-emerald-400 mx-auto mb-0.5" />
+                        <p className="text-base sm:text-lg font-bold text-emerald-700 dark:text-emerald-400">
                           {res.currentServingNumber}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">{t('currentlyServing')}</p>
+                        <p className="text-[9px] sm:text-[10px] text-muted-foreground">{t('currentServing')}</p>
                       </div>
                     </div>
 

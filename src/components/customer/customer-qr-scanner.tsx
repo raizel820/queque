@@ -161,8 +161,27 @@ export function CustomerQrScanner({ open, onOpenChange, onAgencyFound }: Custome
     });
 
     if (code && code.data) {
+      // Parse QR code data - extract agency code
+      // Supports: "QW:CLINIC01", "QW: LAB001", or plain "CLINIC01"
+      let agencyCode = code.data.trim();
+      if (agencyCode.startsWith('QW:')) {
+        agencyCode = agencyCode.slice(3).trim();
+      }
+      // Also handle legacy URLs like https://queuewise.dz/join/CLINIC01
+      const urlMatch = agencyCode.match(/\/join\/([A-Za-z0-9_-]+)$/);
+      if (urlMatch) {
+        agencyCode = urlMatch[1];
+      }
+      
+      if (!agencyCode) {
+        setScannerState('error');
+        setErrorType('general');
+        toast.error(t('agencyNotFound'));
+        return;
+      }
+
       // QR code detected
-      setDetectedCode(code.data);
+      setDetectedCode(agencyCode);
       setScannerState('detected');
       stopCamera();
       // Vibrate on detection
@@ -170,7 +189,7 @@ export function CustomerQrScanner({ open, onOpenChange, onAgencyFound }: Custome
         navigator.vibrate(100);
       }
       // Fetch agency info
-      fetchAgencyByCode(code.data.trim());
+      fetchAgencyByCode(agencyCode);
       return;
     }
 

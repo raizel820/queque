@@ -202,42 +202,38 @@ export async function DELETE(request: NextRequest) {
     // Get agencyId before deleting (for agency cleanup)
     const agency = await db.agency.findFirst({ where: { ownerId: userId } });
 
-    // Delete related records first (in order to avoid foreign key constraints)
-    if (agency) {
-      // Delete agency staff
-      await db.agencyStaff.deleteMany({ where: { agencyId: agency.id } });
-      // Delete queue settings
-      await db.queueSettings.deleteMany({ where: { agencyId: agency.id } });
-      // Delete reservations
-      await db.reservation.deleteMany({ where: { agencyId: agency.id } });
-      // Delete services
-      await db.service.deleteMany({ where: { agencyId: agency.id } });
-      // Delete announcements
-      await db.announcement.deleteMany({ where: { agencyId: agency.id } });
-      // Delete transactions
-      await db.transaction.deleteMany({ where: { agencyId: agency.id } });
-      // Delete the agency
-      await db.agency.delete({ where: { id: agency.id } });
-    }
+    // Use transaction for atomic deletion
+    await db.$transaction(async (tx) => {
+      // Delete agency-related records first
+      if (agency) {
+        await tx.agencyStaff.deleteMany({ where: { agencyId: agency.id } });
+        await tx.queueSettings.deleteMany({ where: { agencyId: agency.id } });
+        await tx.reservation.deleteMany({ where: { agencyId: agency.id } });
+        await tx.service.deleteMany({ where: { agencyId: agency.id } });
+        await tx.announcement.deleteMany({ where: { agencyId: agency.id } });
+        await tx.transaction.deleteMany({ where: { agencyId: agency.id } });
+        await tx.agency.delete({ where: { id: agency.id } });
+      }
 
-    // Delete user's reservations (as customer)
-    await db.reservation.deleteMany({ where: { customerId: userId } });
-    // Delete user's favorites
-    await db.favorite.deleteMany({ where: { userId } });
-    // Delete user's notifications
-    await db.notification.deleteMany({ where: { userId } });
-    // Delete user's audit logs
-    await db.auditLog.deleteMany({ where: { userId } });
-    // Delete user's staff memberships
-    await db.agencyStaff.deleteMany({ where: { userId } });
-    // Delete user's reviews (transaction reviews)
-    await db.transaction.updateMany({
-      where: { reviewedBy: userId },
-      data: { reviewedBy: null },
+      // Delete user's reservations (as customer)
+      await tx.reservation.deleteMany({ where: { userId } });
+      // Delete user's favorites
+      await tx.favorite.deleteMany({ where: { userId } });
+      // Delete user's notifications
+      await tx.notification.deleteMany({ where: { userId } });
+      // Delete user's audit logs
+      await tx.auditLog.deleteMany({ where: { userId } });
+      // Delete user's staff memberships
+      await tx.agencyStaff.deleteMany({ where: { userId } });
+      // Clear transaction reviews
+      await tx.transaction.updateMany({
+        where: { reviewedBy: userId },
+        data: { reviewedBy: null },
+      });
+
+      // Finally delete the user
+      await tx.user.delete({ where: { id: userId } });
     });
-
-    // Finally delete the user
-    await db.user.delete({ where: { id: userId } });
 
     await db.auditLog.create({
       data: {

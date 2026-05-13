@@ -107,6 +107,7 @@ export function CustomerHome() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchSectionRef = useRef<HTMLDivElement>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Date picker state
@@ -388,6 +389,24 @@ export function CustomerHome() {
     return cur >= sh * 60 + sm && cur < eh * 60 + em;
   };
 
+  // Welcome banner helpers
+  const firstName = user?.fullName?.split(' ')[0] || '';
+  const getGreetingMessage = () => {
+    const hour = new Date().getHours();
+    const messages: Record<string, Record<string, string>> = {
+      morning: { ar: 'ابحث عن أقرب وكالة وانضم إلى الطابور', fr: 'Trouvez votre agence la plus proche et rejoignez la file', en: 'Find your nearest agency and join the queue' },
+      afternoon: { ar: 'انضم إلى الطابور دون الانتظار في الصف', fr: 'Rejoignez une file sans attendre en ligne', en: 'Join a queue without waiting in line' },
+      evening: { ar: 'وصول سريع إلى الطابور بين يديك', fr: 'Accès rapide à la file à portée de main', en: 'Quick queue access at your fingertips' },
+      night: { ar: 'خطط لزيارتك القادمة غداً', fr: 'Planifiez votre prochaine visite demain', en: 'Plan your next visit tomorrow' },
+    };
+    let timeOfDay: string;
+    if (hour >= 5 && hour < 12) timeOfDay = 'morning';
+    else if (hour >= 12 && hour < 17) timeOfDay = 'afternoon';
+    else if (hour >= 17 && hour < 21) timeOfDay = 'evening';
+    else timeOfDay = 'night';
+    return messages[timeOfDay][lang] || messages[timeOfDay].en;
+  };
+
   const dateDialogContent = (
     <Dialog open={dateDialogOpen} onOpenChange={(open) => { setDateDialogOpen(open); if (!open) { setPendingJoin(null); setSelectedDate(undefined); } }}>
       <DialogContent className="sm:max-w-md">
@@ -625,6 +644,27 @@ export function CustomerHome() {
         <p className="text-sm text-muted-foreground ms-[44px]">{t('welcomeSubtitle')}</p>
       </motion.div>
 
+      {/* Welcome Banner */}
+      {firstName && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="mb-4"
+        >
+          <button
+            type="button"
+            onClick={() => searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+            className="w-full text-start rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 px-5 py-4 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-transform cursor-pointer"
+          >
+            <p className="text-lg font-bold text-white mb-0.5">
+              {lang === 'ar' ? `مرحباً، ${firstName}! 👋` : lang === 'fr' ? `Bienvenue, ${firstName} ! 👋` : `Welcome, ${firstName}! 👋`}
+            </p>
+            <p className="text-sm text-emerald-100">{getGreetingMessage()}</p>
+          </button>
+        </motion.div>
+      )}
+
       {/* Quick Stats Banner — Glass-morphism */}
       {!loading && agencies.length > 0 && (
         <motion.div
@@ -686,7 +726,7 @@ export function CustomerHome() {
       )}
 
       {/* Search Bar */}
-      <div className="relative mb-4">
+      <div ref={searchSectionRef} className="relative mb-4">
         <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input
           ref={searchInputRef}

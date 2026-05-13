@@ -13,9 +13,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const url = `https://queuewise.dz/join/${encodeURIComponent(code)}`;
+    // Encode as QW:{code} so scanner can identify QueueWise codes
+    const qrData = `QW:${code}`;
 
-    const svgString = await QRCode.toString(url, {
+    const svgString = await QRCode.toString(qrData, {
       type: 'svg',
       width: 256,
       margin: 2,

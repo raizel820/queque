@@ -261,19 +261,19 @@ export function CustomerHistory() {
                     {/* Timeline dot */}
                     <div className={`absolute start-[-21px] top-5 h-3 w-3 rounded-full ${statusDotColor} ring-2 ring-background shadow-sm`} />
                     <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="h-11 w-11 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                              <span className="text-base font-bold text-emerald-700 dark:text-emerald-400">
+                      <CardContent className="p-3 sm:p-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm sm:text-base font-bold text-emerald-700 dark:text-emerald-400">
                                 {item.queueNumber}
                               </span>
                             </div>
-                            <div>
-                              <p className="text-sm font-semibold text-foreground">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-foreground truncate">
                                 {getAgencyName(item)}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-xs text-muted-foreground truncate">
                                 {getServiceName(item)}
                               </p>
                             </div>

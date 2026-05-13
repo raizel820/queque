@@ -72,6 +72,11 @@ interface DashboardStats {
   noShowCount?: number;
   cancelledCount?: number;
   peakHour?: string;
+  avgRating?: number;
+  totalRatings?: number;
+  noShowRate?: number;
+  hourlyWaitTime?: number[];
+  ratingDistribution?: number[];
 }
 
 interface ServiceStat {
@@ -889,7 +894,7 @@ export function AgencyDashboard() {
           transition={{ delay: 0.35 }}
         >
           <WaitTimeChart
-            data={[]}
+            data={stats?.hourlyWaitTime ?? []}
             currentHour={new Date().getHours()}
           />
         </motion.div>
@@ -898,7 +903,7 @@ export function AgencyDashboard() {
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.4 }}
         >
-          <RatingDistribution ratings={[]} />
+          <RatingDistribution ratings={stats?.ratingDistribution ?? []} />
         </motion.div>
       </div>
 
