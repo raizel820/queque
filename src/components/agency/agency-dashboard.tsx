@@ -507,7 +507,7 @@ export function AgencyDashboard() {
   ];
 
   return (
-    <div className="p-4 lg:p-6 space-y-5 relative" ref={sectionRef}>
+    <div className="p-4 lg:p-6 space-y-3 relative" ref={sectionRef}>
       {/* Gradient top border */}
       <div className="absolute top-0 start-0 end-0 h-[4px] bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 rounded-full" />
 

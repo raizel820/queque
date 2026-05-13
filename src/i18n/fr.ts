@@ -766,6 +766,20 @@ const fr: Record<TranslationKeys, string> = {
   totalRatingsStat: "Total des notes",
   completionRateStat: "Taux d'achèvement",
   noShowRateStat: "Taux d'absence",
+
+  // ─── QR Code Scanner ────────────────
+  scanQrCode: "Scanner le code QR",
+  cameraPermissionDenied: "Permission de caméra refusée. Veuillez l'activer dans les paramètres du navigateur.",
+  noCameraAvailable: "Aucune caméra disponible sur cet appareil.",
+  scanningStatus: "Analyse en cours...",
+  qrCodeDetected: "Code QR détecté !",
+  agencyFound: "Établissement trouvé",
+  agencyNotFound: "Aucun établissement trouvé avec ce code",
+  goToAgency: "Aller à l'établissement",
+  closeScanner: "Fermer le scanner",
+  pointCameraAtQr: "Pointez votre caméra vers un code QR",
+  invalidQrCode: "Code QR invalide. Veuillez réessayer.",
+  cameraError: "Erreur d'accès à la caméra",
 };
 
 export default fr;
