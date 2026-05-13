@@ -766,6 +766,20 @@ const ar = {
   totalRatingsStat: 'إجمالي التقييمات',
   completionRateStat: 'معدل الإنجاز',
   noShowRateStat: 'معدل عدم الحضور',
+
+  // ─── QR Code Scanner ────────────────
+  scanQrCode: 'مسح رمز QR',
+  cameraPermissionDenied: 'تم رفض إذن الكاميرا. يرجى تفعيله من إعدادات المتصفح.',
+  noCameraAvailable: 'لا توجد كاميرا متاحة على هذا الجهاز.',
+  scanningStatus: 'جارٍ المسح...',
+  qrCodeDetected: 'تم اكتشاف رمز QR!',
+  agencyFound: 'تم العثور على المؤسسة',
+  agencyNotFound: 'لم يتم العثور على مؤسسة بهذا الكود',
+  goToAgency: 'الذهاب للمؤسسة',
+  closeScanner: 'إغلاق الماسح',
+  pointCameraAtQr: 'وجّه الكاميرا نحو رمز QR',
+  invalidQrCode: 'رمز QR غير صالح. يرجى المحاولة مرة أخرى.',
+  cameraError: 'خطأ في الوصول إلى الكاميرا',
 };
 
 export default ar;

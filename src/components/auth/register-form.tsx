@@ -22,6 +22,74 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { UserRole } from '@/store/use-app-store';
 
+// FloatingInput component defined OUTSIDE RegisterForm to prevent remounting on state changes
+function FloatingInput({ id, label, type = 'text', value, onChange, onFocus, onBlur, placeholder, dir, prefix, suffix, children, hasToggle, toggleVisible, onToggle, focusedField }: {
+  id: string;
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onFocus: () => void;
+  onBlur: () => void;
+  placeholder?: string;
+  dir?: string;
+  prefix?: React.ReactNode;
+  suffix?: React.ReactNode;
+  children?: React.ReactNode;
+  hasToggle?: boolean;
+  toggleVisible?: boolean;
+  onToggle?: () => void;
+  focusedField: string | null;
+}) {
+  const isActive = focusedField === id || value.length > 0;
+  return (
+    <div className="relative space-y-1">
+      <div className={`relative flex items-center rounded-xl border transition-colors duration-200 ${
+        focusedField === id
+          ? 'border-emerald-400 ring-2 ring-emerald-500/20 dark:ring-emerald-400/20 bg-white dark:bg-gray-900 shadow-sm'
+          : 'border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50'
+      }`}>
+        {prefix && <div className="ps-3.5 flex-shrink-0">{prefix}</div>}
+        <div className="relative flex-1">
+          <input
+            id={id}
+            type={type}
+            value={value}
+            onChange={onChange}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            placeholder={isActive ? placeholder : ' '}
+            dir={dir}
+            className={`peer h-12 w-full bg-transparent px-3.5 text-base text-foreground outline-none placeholder:text-muted-foreground/60 ${prefix ? 'ps-0' : ''} ${hasToggle ? 'pe-10' : ''}`}
+            autoComplete={type === 'password' ? 'new-password' : id === 'reg-username' ? 'username' : undefined}
+          />
+          <label
+            htmlFor={id}
+            className={`pointer-events-none absolute transition-all duration-200 ease-out ${
+              isActive
+                ? 'top-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400'
+                : 'top-1/2 -translate-y-1/2 text-sm text-muted-foreground'
+            } ${prefix ? 'start-3.5' : 'start-3.5'}`}
+          >
+            {label}
+          </label>
+        </div>
+        {hasToggle && toggleVisible !== undefined && onToggle && (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+            tabIndex={-1}
+          >
+            {toggleVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
+        {suffix && <div className="pe-3.5 flex-shrink-0">{suffix}</div>}
+      </div>
+    </div>
+  );
+}
+
 const STEPS = [
   { id: 1, label: 'account', labelKey: 'account' as const },
   { id: 2, label: 'profile', labelKey: 'fullName' as const },
@@ -159,72 +227,7 @@ export function RegisterForm() {
 
   const isFocused = focusedField !== null;
 
-  // Floating label component
-  const FloatingInput = ({ id, label, type = 'text', value, onChange, onFocus, onBlur, placeholder, dir, prefix, suffix, children, hasToggle, toggleVisible, onToggle }: {
-    id: string;
-    label: string;
-    type?: string;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onFocus: () => void;
-    onBlur: () => void;
-    placeholder?: string;
-    dir?: string;
-    prefix?: React.ReactNode;
-    suffix?: React.ReactNode;
-    children?: React.ReactNode;
-    hasToggle?: boolean;
-    toggleVisible?: boolean;
-    onToggle?: () => void;
-  }) => {
-    const isActive = focusedField === id || value.length > 0;
-    return (
-      <div className="relative space-y-1">
-        <div className={`relative flex items-center rounded-xl border transition-all duration-300 ${
-          focusedField === id
-            ? 'border-emerald-400 ring-2 ring-emerald-500/20 dark:ring-emerald-400/20 bg-white dark:bg-gray-900 shadow-sm'
-            : 'border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50'
-        }`}>
-          {prefix && <div className="ps-3.5 flex-shrink-0">{prefix}</div>}
-          <div className="relative flex-1">
-            <input
-              id={id}
-              type={type}
-              value={value}
-              onChange={onChange}
-              onFocus={onFocus}
-              onBlur={onBlur}
-              placeholder={isActive ? placeholder : ' '}
-              dir={dir}
-              className={`peer h-12 w-full bg-transparent px-3.5 text-base text-foreground outline-none placeholder:text-muted-foreground/60 ${prefix ? 'ps-0' : ''} ${hasToggle ? 'pe-10' : ''}`}
-              autoComplete={type === 'password' ? 'new-password' : id === 'reg-username' ? 'username' : undefined}
-            />
-            <label
-              htmlFor={id}
-              className={`pointer-events-none absolute transition-all duration-200 ease-out ${
-                isActive
-                  ? 'top-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400'
-                  : 'top-1/2 -translate-y-1/2 text-sm text-muted-foreground'
-              } ${prefix ? 'start-3.5' : 'start-3.5'}`}
-            >
-              {label}
-            </label>
-          </div>
-          {hasToggle && toggleVisible !== undefined && onToggle && (
-            <button
-              type="button"
-              onClick={onToggle}
-              className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
-              tabIndex={-1}
-            >
-              {toggleVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          )}
-          {suffix && <div className="pe-3.5 flex-shrink-0">{suffix}</div>}
-        </div>
-      </div>
-    );
-  };
+
 
   const slideVariants = {
     enter: (direction: number) => ({ x: direction > 0 ? 300 : -300, opacity: 0 }),
@@ -282,7 +285,7 @@ export function RegisterForm() {
           transition={{ duration: 0.4 }}
           className="w-full max-w-md"
         >
-          <div className={`relative transition-all duration-700 ${isFocused ? 'scale-[1.01]' : ''}`}>
+          <div className={`relative transition-transform duration-300 ${isFocused ? 'scale-[1.01]' : ''}`}>
             <div
               className={`absolute -inset-1 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-teal-400/20 dark:from-emerald-500/10 dark:to-teal-500/10 blur-xl transition-opacity duration-700 ${isFocused ? 'opacity-100' : 'opacity-0'}`}
             />
@@ -416,6 +419,7 @@ export function RegisterForm() {
                           onFocus={() => setFocusedField('username')}
                           onBlur={() => setFocusedField(null)}
                           placeholder={t('username')}
+                          focusedField={focusedField}
                         />
 
                         <div className="space-y-1.5">
@@ -431,6 +435,7 @@ export function RegisterForm() {
                             hasToggle
                             toggleVisible={showPassword}
                             onToggle={() => setShowPassword(!showPassword)}
+                            focusedField={focusedField}
                           />
                           {/* Password Strength Indicator */}
                           {password.length > 0 && (
@@ -485,6 +490,7 @@ export function RegisterForm() {
                           hasToggle
                           toggleVisible={showConfirm}
                           onToggle={() => setShowConfirm(!showConfirm)}
+                          focusedField={focusedField}
                         />
                       </>
                     )}
@@ -500,6 +506,7 @@ export function RegisterForm() {
                           onFocus={() => setFocusedField('fullname')}
                           onBlur={() => setFocusedField(null)}
                           placeholder={t('fullName')}
+                          focusedField={focusedField}
                         />
 
                         {/* Phone with Algeria prefix */}
@@ -547,6 +554,7 @@ export function RegisterForm() {
                             onBlur={() => setFocusedField(null)}
                             placeholder={t('agencyCodePlaceholder')}
                             dir="ltr"
+                            focusedField={focusedField}
                           />
                         )}
 
@@ -563,6 +571,7 @@ export function RegisterForm() {
                               onBlur={() => setFocusedField(null)}
                               placeholder="••••••••"
                               dir="ltr"
+                              focusedField={focusedField}
                             />
                             <p className="text-xs text-muted-foreground">{t('adminCodeDesc')}</p>
                           </>

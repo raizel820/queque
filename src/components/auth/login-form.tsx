@@ -142,7 +142,7 @@ export function LoginForm() {
           className="w-full max-w-md"
         >
           {/* Glow behind card when focused */}
-          <div className={`relative transition-all duration-700 ${isFocused ? 'scale-[1.01]' : ''} ${shakeError ? 'animate-[shake_0.5s_ease-in-out]' : ''}`}>
+          <div className={`relative transition-transform duration-300 ${isFocused ? 'scale-[1.01]' : ''} ${shakeError ? 'animate-[shake_0.5s_ease-in-out]' : ''}`}>
             <div
               className={`absolute -inset-1 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-teal-400/20 dark:from-emerald-500/10 dark:to-teal-500/10 blur-xl transition-opacity duration-700 ${isFocused ? 'opacity-100' : 'opacity-0'}`}
             />
