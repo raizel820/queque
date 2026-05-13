@@ -377,7 +377,7 @@ export function AgencySettings() {
         <span
           className={`pointer-events-none absolute top-[3px] h-5 w-5 rounded-full shadow-md bg-white transition-all duration-300 ease-in-out ${
             checked
-              ? 'start-[22px]'
+              ? 'start-[25px]'
               : 'start-[3px]'
           }`}
         />

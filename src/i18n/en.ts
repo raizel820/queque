@@ -853,6 +853,7 @@ const en: Record<TranslationKeys, string> = {
   autoSkipDesc: "Automatically skip customers who don't arrive within 3 minutes of being called",
   smsConfigSection: "SMS Configuration",
   smsConfigDesc: "Configure the SMS gateway to send text notifications to customers",
+  smsPerReminder: "SMS per Reminder",
   testPhoneNumber: "Test Phone Number",
   testPhoneNumberDesc: "Send a test SMS to this number",
   turnApproachingSms: "Your turn at {agency} is approaching! Ticket: {number}",

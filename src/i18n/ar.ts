@@ -853,6 +853,7 @@ const ar = {
   autoSkipDesc: 'تخطي العملاء الذين لا يحضرون خلال 3 دقائق من الاستدعاء تلقائياً',
   smsConfigSection: 'إعدادات الرسائل النصية',
   smsConfigDesc: 'تهيئة بوابة الرسائل النصية لإرسال إشعارات للعملاء',
+  smsPerReminder: 'رسائل لكل تذكير',
   testPhoneNumber: 'رقم هاتف تجريبي',
   testPhoneNumberDesc: 'إرسال رسالة تجريبية إلى هذا الرقم',
   turnApproachingSms: 'دورك في {agency} يقترب! التذكرة: {number}',
