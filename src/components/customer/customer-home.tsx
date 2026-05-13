@@ -30,7 +30,6 @@ import {
   ArrowLeft,
   Navigation,
   X,
-  ScanLine,
   History,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -44,7 +43,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
-import { CustomerQrScanner } from '@/components/customer/customer-qr-scanner';
 
 interface AgencyListItem {
   id: string;
@@ -114,7 +112,6 @@ export function CustomerHome() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [pendingJoin, setPendingJoin] = useState<{ agencyId: string; serviceId?: string } | null>(null);
   const [joining, setJoining] = useState(false);
-  const [qrScannerOpen, setQrScannerOpen] = useState(false);
 
   useEffect(() => {
     fetchAgencies();
@@ -766,7 +763,7 @@ export function CustomerHome() {
         )}
       </div>
 
-      {/* Agency Code Input + Scan QR */}
+      {/* Agency Code Input */}
       <div className="flex gap-2 mb-5">
         <Input
           placeholder={t('enterAgencyCode')}
@@ -776,14 +773,6 @@ export function CustomerHome() {
           className="h-11 text-sm rounded-xl input-emerald-glow"
           dir="ltr"
         />
-        <Button
-          variant="outline"
-          className="h-11 px-3 rounded-xl border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-          onClick={() => setQrScannerOpen(true)}
-          aria-label={t('scanQrCode')}
-        >
-          <ScanLine className="h-4 w-4" />
-        </Button>
         <Button
           variant="outline"
           className="h-11 px-4 rounded-xl border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
@@ -987,13 +976,6 @@ export function CustomerHome() {
 
       {/* Date Picker Dialog */}
       {dateDialogContent}
-
-      {/* QR Code Scanner Dialog */}
-      <CustomerQrScanner
-        open={qrScannerOpen}
-        onOpenChange={setQrScannerOpen}
-        onAgencyFound={(code) => fetchAgencyDetail(code)}
-      />
     </div>
   );
 }

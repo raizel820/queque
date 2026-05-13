@@ -655,16 +655,6 @@ export default function Home() {
           </header>
         )}
 
-        {/* Top bar for customer - language & theme controls */}
-        {isCustomer && (
-          <header className="sticky top-0 z-30 h-12 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-border flex items-center justify-end px-4">
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher />
-              <ThemeToggle />
-            </div>
-          </header>
-        )}
-
         {/* Global Announcements Banner */}
         {isAuthenticated && globalAnnouncements.length > 0 && (
           <div className="px-4 pt-3">
@@ -725,7 +715,7 @@ export default function Home() {
         )}
 
         {/* Page content */}
-        <div className={isCustomer ? 'pb-24 pt-2' : ''}>
+        <div className={isCustomer ? 'pb-24' : ''}>
           <AnimatePresence mode="wait">
             <motion.div
               key={currentView}

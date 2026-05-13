@@ -766,20 +766,6 @@ const en: Record<TranslationKeys, string> = {
   totalRatingsStat: "Total Ratings",
   completionRateStat: "Completion Rate",
   noShowRateStat: "No-Show Rate",
-
-  // ─── QR Code Scanner ────────────────
-  scanQrCode: "Scan QR Code",
-  cameraPermissionDenied: "Camera permission denied. Please enable it in your browser settings.",
-  noCameraAvailable: "No camera available on this device.",
-  scanningStatus: "Scanning...",
-  qrCodeDetected: "QR Code detected!",
-  agencyFound: "Agency found",
-  agencyNotFound: "No agency found with this code",
-  goToAgency: "Go to Agency",
-  closeScanner: "Close Scanner",
-  pointCameraAtQr: "Point your camera at a QR code",
-  invalidQrCode: "Invalid QR code. Please try again.",
-  cameraError: "Error accessing camera",
 };
 
 export default en;

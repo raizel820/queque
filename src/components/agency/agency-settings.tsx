@@ -340,28 +340,30 @@ export function AgencySettings() {
 
   // Custom toggle switch component
   const CustomToggle = ({ checked, onCheckedChange, label, description }: { checked: boolean; onCheckedChange: (v: boolean) => void; label: string; description?: string }) => (
-    <div className="flex items-center justify-between gap-3">
-      <div className="min-w-0 flex-1">
+    <div className="flex items-center justify-between">
+      <div className="me-4">
         <p className="text-sm font-medium text-foreground">{label}</p>
         {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
       </div>
-      <button
-        type="button"
+      <motion.button
+        whileTap={{ scale: 0.9 }}
         onClick={() => onCheckedChange(!checked)}
-        className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-2 dark:focus:ring-offset-gray-900 cursor-pointer ${
+        className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
           checked
             ? 'bg-emerald-500 shadow-inner shadow-emerald-600/30'
             : 'bg-gray-300 dark:bg-gray-600 shadow-inner shadow-gray-400/30'
         }`}
       >
-        <span
-          className={`inline-block h-5 w-5 rounded-full shadow-md bg-white transition-transform duration-300 ${
+        <motion.span
+          layout
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+          className={`inline-block h-5 w-5 transform rounded-full shadow-md transition-colors duration-300 ${
             checked
-              ? 'translate-x-[22px]'
-              : 'translate-x-[3px]'
+              ? 'bg-white translate-x-[22px]'
+              : 'bg-white translate-x-[3px]'
           }`}
         />
-      </button>
+      </motion.button>
     </div>
   );
 

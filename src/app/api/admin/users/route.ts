@@ -93,40 +93,12 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Prevent modifying super admin accounts
-    const targetUser = await db.user.findUnique({ where: { id: userId } });
-    if (!targetUser) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
     if (action === 'suspend') {
       const user = await db.user.update({
         where: { id: userId },
         data: { isActive: false },
         select: { id: true, fullName: true, isActive: true },
       });
-
-      // Also deactivate associated agency if user is an agency owner
-      if (targetUser.role === 'AGENCY_OWNER') {
-        await db.agency.updateMany({
-          where: { ownerId: userId },
-          data: { isActive: false },
-        });
-      }
-
-      await db.auditLog.create({
-        data: {
-          userId,
-          action: 'USER_SUSPEND',
-          entityType: 'USER',
-          entityId: userId,
-          details: JSON.stringify({ fullName: targetUser.fullName, role: targetUser.role }),
-        },
-      });
-
       return NextResponse.json({ success: true, user });
     }
 
@@ -136,25 +108,6 @@ export async function PATCH(request: NextRequest) {
         data: { isActive: true },
         select: { id: true, fullName: true, isActive: true },
       });
-
-      // Also reactivate associated agency if user is an agency owner
-      if (targetUser.role === 'AGENCY_OWNER') {
-        await db.agency.updateMany({
-          where: { ownerId: userId },
-          data: { isActive: true },
-        });
-      }
-
-      await db.auditLog.create({
-        data: {
-          userId,
-          action: 'USER_ACTIVATE',
-          entityType: 'USER',
-          entityId: userId,
-          details: JSON.stringify({ fullName: targetUser.fullName, role: targetUser.role }),
-        },
-      });
-
       return NextResponse.json({ success: true, user });
     }
 
@@ -162,93 +115,6 @@ export async function PATCH(request: NextRequest) {
       { success: false, error: 'Invalid action. Use "suspend" or "activate".' },
       { status: 400 }
     );
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { userId } = body;
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
-
-    // Prevent deleting super admin accounts
-    const targetUser = await db.user.findUnique({ where: { id: userId } });
-    if (!targetUser) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    if (targetUser.role === 'SUPER_ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Cannot delete super admin accounts' },
-        { status: 403 }
-      );
-    }
-
-    // Get agencyId before deleting (for agency cleanup)
-    const agency = await db.agency.findFirst({ where: { ownerId: userId } });
-
-    // Delete related records first (in order to avoid foreign key constraints)
-    if (agency) {
-      // Delete agency staff
-      await db.agencyStaff.deleteMany({ where: { agencyId: agency.id } });
-      // Delete queue settings
-      await db.queueSettings.deleteMany({ where: { agencyId: agency.id } });
-      // Delete reservations
-      await db.reservation.deleteMany({ where: { agencyId: agency.id } });
-      // Delete services
-      await db.service.deleteMany({ where: { agencyId: agency.id } });
-      // Delete announcements
-      await db.announcement.deleteMany({ where: { agencyId: agency.id } });
-      // Delete transactions
-      await db.transaction.deleteMany({ where: { agencyId: agency.id } });
-      // Delete the agency
-      await db.agency.delete({ where: { id: agency.id } });
-    }
-
-    // Delete user's reservations (as customer)
-    await db.reservation.deleteMany({ where: { customerId: userId } });
-    // Delete user's favorites
-    await db.favorite.deleteMany({ where: { userId } });
-    // Delete user's notifications
-    await db.notification.deleteMany({ where: { userId } });
-    // Delete user's audit logs
-    await db.auditLog.deleteMany({ where: { userId } });
-    // Delete user's staff memberships
-    await db.agencyStaff.deleteMany({ where: { userId } });
-    // Delete user's reviews (transaction reviews)
-    await db.transaction.updateMany({
-      where: { reviewedBy: userId },
-      data: { reviewedBy: null },
-    });
-
-    // Finally delete the user
-    await db.user.delete({ where: { id: userId } });
-
-    await db.auditLog.create({
-      data: {
-        action: 'USER_DELETE',
-        entityType: 'USER',
-        entityId: userId,
-        details: JSON.stringify({ fullName: targetUser.fullName, role: targetUser.role, username: targetUser.username }),
-      },
-    });
-
-    return NextResponse.json({ success: true, message: 'User deleted successfully' });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(

@@ -20,7 +20,6 @@ import {
   Building2,
   Mail,
   KeyRound,
-  Trash2,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -67,9 +66,6 @@ export function AdminUsers() {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetUserId, setResetUserId] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -140,31 +136,6 @@ export function AdminUsers() {
       case 'AGENCY_STAFF': return t('agencyStaffRole');
       case 'CUSTOMER': return t('customerRole');
       default: return role;
-    }
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    setActionLoading(userId);
-    try {
-      const res = await fetch('/api/admin/users', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      });
-      if (res.ok) {
-        setDeleteDialogOpen(false);
-        setDeleteUserId(null);
-        setDeleteConfirmText('');
-        toast.success(t('accountDeleted') || 'Account deleted successfully');
-        fetchUsers();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || t('error'));
-      }
-    } catch {
-      toast.error(t('error'));
-    } finally {
-      setActionLoading(null);
     }
   };
 
@@ -402,20 +373,6 @@ export function AdminUsers() {
                         )}
                         {user.isActive ? t('suspendUserFull') : t('reactivateUserFull')}
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 rounded-lg text-xs border-red-300 text-red-600 dark:border-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
-                        onClick={() => {
-                          setDeleteUserId(user.id);
-                          setDeleteConfirmText('');
-                          setDeleteDialogOpen(true);
-                        }}
-                        disabled={actionLoading === user.id || user.role === 'SUPER_ADMIN'}
-                      >
-                        <Trash2 className="h-3 w-3 me-1" />
-                        {t('deleteAccount') || 'Delete'}
-                      </Button>
                     </div>
                   </div>
 
@@ -512,49 +469,6 @@ export function AdminUsers() {
             >
               {t('confirm')}
             </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete User Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) { setDeleteUserId(null); setDeleteConfirmText(''); } }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-              <Trash2 className="h-5 w-5" />
-              {t('deleteAccount')}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>{t('deleteUserWarning') || 'This action is permanent and cannot be undone. All associated data including reservations, favorites, and notifications will be deleted.'}</p>
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-                <p className="text-xs text-red-600 dark:text-red-400 font-medium">
-                  ⚠️ {t('irreversibleAction') || 'This is an irreversible action'}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">{t('typeDeleteToConfirm')}</p>
-                <Input
-                  value={deleteConfirmText}
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  placeholder="delete"
-                  className="h-10"
-                  dir="ltr"
-                />
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-            <AlertDialogCancel className="w-full rounded-xl h-10">
-              {t('cancel')}
-            </AlertDialogCancel>
-            <Button
-              onClick={() => deleteUserId && handleDeleteUser(deleteUserId)}
-              disabled={actionLoading === deleteUserId || deleteConfirmText !== 'delete'}
-              className="w-full bg-red-600 hover:bg-red-700 text-white rounded-xl h-10"
-            >
-              {actionLoading === deleteUserId ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Trash2 className="h-4 w-4 me-2" />}
-              {t('deleteAccount')}
-            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
