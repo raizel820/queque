@@ -73,6 +73,7 @@ interface Reservation {
   joinedAt: string;
   reservedDate?: string;
   rating?: number | null;
+  skippedForNoShow?: boolean;
 }
 
 // Confetti particle component
@@ -168,6 +169,7 @@ export function CustomerQueue() {
             joinedAt: r.joinedAt,
             reservedDate: (r.reservedDate as string) || undefined,
             rating: (r.rating as number) ?? null,
+            skippedForNoShow: (r.skippedForNoShow as boolean) || false,
           };
         });
 
@@ -380,6 +382,28 @@ export function CustomerQueue() {
         stopNotificationSound();
         soundStartedRef.current = false;
         setView('customer-home');
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setCancelling(null);
+    }
+  };
+
+  const handleReclaim = async (id: string) => {
+    setCancelling(id);
+    try {
+      const res = await fetch('/api/reservations/reclaim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reservationId: id }),
+      });
+      if (res.ok) {
+        toast.success(t('reclaimSuccess'));
+        fetchReservations();
       } else {
         const data = await res.json();
         toast.error(data.error || t('error'));
@@ -1161,6 +1185,32 @@ export function CustomerQueue() {
                         <XCircle className="h-4 w-4" />
                         {t('leaveQueue')}
                       </Button>
+                    )}
+
+                    {/* Skipped - Reclaim Button */}
+                    {res.skippedForNoShow && res.status === 'CALLED' && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30">
+                          <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                          <span className="text-xs text-amber-700 dark:text-amber-400">{t('skippedWarning')}</span>
+                        </div>
+                        <Button
+                          className="w-full h-11 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-lg shadow-amber-500/20 transition-all duration-300"
+                          onClick={() => handleReclaim(res.id)}
+                          disabled={cancelling === res.id}
+                        >
+                          {cancelling === res.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin me-2" />
+                          ) : (
+                            <ShieldAlert className="h-4 w-4 me-2" />
+                          )}
+                          {t('reclaimPosition')}
+                        </Button>
+                      </motion.div>
                     )}
 
                     {/* Feedback for COMPLETED reservations */}

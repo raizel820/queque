@@ -115,8 +115,12 @@ export function AgencySettings() {
   const [staffList, setStaffList] = useState<Array<{ id: string; role: string; joinedAt: string; user: { username: string; fullName: string; role: string } }>>([]);
   const [staffLoading, setStaffLoading] = useState(false);
   const [addStaffOpen, setAddStaffOpen] = useState(false);
-  const [newStaffUsername, setNewStaffUsername] = useState('');
   const [addStaffLoading, setAddStaffLoading] = useState(false);
+  // Create staff form state
+  const [newStaffUsername, setNewStaffUsername] = useState('');
+  const [newStaffFullName, setNewStaffFullName] = useState('');
+  const [newStaffPassword, setNewStaffPassword] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState<'STAFF' | 'MANAGER'>('STAFF');
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -147,26 +151,40 @@ export function AgencySettings() {
     }
   };
 
-  const handleAddStaff = async () => {
-    if (!newStaffUsername.trim() || !user?.agencyId) return;
+  const resetStaffForm = () => {
+    setNewStaffUsername('');
+    setNewStaffFullName('');
+    setNewStaffPassword('');
+    setNewStaffRole('STAFF');
+  };
+
+  const handleCreateStaff = async () => {
+    if (!newStaffUsername.trim() || !newStaffFullName.trim() || !newStaffPassword || !user?.agencyId) return;
     setAddStaffLoading(true);
     try {
-      const res = await fetch('/api/agency/staff', {
+      const res = await fetch('/api/agency/staff/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agencyId: user.agencyId, username: newStaffUsername.trim() }),
+        body: JSON.stringify({
+          agencyId: user.agencyId,
+          username: newStaffUsername.trim(),
+          fullName: newStaffFullName.trim(),
+          password: newStaffPassword,
+          staffRole: newStaffRole,
+        }),
       });
       if (res.ok) {
-        toast.success(t('staffAdded'));
-        setNewStaffUsername('');
+        const data = await res.json();
+        toast.success(t('staffCreatedWithCreds').replace('{username}', data.staff.user.username).replace('{password}', data.initialPassword), {
+          duration: 8000,
+        });
+        resetStaffForm();
         setAddStaffOpen(false);
         fetchStaff();
       } else {
         const data = await res.json();
-        if (res.status === 404) {
-          toast.error(t('userNotFound'));
-        } else if (res.status === 409) {
-          toast.error(t('staffAlreadyExists'));
+        if (res.status === 409) {
+          toast.error(t('usernameTaken'));
         } else {
           toast.error(data.error || t('error'));
         }
@@ -347,18 +365,20 @@ export function AgencySettings() {
       </div>
       <button
         type="button"
+        role="switch"
+        aria-checked={checked}
         onClick={() => onCheckedChange(!checked)}
-        className={`relative inline-flex h-7 w-12 flex-shrink-0 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-2 dark:focus:ring-offset-gray-900 cursor-pointer ${
+        className={`relative inline-flex h-7 w-12 flex-shrink-0 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-2 dark:focus:ring-offset-gray-900 cursor-pointer ${
           checked
             ? 'bg-emerald-500 shadow-inner shadow-emerald-600/30'
             : 'bg-gray-300 dark:bg-gray-600 shadow-inner shadow-gray-400/30'
         }`}
       >
         <span
-          className={`inline-block h-5 w-5 rounded-full shadow-md bg-white transition-transform duration-300 ${
+          className={`pointer-events-none absolute top-[3px] h-5 w-5 rounded-full shadow-md bg-white transition-all duration-300 ease-in-out ${
             checked
-              ? 'translate-x-[22px]'
-              : 'translate-x-[3px]'
+              ? 'start-[22px]'
+              : 'start-[3px]'
           }`}
         />
       </button>
@@ -612,19 +632,19 @@ export function AgencySettings() {
                               <Users className="h-4 w-4 text-muted-foreground" />
                               {t('staffList')}
                             </Label>
-                            <Dialog open={addStaffOpen} onOpenChange={setAddStaffOpen}>
+                            <Dialog open={addStaffOpen} onOpenChange={(open) => { setAddStaffOpen(open); if (!open) resetStaffForm(); }}>
                               <DialogTrigger asChild>
                                 <Button
                                   size="sm"
                                   className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-8 text-xs"
                                 >
                                   <Plus className="h-3.5 w-3.5 me-1" />
-                                  {t('addStaff')}
+                                  {t('createStaffAccount')}
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="sm:max-w-md">
                                 <DialogHeader>
-                                  <DialogTitle>{t('addStaff')}</DialogTitle>
+                                  <DialogTitle>{t('createStaffAccount')}</DialogTitle>
                                 </DialogHeader>
                                 <div className="space-y-4 py-2">
                                   <div className="space-y-2">
@@ -637,15 +657,47 @@ export function AgencySettings() {
                                       dir="ltr"
                                     />
                                   </div>
+                                  <div className="space-y-2">
+                                    <Label>{t('staffFullName')}</Label>
+                                    <Input
+                                      value={newStaffFullName}
+                                      onChange={(e) => setNewStaffFullName(e.target.value)}
+                                      placeholder={t('staffFullName')}
+                                      className="h-11"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>{t('staffInitialPassword')}</Label>
+                                    <Input
+                                      type="password"
+                                      value={newStaffPassword}
+                                      onChange={(e) => setNewStaffPassword(e.target.value)}
+                                      placeholder={t('passwordMinLength')}
+                                      className="h-11"
+                                      dir="ltr"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>{t('staffRoleSelect')}</Label>
+                                    <Select value={newStaffRole} onValueChange={(v) => setNewStaffRole(v as 'STAFF' | 'MANAGER')}>
+                                      <SelectTrigger className="h-11">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="STAFF">{t('staffRoleStaff')}</SelectItem>
+                                        <SelectItem value="MANAGER">{t('staffRoleManager')}</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
                                 </div>
                                 <DialogFooter>
-                                  <Button variant="outline" onClick={() => { setAddStaffOpen(false); setNewStaffUsername(''); }}>
+                                  <Button variant="outline" onClick={() => { setAddStaffOpen(false); resetStaffForm(); }}>
                                     {t('cancel')}
                                   </Button>
                                   <Button
                                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                                    onClick={handleAddStaff}
-                                    disabled={addStaffLoading || !newStaffUsername.trim()}
+                                    onClick={handleCreateStaff}
+                                    disabled={addStaffLoading || !newStaffUsername.trim() || !newStaffFullName.trim() || !newStaffPassword}
                                   >
                                     {addStaffLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
                                     {t('submit')}
@@ -666,29 +718,48 @@ export function AgencySettings() {
                             <div className="space-y-2 max-h-72 overflow-y-auto">
                               {staffList.map((staff) => {
                                 const isOwner = staff.role === 'OWNER';
+                                const isCreatedByOwner = staff.user.role === 'AGENCY_STAFF';
                                 return (
                                   <div
                                     key={staff.id}
                                     className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50"
                                   >
-                                    <div className="flex items-center gap-3">
-                                      <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                                         isOwner
                                           ? 'bg-amber-100 dark:bg-amber-900/30'
-                                          : 'bg-emerald-100 dark:bg-emerald-900/30'
+                                          : staff.role === 'MANAGER'
+                                            ? 'bg-purple-100 dark:bg-purple-900/30'
+                                            : 'bg-emerald-100 dark:bg-emerald-900/30'
                                       }`}>
                                         <Shield className={`h-4 w-4 ${
                                           isOwner
                                             ? 'text-amber-700 dark:text-amber-400'
-                                            : 'text-emerald-700 dark:text-emerald-400'
+                                            : staff.role === 'MANAGER'
+                                              ? 'text-purple-700 dark:text-purple-400'
+                                              : 'text-emerald-700 dark:text-emerald-400'
                                         }`} />
                                       </div>
-                                      <div>
-                                        <p className="text-sm font-medium text-foreground">{staff.user.fullName}</p>
-                                        <p className="text-xs text-muted-foreground">@{staff.user.username} · {staff.role}</p>
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <p className="text-sm font-medium text-foreground truncate">{staff.user.fullName}</p>
+                                          {isOwner && (
+                                            <span className="text-[9px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full flex-shrink-0">{t('ownerRole')}</span>
+                                          )}
+                                          {!isOwner && staff.role === 'MANAGER' && (
+                                            <span className="text-[9px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded-full flex-shrink-0">{t('staffRoleManager')}</span>
+                                          )}
+                                          {!isOwner && staff.role === 'STAFF' && (
+                                            <span className="text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full flex-shrink-0">{t('staffRoleStaff')}</span>
+                                          )}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">@{staff.user.username}</p>
+                                        {isCreatedByOwner && !isOwner && (
+                                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">{t('initialAccountCreated')}</p>
+                                        )}
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-shrink-0">
                                       <span className="text-[10px] text-muted-foreground hidden sm:inline">
                                         {new Date(staff.joinedAt).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US')}
                                       </span>

@@ -17,7 +17,18 @@ export async function PATCH(
     } else if (action === 'activate') {
       await db.agency.update({ where: { id }, data: { isActive: true } });
     } else if (action === 'delete') {
-      await db.agency.delete({ where: { id } });
+      // Cascade delete all related records
+      await db.$transaction(async (tx) => {
+        await tx.agencyStaff.deleteMany({ where: { agencyId: id } });
+        await tx.queueSettings.deleteMany({ where: { agencyId: id } });
+        await tx.reservation.deleteMany({ where: { agencyId: id } });
+        await tx.service.deleteMany({ where: { agencyId: id } });
+        await tx.announcement.deleteMany({ where: { agencyId: id } });
+        await tx.transaction.deleteMany({ where: { agencyId: id } });
+        await tx.agency.delete({ where: { id } });
+      });
+    } else {
+      return NextResponse.json({ error: 'Invalid action. Use suspend, activate, or delete.' }, { status: 400 });
     }
 
     await db.auditLog.create({
@@ -42,7 +53,16 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await db.agency.delete({ where: { id } });
+    // Cascade delete all related records
+    await db.$transaction(async (tx) => {
+      await tx.agencyStaff.deleteMany({ where: { agencyId: id } });
+      await tx.queueSettings.deleteMany({ where: { agencyId: id } });
+      await tx.reservation.deleteMany({ where: { agencyId: id } });
+      await tx.service.deleteMany({ where: { agencyId: id } });
+      await tx.announcement.deleteMany({ where: { agencyId: id } });
+      await tx.transaction.deleteMany({ where: { agencyId: id } });
+      await tx.agency.delete({ where: { id } });
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

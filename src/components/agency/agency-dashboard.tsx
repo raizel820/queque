@@ -22,12 +22,9 @@ import {
   XCircle,
   RefreshCw,
   Loader2,
-  Calendar,
   Radio,
-  PieChart,
   Layers,
   Activity,
-  TrendingUp,
   UserPlus,
   Volume2,
   CircleCheckBig,
@@ -514,47 +511,8 @@ export function AgencyDashboard() {
   const sparkData3 = stats?.servedToday ? [Math.round(stats.servedToday * 0.3), Math.round(stats.servedToday * 0.5), stats.servedToday, Math.round(stats.servedToday * 0.7), Math.round(stats.servedToday * 0.9), stats.servedToday, Math.round(stats.servedToday * 0.8)] : [0, 0, 1, 0, 2, 1, 0];
   const sparkData4 = stats?.avgWaitTime ? [Math.round(stats.avgWaitTime * 0.7), Math.round(stats.avgWaitTime * 0.6), stats.avgWaitTime, Math.round(stats.avgWaitTime * 0.8), stats.avgWaitTime, Math.round(stats.avgWaitTime * 0.9), Math.round(stats.avgWaitTime * 0.7)] : [5, 4, 8, 6, 10, 8, 6];
 
-  const statCards = [
-    {
-      label: t('todayReservations'),
-      value: stats?.todayReservations ?? 0,
-      icon: Calendar,
-      color: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400',
-      iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
-      sparkData: sparkData1,
-      sparkColor: 'bg-emerald-400/60',
-    },
-    {
-      label: t('currentlyWaiting'),
-      value: stats?.currentlyWaiting ?? 0,
-      icon: Users,
-      color: 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400',
-      iconBg: 'bg-teal-100 dark:bg-teal-900/40',
-      sparkData: sparkData2,
-      sparkColor: 'bg-teal-400/60',
-    },
-    {
-      label: t('servedToday'),
-      value: stats?.servedToday ?? 0,
-      icon: CheckCircle2,
-      color: 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-400',
-      iconBg: 'bg-teal-100 dark:bg-teal-900/40',
-      sparkData: sparkData3,
-      sparkColor: 'bg-teal-400/60',
-    },
-    {
-      label: t('avgWaitTime'),
-      value: `${stats?.avgWaitTime ?? 0} ${t('min')}`,
-      icon: Clock,
-      color: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400',
-      iconBg: 'bg-amber-100 dark:bg-amber-900/40',
-      sparkData: sparkData4,
-      sparkColor: 'bg-amber-400/60',
-    },
-  ];
-
   return (
-    <div className="p-4 lg:p-6 space-y-3 relative" ref={sectionRef}>
+    <div className="p-4 lg:p-6 space-y-2 relative" ref={sectionRef}>
       {/* Gradient top border */}
       <div className="absolute top-0 start-0 end-0 h-[4px] bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 rounded-full" />
 
@@ -636,56 +594,6 @@ export function AgencyDashboard() {
         </Card>
       </div>
 
-      {/* Today's Summary Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ delay: 0.05 }}
-      >
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 p-5 text-white shadow-lg shadow-emerald-500/20">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 end-0 h-32 w-32 rounded-full bg-white/20 -translate-y-8 translate-x-8" />
-            <div className="absolute bottom-0 start-0 h-24 w-24 rounded-full bg-white/10 translate-y-8 -translate-x-8" />
-          </div>
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="h-4 w-4 text-emerald-200" />
-              <p className="text-sm font-semibold text-emerald-100">{t('todaySummary')}</p>
-            </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-200" />
-                  <span className="text-[10px] text-emerald-200">{t('servedToday')}</span>
-                </div>
-                <p className="text-2xl font-bold">{stats?.servedToday ?? 0}</p>
-              </div>
-              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Clock className="h-3.5 w-3.5 text-emerald-200" />
-                  <span className="text-[10px] text-emerald-200">{t('avgWaitTime')}</span>
-                </div>
-                <p className="text-2xl font-bold">{stats?.avgWaitTime ?? 0}<span className="text-sm font-normal ms-1">{t('min')}</span></p>
-              </div>
-              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Users className="h-3.5 w-3.5 text-emerald-200" />
-                  <span className="text-[10px] text-emerald-200">{t('currentlyWaiting')}</span>
-                </div>
-                <p className="text-2xl font-bold">{stats?.currentlyWaiting ?? 0}</p>
-              </div>
-              <div className="bg-white/15 backdrop-blur-sm rounded-xl p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <PieChart className="h-3.5 w-3.5 text-emerald-200" />
-                  <span className="text-[10px] text-emerald-200">{t('peakHourToday')}</span>
-                </div>
-                <p className="text-2xl font-bold">{stats?.peakHour ?? '—'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
       {/* Queue Status Widget */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -694,56 +602,6 @@ export function AgencyDashboard() {
       >
         <QueueStatusWidget agencyId={agencyId} />
       </motion.div>
-
-      {/* Queue Status Pill */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="flex items-center gap-2">
-          <Badge
-            className={`text-xs font-semibold px-3 py-1 rounded-full ${
-              stats?.isPaused
-                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-            }`}
-          >
-            <div className={`h-1.5 w-1.5 rounded-full me-1.5 ${stats?.isPaused ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-            {t('queueStatus')}: {stats?.isPaused ? t('paused') : t('openNow')}
-          </Badge>
-        </div>
-      </motion.div>
-
-      {/* Stats Grid with Sparklines */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        {statCards.map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 15 }}
-              animate={isInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: idx * 0.05 }}
-            >
-              <Card className="border-0 shadow-sm hover:shadow-xl hover:shadow-emerald-500/8 transition-all duration-300 hover:-translate-y-1.5 bg-white/80 dark:bg-gray-900/60 dark:border-gray-800/50 dark:backdrop-blur-md dark:shadow-gray-900/50 overflow-hidden relative group">
-                {/* Subtle gradient overlay on hover */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-transparent via-white/50 to-transparent dark:from-transparent dark:via-white/5 dark:to-transparent pointer-events-none" />
-                <CardContent className={`p-4 rounded-xl ${stat.color} relative`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={`h-8 w-8 rounded-lg ${stat.iconBg} flex items-center justify-center shadow-sm`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <MiniSparkline data={stat.sparkData} color={stat.sparkColor} />
-                  </div>
-                  <p className="text-2xl font-bold bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent number-animate">{stat.value}</p>
-                  <p className="text-xs opacity-80">{stat.label}</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
 
       {/* Now Serving + Call Next */}
       <Card className="border-0 shadow-sm overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">

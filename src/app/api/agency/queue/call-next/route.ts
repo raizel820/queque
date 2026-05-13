@@ -15,71 +15,88 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Queue is paused' }, { status: 400 });
     }
 
-    // Find the next WAITING reservation
+    // Build the where clause: WAITING, NOT skipped for no-show
     const where: Record<string, unknown> = {
       agencyId,
       status: 'WAITING',
+      skippedForNoShow: false,
     };
     if (serviceId) {
       where.serviceId = serviceId;
     }
 
-    const nextReservation = await db.reservation.findFirst({
-      where,
-      include: {
-        service: true,
-        user: {
-          select: { fullName: true },
+    // Use findFirst + update in a transaction to prevent double-calling
+    let nextReservation;
+    await db.$transaction(async (tx) => {
+      const candidate = await tx.reservation.findFirst({
+        where,
+        include: {
+          service: true,
+          user: {
+            select: { fullName: true },
+          },
         },
-      },
-      orderBy: { queueNumber: 'asc' },
+        orderBy: { queueNumber: 'asc' },
+      });
+      if (!candidate) return;
+
+      // Re-check status inside transaction to prevent race
+      const recheck = await tx.reservation.findUnique({ where: { id: candidate.id } });
+      if (!recheck || recheck.status !== 'WAITING') return;
+
+      // If this reservation was previously reclaimed, clear the reclaim flag
+      // and reset the skip-related fields
+      const updateData: Record<string, unknown> = {
+        status: 'CALLED',
+        calledAt: new Date(),
+      };
+      if (recheck.reclaimRequestedAt) {
+        updateData.skippedForNoShow = false;
+        updateData.skippedAt = null;
+        updateData.reclaimRequestedAt = null;
+      }
+
+      await tx.reservation.update({
+        where: { id: candidate.id },
+        data: updateData,
+      });
+
+      if (queueSettings) {
+        await tx.queueSettings.update({
+          where: { id: queueSettings.id },
+          data: { currentServingNumber: candidate.queueNumber },
+        });
+      }
+
+      await tx.notification.create({
+        data: {
+          userId: candidate.userId,
+          type: 'QUEUE_CALLED',
+          title: 'Queue Called',
+          message: `Your number ${candidate.displayNumber} has been called. Please proceed.`,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          userId: candidate.userId,
+          action: 'QUEUE_CALL',
+          entityType: 'RESERVATION',
+          entityId: candidate.id,
+          details: JSON.stringify({
+            displayNumber: candidate.displayNumber,
+            agencyId,
+            serviceId: candidate.serviceId,
+          }),
+        },
+      });
+
+      nextReservation = candidate;
     });
 
     if (!nextReservation) {
       return NextResponse.json({ error: 'No customers waiting' }, { status: 404 });
     }
-
-    // Update status to CALLED
-    await db.reservation.update({
-      where: { id: nextReservation.id },
-      data: {
-        status: 'CALLED',
-        calledAt: new Date(),
-      },
-    });
-
-    // Update queue settings
-    if (queueSettings) {
-      await db.queueSettings.update({
-        where: { id: queueSettings.id },
-        data: { currentServingNumber: nextReservation.queueNumber },
-      });
-    }
-
-    // Create notification
-    await db.notification.create({
-      data: {
-        userId: nextReservation.userId,
-        type: 'QUEUE_CALLED',
-        title: 'Queue Called',
-        message: `Your number ${nextReservation.displayNumber} has been called. Please proceed.`,
-      },
-    });
-
-    // Create audit log
-    await db.auditLog.create({
-      data: {
-        userId: nextReservation.userId,
-        action: 'QUEUE_CALL',
-        entityType: 'RESERVATION',
-        entityId: nextReservation.id,
-        details: JSON.stringify({
-          displayNumber: nextReservation.displayNumber,
-          agencyId,
-          serviceId: nextReservation.serviceId,
-        }),
-      },
-    });
 
     return NextResponse.json({
       success: true,
@@ -89,8 +106,7 @@ export async function POST(req: NextRequest) {
         customerName: (nextReservation as { user?: { fullName: string } }).user?.fullName ?? '',
       },
     });
-  } catch (error) {
-    console.error('Call next error:', error);
+  } catch (_error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

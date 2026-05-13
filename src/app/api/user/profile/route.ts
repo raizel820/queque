@@ -22,6 +22,8 @@ export async function GET(request: NextRequest) {
         avatarUrl: true,
         freeSmsCount: true,
         notificationPreferences: true,
+        reminderMinutes: true,
+        smsNotificationsEnabled: true,
         isActive: true,
         createdAt: true,
       },
@@ -38,11 +40,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH - Update user profile (phone, notification prefs, etc.)
+// PATCH - Update user profile (phone, notification prefs, reminder minutes, SMS toggle, etc.)
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, phoneNumber, notificationPreferences } = body;
+    const { userId, phoneNumber, notificationPreferences, reminderMinutes, smsNotificationsEnabled } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
@@ -57,6 +59,12 @@ export async function PATCH(request: NextRequest) {
         typeof notificationPreferences === 'string'
           ? notificationPreferences
           : JSON.stringify(notificationPreferences);
+    }
+    if (reminderMinutes !== undefined) {
+      updateData.reminderMinutes = Number(reminderMinutes);
+    }
+    if (smsNotificationsEnabled !== undefined) {
+      updateData.smsNotificationsEnabled = Boolean(smsNotificationsEnabled);
     }
 
     if (Object.keys(updateData).length === 0) {
@@ -77,6 +85,8 @@ export async function PATCH(request: NextRequest) {
         avatarUrl: true,
         freeSmsCount: true,
         notificationPreferences: true,
+        reminderMinutes: true,
+        smsNotificationsEnabled: true,
         isActive: true,
       },
     });

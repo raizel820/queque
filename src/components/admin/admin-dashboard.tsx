@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Building2,
   Users,
@@ -28,14 +31,50 @@ import {
   Megaphone,
   Pin,
   Trash2,
-   X,
+  X,
   Info,
   AlertTriangle,
   Download,
   Loader2,
+  MessageSquare,
+  Send,
+  Save,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+
+interface SmsSettingsData {
+  id: string;
+  provider: string;
+  apiUrl: string;
+  apiKey: string;
+  senderName: string;
+  enabled: boolean;
+  smsPerReminder: number;
+  maxSmsPerDay: number;
+  testPhoneNumber: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+
+interface SmsUsageStats {
+  sentToday: number;
+  sentThisWeek: number;
+  sentThisMonth: number;
+  totalSent: number;
+  failedToday: number;
+}
+
+interface SmsLogItem {
+  id: string;
+  phoneNumber: string;
+  message: string;
+  status: string;
+  provider: string;
+  errorMessage: string | null;
+  createdAt: string;
+}
 
 interface AdminStats {
   totalAgencies: number;
@@ -96,11 +135,74 @@ export function AdminDashboard() {
   const [newAnnMsg, setNewAnnMsg] = useState('');
   const [newAnnType, setNewAnnType] = useState<'INFO' | 'WARNING' | 'URGENT'>('INFO');
   const [annLoading, setAnnLoading] = useState(false);
+  const [smsSettings, setSmsSettings] = useState<SmsSettingsData | null>(null);
+  const [smsStats, setSmsStats] = useState<SmsUsageStats | null>(null);
+  const [smsLogs, setSmsLogs] = useState<SmsLogItem[]>([]);
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [smsSaving, setSmsSaving] = useState(false);
+  const [smsTestLoading, setSmsTestLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
     fetchRealAnnouncements();
- }, []);
+    fetchSmsSettings();
+  }, []);
+
+  const fetchSmsSettings = async () => {
+    setSmsLoading(true);
+    try {
+      const res = await fetch('/api/admin/sms-settings');
+      if (res.ok) {
+        const data = await res.json();
+        setSmsSettings(data.settings);
+        setSmsStats(data.stats);
+        setSmsLogs(data.recentLogs ?? []);
+      }
+    } catch { toast.error(t('error')); }
+    finally { setSmsLoading(false); }
+  };
+
+  const handleSaveSmsSettings = async () => {
+    if (!smsSettings) return;
+    setSmsSaving(true);
+    try {
+      const res = await fetch('/api/admin/sms-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: smsSettings.provider,
+          apiUrl: smsSettings.apiUrl,
+          apiKey: smsSettings.apiKey,
+          senderName: smsSettings.senderName,
+          enabled: smsSettings.enabled,
+          smsPerReminder: smsSettings.smsPerReminder,
+          maxSmsPerDay: smsSettings.maxSmsPerDay,
+          testPhoneNumber: smsSettings.testPhoneNumber,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSmsSettings(data.settings);
+        toast.success(t('smsSaved'));
+      } else { toast.error(t('error')); }
+    } catch { toast.error(t('error')); }
+    finally { setSmsSaving(false); }
+  };
+
+  const handleSendTestSms = async () => {
+    setSmsTestLoading(true);
+    try {
+      const res = await fetch('/api/admin/sms-settings/test', { method: 'POST' });
+      if (res.ok) {
+        toast.success(t('smsTestSent'));
+        fetchSmsSettings();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('smsTestFailed'));
+      }
+    } catch { toast.error(t('smsTestFailed')); }
+    finally { setSmsTestLoading(false); }
+  };
 
   const fetchRealAnnouncements = async () => {
     try {
@@ -637,6 +739,233 @@ export function AdminDashboard() {
                 <span className="text-xs font-semibold text-foreground">{t('viewTransactions')}</span>
               </motion.button>
             </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* SMS Settings Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.32 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-emerald-600" />
+                {t('smsConfigSection')}
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                {smsSettings?.enabled ? (
+                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs font-medium">
+                    <Check className="h-3 w-3 me-1" />
+                    {t('smsEnabled')}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-xs text-muted-foreground">
+                    {t('smsDisabled')}
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={fetchSmsSettings}
+                  disabled={smsLoading}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${smsLoading ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">{t('smsConfigDesc')}</p>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-4">
+            {smsLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-3/4" />
+              </div>
+            ) : smsSettings ? (
+              <>
+                {/* SMS Enable Toggle */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40 flex items-center justify-center shadow-sm">
+                      <MessageSquare className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{t('smsEnabled')}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {smsSettings.enabled ? t('smsEnabled') : t('smsDisabled')}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={smsSettings.enabled}
+                    onCheckedChange={(checked) => setSmsSettings({ ...smsSettings, enabled: checked })}
+                  />
+                </div>
+
+                {/* SMS Configuration Form */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Provider */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">{t('smsProvider')}</Label>
+                    <select
+                      value={smsSettings.provider}
+                      onChange={(e) => setSmsSettings({ ...smsSettings, provider: e.target.value })}
+                      className="h-9 w-full px-3 rounded-lg border border-border bg-background text-sm"
+                    >
+                      <option value="algeria_sms">Algeria SMS</option>
+                      <option value="generic">Generic API</option>
+                    </select>
+                  </div>
+
+                  {/* Sender Name */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">{t('smsSenderName')}</Label>
+                    <Input
+                      value={smsSettings.senderName}
+                      onChange={(e) => setSmsSettings({ ...smsSettings, senderName: e.target.value })}
+                      className="h-9 text-sm"
+                      placeholder="QueueWise"
+                    />
+                  </div>
+
+                  {/* API URL */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">{t('smsApiUrl')}</Label>
+                    <Input
+                      value={smsSettings.apiUrl}
+                      onChange={(e) => setSmsSettings({ ...smsSettings, apiUrl: e.target.value })}
+                      className="h-9 text-sm"
+                      placeholder="https://api.example.com/sms"
+                    />
+                  </div>
+
+                  {/* API Key */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">{t('smsApiKey')}</Label>
+                    <Input
+                      value={smsSettings.apiKey}
+                      onChange={(e) => setSmsSettings({ ...smsSettings, apiKey: e.target.value })}
+                      className="h-9 text-sm"
+                      type="password"
+                      placeholder="••••••••••"
+                    />
+                  </div>
+
+                  {/* Test Phone */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">{t('testPhoneNumber')}</Label>
+                    <Input
+                      value={smsSettings.testPhoneNumber ?? ''}
+                      onChange={(e) => setSmsSettings({ ...smsSettings, testPhoneNumber: e.target.value })}
+                      className="h-9 text-sm"
+                      placeholder="+213XXXXXXXXX"
+                    />
+                  </div>
+
+                  {/* SMS Per Reminder */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">{t('smsPerReminder')}</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={smsSettings.smsPerReminder}
+                      onChange={(e) => setSmsSettings({ ...smsSettings, smsPerReminder: parseInt(e.target.value) || 1 })}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleSaveSmsSettings}
+                    disabled={smsSaving}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl h-9 px-4 text-sm"
+                  >
+                    {smsSaving ? <Loader2 className="h-4 w-4 animate-spin me-1.5" /> : <Save className="h-4 w-4 me-1.5" />}
+                    {t('save')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleSendTestSms}
+                    disabled={smsTestLoading || !smsSettings.testPhoneNumber}
+                    className="rounded-xl h-9 px-4 text-sm"
+                  >
+                    {smsTestLoading ? <Loader2 className="h-4 w-4 animate-spin me-1.5" /> : <Send className="h-4 w-4 me-1.5" />}
+                    {t('smsTestSend')}
+                  </Button>
+                </div>
+
+                {/* SMS Usage Stats */}
+                {smsStats && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="flex flex-col items-center p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/10">
+                      <span className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{smsStats.sentToday}</span>
+                      <span className="text-[10px] text-muted-foreground">{t('smsSentToday')}</span>
+                    </div>
+                    <div className="flex flex-col items-center p-2.5 rounded-xl bg-teal-50 dark:bg-teal-900/10">
+                      <span className="text-lg font-bold text-teal-700 dark:text-teal-400">{smsStats.sentThisWeek}</span>
+                      <span className="text-[10px] text-muted-foreground">{t('smsSentThisWeek')}</span>
+                    </div>
+                    <div className="flex flex-col items-center p-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/10">
+                      <span className="text-lg font-bold text-amber-700 dark:text-amber-400">{smsStats.sentThisMonth}</span>
+                      <span className="text-[10px] text-muted-foreground">{t('smsSentThisMonth')}</span>
+                    </div>
+                    <div className="flex flex-col items-center p-2.5 rounded-xl bg-gray-50 dark:bg-gray-900/50">
+                      <span className="text-lg font-bold text-foreground">{smsStats.totalSent}</span>
+                      <span className="text-[10px] text-muted-foreground">{t('smsTotalSent')}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent SMS Logs */}
+                <div>
+                  <p className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                    <ClipboardList className="h-3.5 w-3.5" />
+                    {t('smsLogs')}
+                  </p>
+                  {smsLogs.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-3">{t('noSmsLogs')}</p>
+                  ) : (
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                      {smsLogs.map((log) => (
+                        <div
+                          key={log.id}
+                          className="flex items-center gap-2.5 p-2 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-xs"
+                        >
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
+                              log.status === 'SENT'
+                                ? 'border-emerald-300 text-emerald-600 dark:border-emerald-700 dark:text-emerald-400'
+                                : log.status === 'FAILED'
+                                ? 'border-rose-300 text-rose-600 dark:border-rose-700 dark:text-rose-400'
+                                : 'border-amber-300 text-amber-600 dark:border-amber-700 dark:text-amber-400'
+                            }`}
+                          >
+                            {log.status}
+                          </Badge>
+                          <span className="text-muted-foreground truncate flex-shrink-0">{log.phoneNumber}</span>
+                          <span className="text-foreground truncate flex-1 min-w-0">{log.message.slice(0, 60)}</span>
+                          <span className="text-muted-foreground flex-shrink-0 whitespace-nowrap">
+                            {formatTime(log.createdAt)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">{t('noData')}</p>
+            )}
           </CardContent>
         </Card>
       </motion.div>

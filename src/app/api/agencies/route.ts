@@ -6,8 +6,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
     const category = searchParams.get('category') || ''
-    const limit = parseInt(searchParams.get('limit') || '20', 10)
-    const offset = parseInt(searchParams.get('offset') || '0', 10)
+    const rawLimit = parseInt(searchParams.get('limit') || '20', 10)
+    const rawOffset = parseInt(searchParams.get('offset') || '0', 10)
+    const limit = Math.min(Math.max(rawLimit, 1), 50)
+    const offset = Math.max(rawOffset, 0)
 
     const where: Record<string, unknown> = {
       isActive: true,
@@ -16,10 +18,10 @@ export async function GET(request: NextRequest) {
     if (search) {
       const searchLower = search.toLowerCase()
       where.OR = [
-        { name: { contains: search } },
-        { nameFr: { contains: search } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { nameFr: { contains: search, mode: 'insensitive' } },
         { nameAr: { contains: search } },
-        { customCode: { contains: search } },
+        { customCode: { contains: search, mode: 'insensitive' } },
       ]
     }
 
@@ -38,6 +40,10 @@ export async function GET(request: NextRequest) {
             select: { isPaused: true },
             take: 1,
             orderBy: { updatedAt: 'desc' },
+          },
+          reservations: {
+            select: { id: true },
+            where: { status: { in: ['WAITING', 'CALLED'] } },
           },
         },
         orderBy: [
@@ -65,6 +71,7 @@ export async function GET(request: NextRequest) {
       isSponsored: agency.isSponsored,
       isQueueOpen: agency.isQueueOpen,
       serviceCount: agency._count.services,
+      waitingCount: agency.reservations.length,
       workingHoursStart: agency.workingHoursStart,
       workingHoursEnd: agency.workingHoursEnd,
       isPaused: agency.queueSettings.length > 0 ? agency.queueSettings[0].isPaused : false,

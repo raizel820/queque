@@ -19,6 +19,8 @@ model User {
   avatarUrl               String?
   freeSmsCount            Int            @default(10)
   notificationPreferences String         @default("{\"queue_called\":true,\"turn_approaching\":true,\"completed\":true}")
+  reminderMinutes         Int            @default(10)
+  smsNotificationsEnabled Boolean        @default(true)
   isActive                Boolean        @default(true)
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt
@@ -116,24 +118,31 @@ model QueueSettings {
 }
 
 model Reservation {
-  id            String    @id @default(cuid())
-  userId        String
-  agencyId      String
-  serviceId     String
-  queueNumber   Int
-  displayNumber String
-  status        String    @default("WAITING")
-  estimatedWait Int?
-  reservedDate  String?
-  joinedAt      DateTime  @default(now())
-  calledAt      DateTime?
-  completedAt   DateTime?
-  cancelledAt   DateTime?
-  rating        Int?
-  notes         String?
-  agency        Agency    @relation(fields: [agencyId], references: [id])
-  service       Service   @relation(fields: [serviceId], references: [id])
-  user          User      @relation(fields: [userId], references: [id])
+  id                  String    @id @default(cuid())
+  userId              String
+  agencyId            String
+  serviceId           String
+  queueNumber         Int
+  displayNumber       String
+  status              String    @default("WAITING")
+  estimatedWait       Int?
+  reservedDate        String?
+  joinedAt            DateTime  @default(now())
+  calledAt            DateTime?
+  completedAt         DateTime?
+  cancelledAt         DateTime?
+  rating              Int?
+  notes               String?
+  reminderSent        Boolean   @default(false)
+  reminderSentAt      DateTime?
+  smsReminderSent     Boolean   @default(false)
+  smsReminderSentAt   DateTime?
+  skippedForNoShow    Boolean   @default(false)
+  skippedAt           DateTime?
+  reclaimRequestedAt   DateTime?
+  agency              Agency    @relation(fields: [agencyId], references: [id])
+  service             Service   @relation(fields: [serviceId], references: [id])
+  user                User      @relation(fields: [userId], references: [id])
 
   @@index([agencyId, status])
   @@index([userId, status])
@@ -211,6 +220,34 @@ model GlobalAnnouncement {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+model SmsSettings {
+  id              String   @id @default(cuid())
+  provider        String   @default("algeria_sms")
+  apiUrl          String   @default("")
+  apiKey          String   @default("")
+  senderName      String   @default("QueueWise")
+  enabled         Boolean  @default(false)
+  smsPerReminder  Int      @default(1)
+  maxSmsPerDay    Int      @default(5)
+  testPhoneNumber String?
+  updatedAt       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  smsLogs         SmsLog[]
+}
+
+model SmsLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  phoneNumber String
+  message     String
+  status      String   @default("PENDING")
+  provider    String   @default("")
+  errorMessage String?
+  createdAt   DateTime @default(now())
+  smsSettings SmsSettings? @relation(fields: [smsSettingsId], references: [id])
+  smsSettingsId String?
 }
 
 model AuditLog {

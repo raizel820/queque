@@ -159,80 +159,85 @@ export async function POST(request: NextRequest) {
     } else {
       lastWhere.reservedDate = null;
     }
-    const lastReservation = await db.reservation.findFirst({
-      where: lastWhere,
-      orderBy: { queueNumber: 'desc' },
-    })
-    const nextNumber = (lastReservation?.queueNumber || 0) + 1
-    const displayNumber = `${service.prefix}-${String(nextNumber).padStart(3, '0')}`
-
-    // Calculate estimated wait time
-    const waitWhere: Record<string, unknown> = { serviceId: resolvedServiceId, status: 'WAITING' }
-    if (targetDate) {
-      waitWhere.reservedDate = targetDate;
-    } else {
-      waitWhere.reservedDate = null;
-    }
     const waitingCount = await db.reservation.count({ where: waitWhere })
     const estimatedWait = waitingCount * agency.averageServiceTime
 
-    // Create reservation
-    const reservation = await db.reservation.create({
-      data: {
-        userId,
-        agencyId,
-        serviceId: resolvedServiceId,
-        queueNumber: nextNumber,
-        displayNumber,
-        status: 'WAITING',
-        estimatedWait,
-        reservedDate: targetDate,
-      },
-      include: {
-        agency: {
-          select: { id: true, name: true, nameFr: true, nameAr: true, customCode: true },
-        },
-        service: {
-          select: { id: true, name: true, nameFr: true, nameAr: true, prefix: true },
-        },
-      },
-    })
+    // Create reservation atomically in transaction to prevent duplicates
+    const reservation = await db.$transaction(async (tx) => {
+      // Re-check duplicate inside transaction
+      const dupCheck = await tx.reservation.findFirst({ where: duplicateWhere });
+      if (dupCheck) throw new Error('DUPLICATE');
 
-    // Update queue settings lastIssuedNumber
-    if (agency.queueSettings.length > 0) {
-      await db.queueSettings.update({
-        where: { id: agency.queueSettings[0].id },
-        data: { lastIssuedNumber: nextNumber },
-      })
-    }
+      // Re-check capacity inside transaction
+      const cnt = await tx.reservation.count({ where: countWhere });
+      if (cnt >= agency.maxActiveReservations) throw new Error('FULL');
 
-    // Create notification
-    const dateLabel = targetDate ? ` (${targetDate})` : ''
-    await db.notification.create({
-      data: {
-        userId,
-        type: 'QUEUE_JOINED',
-        title: 'Reservation Confirmed',
-        message: `Your ticket ${displayNumber} for ${agency.name} - ${service.name}${dateLabel}. Estimated wait: ${estimatedWait} minutes.`,
-      },
-    })
+      const lastReservation = await tx.reservation.findFirst({
+        where: lastWhere,
+        orderBy: { queueNumber: 'desc' },
+      });
+      const nextNumber = (lastReservation?.queueNumber || 0) + 1;
+      const displayNumber = `${service.prefix}-${String(nextNumber).padStart(3, '0')}`;
 
-    // Create audit log
-    await db.auditLog.create({
-      data: {
-        userId,
-        action: 'QUEUE_CALL',
-        entityType: 'RESERVATION',
-        entityId: reservation.id,
-        details: JSON.stringify({
+      const res = await tx.reservation.create({
+        data: {
+          userId,
           agencyId,
-          serviceId,
+          serviceId: resolvedServiceId,
+          queueNumber: nextNumber,
           displayNumber,
+          status: 'WAITING',
           estimatedWait,
           reservedDate: targetDate,
-        }),
-      },
-    })
+        },
+        include: {
+          agency: {
+            select: { id: true, name: true, nameFr: true, nameAr: true, customCode: true },
+          },
+          service: {
+            select: { id: true, name: true, nameFr: true, nameAr: true, prefix: true },
+          },
+        },
+      });
+
+      // Update queue settings lastIssuedNumber
+      if (agency.queueSettings.length > 0) {
+        await tx.queueSettings.update({
+          where: { id: agency.queueSettings[0].id },
+          data: { lastIssuedNumber: nextNumber },
+        });
+      }
+
+      // Create notification
+      const dateLabel = targetDate ? ` (${targetDate})` : '';
+      await tx.notification.create({
+        data: {
+          userId,
+          type: 'QUEUE_JOINED',
+          title: 'Reservation Confirmed',
+          message: `Your ticket ${displayNumber} for ${agency.name} - ${service.name}${dateLabel}. Estimated wait: ${estimatedWait} minutes.`,
+        },
+      });
+
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          userId,
+          action: 'QUEUE_JOIN',
+          entityType: 'RESERVATION',
+          entityId: res.id,
+          details: JSON.stringify({
+            agencyId,
+            serviceId,
+            displayNumber,
+            estimatedWait,
+            reservedDate: targetDate,
+          }),
+        },
+      });
+
+      return res;
+    });
 
     return NextResponse.json({ success: true, reservation }, { status: 201 })
   } catch (error: unknown) {

@@ -45,6 +45,10 @@ function getNotificationConfig(type: string) {
       return { icon: AlertTriangle, color: 'border-l-red-500', iconBg: 'bg-red-100 dark:bg-red-900/30', iconColor: 'text-red-600 dark:text-red-400' };
     case 'TURN_APPROACHING':
       return { icon: Clock, color: 'border-l-amber-500', iconBg: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400' };
+    case 'NO_SHOW_WARNING':
+      return { icon: AlertTriangle, color: 'border-l-orange-500', iconBg: 'bg-orange-100 dark:bg-orange-900/30', iconColor: 'text-orange-600 dark:text-orange-400' };
+    case 'RECLAIM_SUCCESS':
+      return { icon: CheckCheck, color: 'border-l-blue-500', iconBg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' };
     default:
       return { icon: Info, color: 'border-l-gray-400', iconBg: 'bg-gray-100 dark:bg-gray-800', iconColor: 'text-gray-600 dark:text-gray-400' };
   }

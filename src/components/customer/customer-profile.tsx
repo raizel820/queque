@@ -41,6 +41,8 @@ import {
   Clock,
   Heart,
   CalendarDays,
+  KeyRound,
+  Smartphone,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -79,6 +81,18 @@ export function CustomerProfile() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
+  // Change password state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [confirmPasswordVal, setConfirmPasswordVal] = useState('');
+  const [changePasswordLoading, setChangePasswordLoading] = useState(false);
+
+  // SMS Notification state
+  const [reminderMinutesVal, setReminderMinutesVal] = useState(10);
+  const [smsNotifEnabled, setSmsNotifEnabled] = useState(true);
+  const [purchasedSms, setPurchasedSms] = useState(0);
+  const [smsSettingsSaving, setSmsSettingsSaving] = useState(false);
+
   // Queue stats state
   const [queueStats, setQueueStats] = useState<{
     totalQueues: number;
@@ -116,6 +130,12 @@ export function CustomerProfile() {
         }
         if (data.freeSmsCount !== undefined) {
           setSmsCount(data.freeSmsCount);
+        }
+        if (data.reminderMinutes !== undefined) {
+          setReminderMinutesVal(data.reminderMinutes);
+        }
+        if (data.smsNotificationsEnabled !== undefined) {
+          setSmsNotifEnabled(data.smsNotificationsEnabled);
         }
       }
     } catch {
@@ -184,6 +204,68 @@ export function CustomerProfile() {
       toast.error(t('error'));
     } finally {
       setSavingPhone(false);
+    }
+  };
+
+  const handleSaveSmsSettings = async () => {
+    if (!user?.id) return;
+    setSmsSettingsSaving(true);
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, reminderMinutes: reminderMinutesVal, smsNotificationsEnabled: smsNotifEnabled }),
+      });
+      if (res.ok) {
+        toast.success(t('smsSaved'));
+      } else {
+        toast.error(t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setSmsSettingsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!user?.id) return;
+    if (!currentPassword || !newPasswordVal || !confirmPasswordVal) {
+      toast.error(t('requiredField'));
+      return;
+    }
+    if (newPasswordVal !== confirmPasswordVal) {
+      toast.error(t('passwordMismatch'));
+      return;
+    }
+    if (newPasswordVal.length < 6) {
+      toast.error(t('passwordMinLength'));
+      return;
+    }
+    setChangePasswordLoading(true);
+    try {
+      const res = await fetch('/api/user/change-password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, currentPassword, newPassword: newPasswordVal }),
+      });
+      if (res.ok) {
+        toast.success(t('passwordChanged'));
+        setCurrentPassword('');
+        setNewPasswordVal('');
+        setConfirmPasswordVal('');
+      } else {
+        const data = await res.json();
+        if (res.status === 401) {
+          toast.error(t('wrongCurrentPassword'));
+        } else {
+          toast.error(data.error || t('error'));
+        }
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setChangePasswordLoading(false);
     }
   };
 
@@ -576,6 +658,110 @@ export function CustomerProfile() {
         </Card>
       </motion.div>
 
+      {/* Notification & SMS Settings */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.125 }}
+      >
+        <Card className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Smartphone className="h-4 w-4 text-emerald-600" />
+              {t('smsSettings')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-4">
+            {/* Reminder Minutes Selector */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                {t('reminderMinutes')}
+              </Label>
+              <Select
+                value={String(reminderMinutesVal)}
+                onValueChange={(val) => setReminderMinutesVal(Number(val))}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">{t('reminder5min')}</SelectItem>
+                  <SelectItem value="10">{t('reminder10min')}</SelectItem>
+                  <SelectItem value="15">{t('reminder15min')}</SelectItem>
+                  <SelectItem value="20">{t('reminder20min')}</SelectItem>
+                  <SelectItem value="30">{t('reminder30min')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground mt-1">{t('reminderMinutesDesc')}</p>
+            </div>
+
+            {/* SMS Notifications Toggle */}
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/30">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                  <BellRing className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{t('smsNotifToggle')}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{t('smsNotifToggleDesc')}</p>
+                </div>
+              </div>
+              <motion.button
+                role="switch"
+                aria-checked={smsNotifEnabled}
+                onClick={() => setSmsNotifEnabled((prev) => !prev)}
+                className="relative h-7 w-12 rounded-full flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+              >
+                <motion.div
+                  animate={{ backgroundColor: smsNotifEnabled ? '#10b981' : '#d1d5db' }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 rounded-full"
+                />
+                <motion.span
+                  layout
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  className="absolute top-0.5 h-6 w-6 bg-white rounded-full shadow-md pointer-events-none"
+                  style={{ left: smsNotifEnabled ? '23px' : '2px' }}
+                />
+              </motion.button>
+            </div>
+
+            {/* SMS Balance Display */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
+                <div className="h-9 w-9 rounded-lg bg-emerald-100 dark:bg-emerald-800/40 flex items-center justify-center flex-shrink-0">
+                  <MessageSquare className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground">{t('freeSmsCount')}</p>
+                  <p className="text-base font-bold text-emerald-700 dark:text-emerald-400">{smsCount}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+                <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center flex-shrink-0">
+                  <CreditCard className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-muted-foreground">{t('purchasedSmsCount')}</p>
+                  <p className="text-base font-bold text-amber-700 dark:text-amber-400">{purchasedSms}</p>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              size="sm"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-10"
+              onClick={handleSaveSmsSettings}
+              disabled={smsSettingsSaving}
+            >
+              {smsSettingsSaving ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <Check className="h-4 w-4 me-2" />}
+              {t('save')}
+            </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Phone Number */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -606,6 +792,68 @@ export function CustomerProfile() {
                 disabled={savingPhone}
               >
                 <Check className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Change Password */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.18 }}
+      >
+        <Card className="border-0 shadow-sm mb-4 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-emerald-600" />
+              {t('changePassword')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">{t('currentPassword')}</Label>
+                <Input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••"
+                  className="h-11"
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">{t('newPassword')}</Label>
+                <Input
+                  type="password"
+                  value={newPasswordVal}
+                  onChange={(e) => setNewPasswordVal(e.target.value)}
+                  placeholder="••••••"
+                  className="h-11"
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">{t('confirmNewPassword')}</Label>
+                <Input
+                  type="password"
+                  value={confirmPasswordVal}
+                  onChange={(e) => setConfirmPasswordVal(e.target.value)}
+                  placeholder="••••••"
+                  className="h-11"
+                  dir="ltr"
+                />
+              </div>
+              <Button
+                size="sm"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg h-10"
+                onClick={handleChangePassword}
+                disabled={changePasswordLoading || !currentPassword || !newPasswordVal || !confirmPasswordVal}
+              >
+                {changePasswordLoading ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <KeyRound className="h-4 w-4 me-2" />}
+                {t('changePassword')}
               </Button>
             </div>
           </CardContent>

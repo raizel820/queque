@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get('role') || '';
     const status = searchParams.get('status') || '';
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const rawLimit = parseInt(searchParams.get('limit') || '20');
+    const limit = Math.min(Math.max(rawLimit, 1), 100);
 
     const where: Record<string, unknown> = {};
 
@@ -93,12 +94,19 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Prevent modifying super admin accounts
     const targetUser = await db.user.findUnique({ where: { id: userId } });
     if (!targetUser) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
+      );
+    }
+
+    // Prevent modifying super admin accounts
+    if (targetUser.role === 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { success: false, error: 'Cannot modify super admin accounts' },
+        { status: 403 }
       );
     }
 
