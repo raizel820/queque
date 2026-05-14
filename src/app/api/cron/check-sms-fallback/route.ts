@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { normalizeDzPhone, getSmsTemplate } from '@/lib/sms-service';
+import { sendSms } from '@/lib/sms-service';
 
 const SMS_FALLBACK_MINUTES = 10;
 
@@ -41,6 +43,7 @@ export async function GET() {
             name: true,
             nameAr: true,
             nameFr: true,
+            averageServiceTime: true,
           },
         },
       },
@@ -61,47 +64,58 @@ export async function GET() {
         continue;
       }
 
-      const agencyName =
-        user.language === 'ar'
-          ? reservation.agency.nameAr || reservation.agency.name
-          : user.language === 'fr'
-            ? reservation.agency.nameFr || reservation.agency.name
-            : reservation.agency.name;
-
-      const smsMessage = `QueueWise Alert: Your ticket ${reservation.displayNumber} at ${agencyName} is ready. Please head to the service counter now!`;
-
-      // Attempt to send SMS (currently logged, actual SMS integration would go here)
-      await db.$transaction(async (tx) => {
-        // Deduct from free SMS count first
-        await tx.user.update({
-          where: { id: user.id },
+      // Normalize phone number for Algerian format
+      const normalizedPhone = normalizeDzPhone(user.phoneNumber!);
+      if (!normalizedPhone) {
+        // Log failure for invalid phone
+        await db.smsLog.create({
           data: {
-            freeSmsCount: Math.max(0, totalFreeCredits - 1),
+            userId: user.id,
+            phoneNumber: user.phoneNumber!,
+            message: 'SMS fallback - invalid phone',
+            status: 'FAILED',
+            provider: 'system',
+            errorMessage: `Invalid phone number format: ${user.phoneNumber}`,
           },
         });
+        continue;
+      }
 
+      // Build localized SMS message
+      const lang = user.language || 'ar';
+      const agencyName = lang === 'ar'
+        ? reservation.agency.nameAr || reservation.agency.name
+        : lang === 'fr'
+          ? reservation.agency.nameFr || reservation.agency.name
+          : reservation.agency.name;
+
+      // Calculate estimated wait
+      const position = reservation.queueNumber; // simplified; in production, query actual position
+      const estimatedMinutes = Math.max(1, Math.round(reservation.agency.averageServiceTime || 10));
+
+      const smsMessage = getSmsTemplate('turnApproaching', lang, {
+        ticketNumber: reservation.displayNumber,
+        agencyName,
+        position,
+        estimatedMinutes,
+      });
+
+      // Attempt to send SMS via configured provider
+      const result = await sendSms(normalizedPhone, smsMessage, user.id);
+
+      if (result.success) {
         // Mark SMS reminder as sent on the reservation
-        await tx.reservation.update({
+        await db.reservation.update({
           where: { id: reservation.id },
           data: {
             smsReminderSent: true,
             smsReminderSentAt: new Date(),
           },
         });
-
-        // Create SMS log entry
-        await tx.smsLog.create({
-          data: {
-            userId: user.id,
-            phoneNumber: user.phoneNumber!,
-            message: smsMessage,
-            status: 'SENT',
-            provider: 'algeria_sms',
-          },
-        });
-      });
-
-      smsSent++;
+        smsSent++;
+      } else {
+        console.error(`[cron/check-sms-fallback] Failed to send SMS to ${normalizedPhone}: ${result.error}`);
+      }
     }
 
     return NextResponse.json({

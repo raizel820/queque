@@ -664,6 +664,11 @@ const ar = {
 
   // ─── Agency Rating ─────────────
   rateExperience: 'قيّم تجربتك',
+  ratePrompt: 'كيف كانت زيارتك؟',
+  submitRating: 'إرسال التقييم',
+  ratingSubmitted: 'شكراً لملاحظاتك!',
+  alreadyRated: 'لقد قيّمت هذه الزيارة بالفعل',
+  feedbackPlaceholder: 'شارك تجربتك (اختياري)',
   rateSubmitted: 'شكراً لتقييمك!',
   yourRating: 'تقييمك',
 
@@ -859,12 +864,33 @@ const ar = {
   turnApproachingSms: 'دورك في {agency} يقترب! التذكرة: {number}',
   noShowWarningNotif: 'تم تخطيك في {agency} (التذكرة {number}). اضغط للاستعادة.',
   smsSaved: 'تم حفظ إعدادات الرسائل بنجاح',
+  smsValidateConnection: 'التحقق من الاتصال',
+  smsGatewayValid: 'تم الاتصال ببوابة الرسائل بنجاح!',
+  smsTestPhoneRequired: 'رقم الهاتف الاختباري مطلوب',
+  smsInvalidPhone: 'رقم هاتف جزائري غير صالح. استخدم +213XXXXXXXXX أو 0XXXXXXXXX',
+  smsDailyLimitReached: 'تم الوصول للحد اليومي من الرسائل',
+  smsPhoneFormat: 'الصيغة الجزائرية: +213XXXXXXXXX أو 0XXXXXXXXX',
+  smsPhoneFormatDesc: 'يجب أن يبدأ الرقم بـ +213 أو 00213 أو 0 متبوعاً بـ 5XX/6XX/7XX',
   reminder5min: '5 دقائق',
   reminder10min: '10 دقائق',
   reminder15min: '15 دقيقة',
   reminder20min: '20 دقيقة',
   reminder30min: '30 دقيقة',
   noSmsSettings: 'الرسائل غير مفعّلة. تواصل مع المدير.',
+
+  // ─── Task 13-b: Queue Position Sharing ─────
+  sharePositionNew: 'مشاركة المركز',
+  shareText: 'أنا في الطابور في',
+  shareTicket: 'تذكرة',
+  sharePositionLabel: 'المركز',
+  shareEstimatedWait: 'انتظار متوقع',
+  shareMinutes: 'دقيقة',
+  copiedToClipboard: 'تم النسخ!',
+  shareFailed: 'فشل المشاركة',
+
+  // ─── Task 13-b: Peak Hours ─────
+  peakHoursDesc: 'أكثر الأوقات ازدحاماً في آخر 30 يوم',
+  reservations: 'حجز',
 };
 
 export default ar;

@@ -138,6 +138,9 @@ export function CustomerQueue() {
   const [feedbackComment, setFeedbackComment] = useState<Record<string, string>>({});
   const [feedbackSubmittedIds, setFeedbackSubmittedIds] = useState<Set<string>>(new Set());
   const [hoveredStar, setHoveredStar] = useState<Record<string, number>>({});
+  const [ratingDialogOpen, setRatingDialogOpen] = useState(false);
+  const [ratingTargetId, setRatingTargetId] = useState<string | null>(null);
+  const [selectedRating, setSelectedRating] = useState(0);
   const prevStatusRef = useRef<Record<string, string>>({});
   const soundStartedRef = useRef(false);
   const turnAlertRef = useRef<HTMLDivElement>(null);
@@ -415,6 +418,12 @@ export function CustomerQueue() {
     }
   };
 
+  const openRatingDialog = (resId: string) => {
+    setRatingTargetId(resId);
+    setSelectedRating(0);
+    setRatingDialogOpen(true);
+  };
+
   const handleSubmitRating = async (resId: string, rating: number) => {
     setSubmittingRating(resId);
     try {
@@ -422,7 +431,7 @@ export function CustomerQueue() {
       const res = await fetch(`/api/reservations/${resId}/rate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating, notes: comment }),
+        body: JSON.stringify({ rating, feedback: comment, userId: user?.id }),
       });
       if (res.ok) {
         setUserRating((prev) => ({ ...prev, [resId]: rating }));
@@ -433,7 +442,9 @@ export function CustomerQueue() {
           try { localStorage.setItem('queuewise_feedback_submitted', JSON.stringify([...next])); } catch { /* ignore */ }
           return next;
         });
-        toast.success(t('feedbackSubmitted'));
+        setRatingDialogOpen(false);
+        setRatingTargetId(null);
+        toast.success(t('ratingSubmitted'));
       } else {
         const data = await res.json();
         toast.error(data.error || t('error'));
@@ -442,6 +453,12 @@ export function CustomerQueue() {
       toast.error(t('error'));
     } finally {
       setSubmittingRating(null);
+    }
+  };
+
+  const handleDialogSubmitRating = () => {
+    if (ratingTargetId && selectedRating >= 1 && selectedRating <= 5) {
+      handleSubmitRating(ratingTargetId, selectedRating);
     }
   };
 
@@ -601,13 +618,50 @@ export function CustomerQueue() {
         </div>
       )}
 
+      {/* Gradient header bar with ticket number */}
+      {activeRes && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative -mx-4 -mt-4 mb-5 rounded-b-2xl bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 p-4 text-white shadow-lg shadow-emerald-500/25 overflow-hidden"
+        >
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-4 -end-4 w-24 h-24 rounded-full bg-white/10" />
+            <div className="absolute bottom-0 -start-4 w-16 h-16 rounded-full bg-white/5" />
+          </div>
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <TicketCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium text-emerald-100">{t('yourQueueNumber')}</p>
+                <p className="text-2xl font-black tracking-tight">{activeRes.queueNumber}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {isFastPolling && activeRes?.status === 'WAITING' && (
+                <motion.div
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="h-2.5 w-2.5 rounded-full bg-amber-300"
+                />
+              )}
+              <span className="text-xs font-medium bg-white/20 px-2.5 py-1 rounded-full backdrop-blur-sm">
+                {activeRes.status === 'CALLED' ? t('statusCalled') : t('statusWaiting')}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">{t('myQueue')}</h1>
         <Button
           variant="outline"
           size="sm"
           onClick={fetchReservations}
-          className="h-9 px-3 rounded-lg gap-1.5"
+          className="h-9 px-3 rounded-lg gap-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors duration-200"
         >
           <RefreshCw className="h-4 w-4" />
           <span className="text-xs font-medium">{t('refresh')}</span>
@@ -1224,69 +1278,27 @@ export function CustomerQueue() {
                           <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/50">
                             <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
                             <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                              {t('thankYouFeedback')}
+                              {t('ratingSubmitted')}
                             </span>
+                            {res.rating && (
+                              <div className="flex items-center gap-0.5 ms-1">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                  <Star
+                                    key={s}
+                                    className={`h-3 w-3 ${s <= res.rating! ? 'text-amber-400 fill-amber-400' : 'text-gray-300 dark:text-gray-600'}`}
+                                  />
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ) : (
-                          <div className="space-y-3">
-                            <p className="text-sm font-medium text-foreground text-center">{t('commentFeedback')}</p>
-                            {/* Star rating row */}
-                            <div className="flex justify-center gap-1">
-                              {[1, 2, 3, 4, 5].map((star) => {
-                                const isFilled = star <= (hoveredStar[res.id] || 0);
-                                return (
-                                  <button
-                                    key={star}
-                                    type="button"
-                                    className="p-1 transition-transform hover:scale-125 disabled:opacity-30"
-                                    disabled={submittingRating === res.id}
-                                    onClick={() => setHoveredStar((prev) => ({ ...prev, [res.id]: star }))}
-                                    onMouseEnter={() => setHoveredStar((prev) => ({ ...prev, [res.id]: star }))}
-                                    onMouseLeave={() => setHoveredStar((prev) => ({ ...prev, [res.id]: 0 }))}
-                                  >
-                                    <Star
-                                      className={`h-7 w-7 transition-colors ${
-                                        isFilled
-                                          ? 'text-amber-400 fill-amber-400'
-                                          : 'text-gray-300 dark:text-gray-600'
-                                      }`}
-                                    />
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            {/* Selected stars display */}
-                            {hoveredStar[res.id] ? (
-                              <p className="text-center text-xs text-muted-foreground">
-                                {hoveredStar[res.id]}/5 {t('rateExperience')}
-                              </p>
-                            ) : null}
-                            {/* Comment textarea */}
-                            <textarea
-                              value={feedbackComment[res.id] || ''}
-                              onChange={(e) => setFeedbackComment((prev) => ({ ...prev, [res.id]: e.target.value }))}
-                              placeholder={t('feedbackComment')}
-                              className="w-full h-20 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-colors"
-                              dir={lang === 'ar' ? 'rtl' : 'ltr'}
-                            />
-                            {/* Submit button */}
-                            <Button
-                              className="w-full h-10 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl transition-all duration-300 disabled:opacity-50"
-                              onClick={() => {
-                                const rating = hoveredStar[res.id];
-                                if (rating && rating >= 1 && rating <= 5) {
-                                  handleSubmitRating(res.id, rating);
-                                }
-                              }}
-                              disabled={submittingRating === res.id || !hoveredStar[res.id]}
-                            >
-                              {submittingRating === res.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin me-2" />
-                              ) : null}
-                              <Star className="h-4 w-4 me-1" />
-                              {t('submitFeedback')}
-                            </Button>
-                          </div>
+                          <Button
+                            className="w-full h-10 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold shadow-lg shadow-amber-500/20 transition-all duration-300 gap-2"
+                            onClick={() => openRatingDialog(res.id)}
+                          >
+                            <Star className="h-4 w-4" />
+                            {t('rateExperience')}
+                          </Button>
                         )}
                       </motion.div>
                     )}

@@ -150,7 +150,7 @@ export function CustomerHome() {
 
   useEffect(() => {
     fetchFavorites();
-  }, []);
+  }, [user?.id]);
 
   const fetchAgencies = async () => {
     setLoading(true);
@@ -395,7 +395,13 @@ export function CustomerHome() {
     const [sh, sm] = start.split(':').map(Number);
     const [eh, em] = end.split(':').map(Number);
     const cur = now.getHours() * 60 + now.getMinutes();
-    return cur >= sh * 60 + sm && cur < eh * 60 + em;
+    const startMin = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    // Handle overnight hours (e.g. 22:00 - 06:00)
+    if (startMin > endMin) {
+      return cur >= startMin || cur < endMin;
+    }
+    return cur >= startMin && cur < endMin;
   };
 
   // Welcome banner helpers

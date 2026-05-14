@@ -264,10 +264,11 @@ export function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+            <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
+              <div className="relative rounded-2xl p-[2px] bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500">
               <Button
                 size="lg"
-                className="cta-glow bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-10 py-7 text-lg rounded-2xl shadow-xl shadow-emerald-500/30 min-h-14 hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300"
+                className="cta-glow bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-10 py-7 text-lg rounded-2xl shadow-xl shadow-emerald-500/30 min-h-14 hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300"
                 onClick={() => setView('register')}
               >
                 {t('getStarted')}
@@ -278,12 +279,13 @@ export function LandingPage() {
                   <ArrowRight className="ms-2 h-5 w-5 rtl:rotate-180" />
                 </motion.div>
               </Button>
+              </div>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+            <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
               <Button
                 size="lg"
                 variant="outline"
-                className="cta-glow font-bold px-10 py-7 text-lg rounded-2xl min-h-14 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all duration-300 border-2 hover:border-emerald-300 dark:hover:border-emerald-700"
+                className="cta-glow font-bold px-10 py-7 text-lg rounded-2xl min-h-14 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all duration-300 border-2 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg hover:shadow-emerald-500/10"
                 onClick={() => setView('login')}
               >
                 {t('login')}
@@ -389,9 +391,10 @@ export function LandingPage() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="max-w-3xl mx-auto"
         >
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12 text-foreground">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-3 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-400 bg-clip-text text-transparent">
             {t('howItWorks')}
           </h2>
+          <p className="text-sm text-muted-foreground text-center mb-12 max-w-md mx-auto">{t('howItWorksDesc') || ''}</p>
 
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-0">
             {steps.map((step, idx) => (
@@ -417,6 +420,7 @@ export function LandingPage() {
                   </div>
                 )}
 
+                {/* Glassmorphism card wrapper around step icon + text */}
                 <div className="relative group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-emerald-500/25 transition-all duration-300">
                   <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                     <step.icon className="h-7 w-7 text-white" />
@@ -425,12 +429,15 @@ export function LandingPage() {
                     {idx + 1}
                   </div>
                 </div>
-                <h3 className="mt-4 font-semibold text-base text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">
-                  {t(step.titleKey)}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground max-w-[200px]">
-                  {t(step.descKey)}
-                </p>
+                {/* Glassmorphism card for step text */}
+                <div className="mt-4 p-4 rounded-2xl bg-white/40 dark:bg-gray-800/30 backdrop-blur-md border border-white/60 dark:border-gray-700/30 shadow-sm group-hover:shadow-lg group-hover:shadow-emerald-500/5 group-hover:bg-white/60 dark:group-hover:bg-gray-800/50 group-hover:border-emerald-200/50 dark:group-hover:border-emerald-700/30 transition-all duration-300 max-w-[220px]">
+                  <h3 className="font-semibold text-sm text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">
+                    {t(step.titleKey)}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                    {t(step.descKey)}
+                  </p>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -462,25 +469,25 @@ export function LandingPage() {
                 viewport={{ once: true, margin: '-30px' }}
                 transition={{ duration: 0.4, delay: idx * 0.12 }}
               >
-                <Card className="h-full border-0 shadow-sm hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-gray-900 group">
+                <Card className="h-full border-0 shadow-sm hover:shadow-xl hover:shadow-emerald-500/15 transition-all duration-300 hover:-translate-y-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm group">
                   <CardContent className="p-5 flex flex-col h-full">
-                    <Quote className="h-8 w-8 text-emerald-200 dark:text-emerald-800 mb-3 flex-shrink-0 group-hover:text-emerald-300 dark:group-hover:text-emerald-700 transition-colors duration-300" />
+                    <Quote className="h-10 w-10 text-emerald-200 dark:text-emerald-800 mb-3 flex-shrink-0 group-hover:text-emerald-400 dark:group-hover:text-emerald-600 transition-colors duration-300" />
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">
                       &ldquo;{t(testimonial.textKey)}&rdquo;
                     </p>
-                    <div className="flex items-center gap-3 pt-3 border-t border-border">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm">
+                    <div className="flex items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-md group-hover:shadow-lg group-hover:shadow-emerald-500/20 transition-shadow duration-300">
                         {t(testimonial.nameKey).charAt(0)}
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
                           {t(testimonial.nameKey)}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground truncate">
                           {t(testimonial.roleKey)}
                         </p>
                       </div>
-                      <div className="ms-auto flex gap-0.5">
+                      <div className="ms-auto flex gap-0.5 flex-shrink-0">
                         {[...Array(5)].map((_, i) => (
                           <Star key={i} className="h-3 w-3 text-amber-400 fill-amber-400" />
                         ))}

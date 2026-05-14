@@ -27,7 +27,7 @@ export async function PATCH(
     const status = statusMap[action];
     const updateData: Record<string, unknown> = {
       status,
-      completedAt: new Date(),
+      completedAt: action === 'complete' ? new Date() : undefined,
       cancelledAt: action === 'cancel' ? new Date() : undefined,
     };
 

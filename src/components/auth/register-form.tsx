@@ -280,9 +280,9 @@ export function RegisterForm() {
       {/* Register Form */}
       <div className="flex-1 flex items-center justify-center px-4 py-4 relative z-10">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
           className="w-full max-w-md"
         >
           <div className={`relative transition-transform duration-300 ${isFocused ? 'scale-[1.01]' : ''}`}>
@@ -703,6 +703,24 @@ export function RegisterForm() {
               </CardFooter>
             </Card>
           </div>
+
+          {/* Branded Footer */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="mt-6 flex flex-col items-center gap-2"
+          >
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
+                <TicketCheck className="h-3.5 w-3.5 text-white" />
+              </div>
+              <span className="text-xs font-semibold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
+                QueueWise
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground/50">{t('rightsReserved')} · {t('version')}</p>
+          </motion.div>
         </motion.div>
       </div>
     </div>

@@ -329,7 +329,14 @@ export function AgencyDashboard() {
         })
       );
       const results = await Promise.allSettled(promises);
-      const failedCount = results.filter(r => r.status === 'rejected').length;
+      let failedCount = 0;
+      for (const r of results) {
+        if (r.status === 'rejected') {
+          failedCount++;
+        } else if (r.status === 'fulfilled' && !r.value.ok) {
+          failedCount++;
+        }
+      }
       if (failedCount === 0) {
         toast.success(t('success'));
       } else if (failedCount < results.length) {

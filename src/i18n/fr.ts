@@ -664,6 +664,11 @@ const fr: Record<TranslationKeys, string> = {
 
   // ─── Agency Rating ─────────────
   rateExperience: "Évaluez votre expérience",
+  ratePrompt: "Comment s'est passée votre visite ?",
+  submitRating: "Soumettre l'évaluation",
+  ratingSubmitted: "Merci pour votre retour !",
+  alreadyRated: "Vous avez déjà évalué cette visite",
+  feedbackPlaceholder: "Partagez votre expérience (facultatif)",
   rateSubmitted: "Merci pour votre évaluation !",
   yourRating: "Votre note",
 
@@ -859,12 +864,33 @@ const fr: Record<TranslationKeys, string> = {
   turnApproachingSms: "Votre tour à {agency} approche ! Ticket : {number}",
   noShowWarningNotif: "Vous avez été passé à {agency} (ticket {number}). Appuyez pour récupérer.",
   smsSaved: "Paramètres SMS enregistrés avec succès",
+  smsValidateConnection: "Valider la connexion",
+  smsGatewayValid: "Connexion à la passerelle réussie !",
+  smsTestPhoneRequired: "Le numéro de téléphone test est requis",
+  smsInvalidPhone: "Numéro algérien invalide. Utilisez +213XXXXXXXXX ou 0XXXXXXXXX",
+  smsDailyLimitReached: "Limite quotidienne de SMS atteinte",
+  smsPhoneFormat: "Format algérien : +213XXXXXXXXX ou 0XXXXXXXXX",
+  smsPhoneFormatDesc: "Le numéro doit commencer par +213, 00213 ou 0 suivi de 5XX/6XX/7XX",
   reminder5min: "5 minutes",
   reminder10min: "10 minutes",
   reminder15min: "15 minutes",
   reminder20min: "20 minutes",
   reminder30min: "30 minutes",
   noSmsSettings: "SMS non configuré. Contactez l'admin.",
+
+  // ─── Task 13-b: Queue Position Sharing ─────
+  sharePositionNew: "Partager la position",
+  shareText: "Je suis dans la file à",
+  shareTicket: "Billet",
+  sharePositionLabel: "Position",
+  shareEstimatedWait: "Attente estimée",
+  shareMinutes: "min",
+  copiedToClipboard: "Copié !",
+  shareFailed: "Échec du partage",
+
+  // ─── Task 13-b: Peak Hours ─────
+  peakHoursDesc: "Heures les plus chargées des 30 derniers jours",
+  reservations: "réservations",
 };
 
 export default fr;

@@ -664,6 +664,11 @@ const en: Record<TranslationKeys, string> = {
 
   // ─── Agency Rating ─────────────
   rateExperience: "Rate your experience",
+  ratePrompt: "How was your visit?",
+  submitRating: "Submit Rating",
+  ratingSubmitted: "Thank you for your feedback!",
+  alreadyRated: "You already rated this visit",
+  feedbackPlaceholder: "Share your experience (optional)",
   rateSubmitted: "Thanks for your rating!",
   yourRating: "Your rating",
 
@@ -859,12 +864,33 @@ const en: Record<TranslationKeys, string> = {
   turnApproachingSms: "Your turn at {agency} is approaching! Ticket: {number}",
   noShowWarningNotif: "You were skipped at {agency} (ticket {number}). Tap to reclaim.",
   smsSaved: "SMS settings saved successfully",
+  smsValidateConnection: "Validate Connection",
+  smsGatewayValid: "Gateway connection successful!",
+  smsTestPhoneRequired: "Test phone number is required",
+  smsInvalidPhone: "Invalid Algerian phone number. Use +213XXXXXXXXX or 0XXXXXXXXX",
+  smsDailyLimitReached: "Daily SMS limit reached",
+  smsPhoneFormat: "Algerian format: +213XXXXXXXXX or 0XXXXXXXXX",
+  smsPhoneFormatDesc: "Phone number must start with +213, 00213, or 0 followed by 5XX/6XX/7XX",
   reminder5min: "5 minutes",
   reminder10min: "10 minutes",
   reminder15min: "15 minutes",
   reminder20min: "20 minutes",
   reminder30min: "30 minutes",
   noSmsSettings: "SMS not configured. Contact admin.",
+
+  // ─── Task 13-b: Queue Position Sharing ─────
+  sharePositionNew: "Share Position",
+  shareText: "I'm in queue at",
+  shareTicket: "Ticket",
+  sharePositionLabel: "Position",
+  shareEstimatedWait: "Est. wait",
+  shareMinutes: "min",
+  copiedToClipboard: "Copied to clipboard!",
+  shareFailed: "Share failed",
+
+  // ─── Task 13-b: Peak Hours ─────
+  peakHoursDesc: "Busiest hours in the last 30 days",
+  reservations: "reservations",
 };
 
 export default en;

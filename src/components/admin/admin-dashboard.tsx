@@ -40,6 +40,7 @@ import {
   Send,
   Save,
   RefreshCw,
+  Wifi,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -56,6 +57,15 @@ interface SmsSettingsData {
   testPhoneNumber: string | null;
   updatedAt: string;
   createdAt: string;
+}
+
+interface SmsProviderInfo {
+  id: string;
+  name: string;
+  description: string;
+  defaultApiUrl: string;
+  senderIdSupport: boolean;
+  docsUrl: string;
 }
 
 interface SmsUsageStats {
@@ -138,9 +148,11 @@ export function AdminDashboard() {
   const [smsSettings, setSmsSettings] = useState<SmsSettingsData | null>(null);
   const [smsStats, setSmsStats] = useState<SmsUsageStats | null>(null);
   const [smsLogs, setSmsLogs] = useState<SmsLogItem[]>([]);
+  const [smsProviders, setSmsProviders] = useState<SmsProviderInfo[]>([]);
   const [smsLoading, setSmsLoading] = useState(false);
   const [smsSaving, setSmsSaving] = useState(false);
   const [smsTestLoading, setSmsTestLoading] = useState(false);
+  const [smsValidating, setSmsValidating] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
@@ -157,6 +169,7 @@ export function AdminDashboard() {
         setSmsSettings(data.settings);
         setSmsStats(data.stats);
         setSmsLogs(data.recentLogs ?? []);
+        setSmsProviders(data.providers ?? []);
       }
     } catch { toast.error(t('error')); }
     finally { setSmsLoading(false); }
@@ -190,9 +203,17 @@ export function AdminDashboard() {
   };
 
   const handleSendTestSms = async () => {
+    if (!smsSettings?.testPhoneNumber) {
+      toast.error(t('smsTestPhoneRequired') || 'Test phone number is required');
+      return;
+    }
     setSmsTestLoading(true);
     try {
-      const res = await fetch('/api/admin/sms-settings/test', { method: 'POST' });
+      const res = await fetch('/api/admin/sms-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: smsSettings.testPhoneNumber }),
+      });
       if (res.ok) {
         toast.success(t('smsTestSent'));
         fetchSmsSettings();
@@ -202,6 +223,34 @@ export function AdminDashboard() {
       }
     } catch { toast.error(t('smsTestFailed')); }
     finally { setSmsTestLoading(false); }
+  };
+
+  const handleValidateGateway = async () => {
+    setSmsValidating(true);
+    try {
+      const res = await fetch('/api/admin/sms-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'validate' }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        toast.success(t('smsGatewayValid') || 'Gateway connection successful!');
+      } else {
+        toast.error(data.error || t('smsTestFailed'));
+      }
+    } catch { toast.error(t('smsTestFailed')); }
+    finally { setSmsValidating(false); }
+  };
+
+  const handleProviderChange = (providerId: string) => {
+    if (!smsSettings) return;
+    const provider = smsProviders.find(p => p.id === providerId);
+    setSmsSettings({
+      ...smsSettings,
+      provider: providerId,
+      apiUrl: provider?.defaultApiUrl || smsSettings.apiUrl,
+    });
   };
 
   const fetchRealAnnouncements = async () => {
@@ -815,12 +864,34 @@ export function AdminDashboard() {
                     <Label className="text-xs font-medium text-muted-foreground">{t('smsProvider')}</Label>
                     <select
                       value={smsSettings.provider}
-                      onChange={(e) => setSmsSettings({ ...smsSettings, provider: e.target.value })}
+                      onChange={(e) => handleProviderChange(e.target.value)}
                       className="h-9 w-full px-3 rounded-lg border border-border bg-background text-sm"
                     >
-                      <option value="algeria_sms">Algeria SMS</option>
-                      <option value="generic">Generic API</option>
+                      {smsProviders.length > 0 ? smsProviders.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      )) : (
+                        <>
+                          <option value="winsms">WinSMS (winsms.dz)</option>
+                          <option value="notifsend">NotifSend (notifsend.com)</option>
+                          <option value="algeria_sms">Algeria SMS (algeria-sms.com)</option>
+                          <option value="green_send">GreenSMS (greensms.ma)</option>
+                          <option value="mtarget">M-Target (mtarget.dz)</option>
+                          <option value="twilio">Twilio (twilio.com)</option>
+                          <option value="vonage">Vonage / Nexmo (vonage.com)</option>
+                          <option value="generic">Generic API</option>
+                        </>
+                      )}
                     </select>
+                    {(() => {
+                      const prov = smsProviders.find(p => p.id === smsSettings.provider);
+                      if (!prov) return null;
+                      return (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {prov.description}
+                          {!prov.senderIdSupport && ' ⚠️ Uses phone number as sender (not name)'}
+                        </p>
+                      );
+                    })()}
                   </div>
 
                   {/* Sender Name */}
@@ -865,7 +936,9 @@ export function AdminDashboard() {
                       onChange={(e) => setSmsSettings({ ...smsSettings, testPhoneNumber: e.target.value })}
                       className="h-9 text-sm"
                       placeholder="+213XXXXXXXXX"
+                      dir="ltr"
                     />
+                    <p className="text-[10px] text-muted-foreground">{t('smsPhoneFormat') || 'Algerian format: +213XXXXXXXXX or 0XXXXXXXXX'}</p>
                   </div>
 
                   {/* SMS Per Reminder */}
@@ -900,6 +973,15 @@ export function AdminDashboard() {
                   >
                     {smsTestLoading ? <Loader2 className="h-4 w-4 animate-spin me-1.5" /> : <Send className="h-4 w-4 me-1.5" />}
                     {t('smsTestSend')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleValidateGateway}
+                    disabled={smsValidating || !smsSettings.apiUrl}
+                    className="rounded-xl h-9 px-4 text-sm border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                  >
+                    {smsValidating ? <Loader2 className="h-4 w-4 animate-spin me-1.5" /> : <Wifi className="h-4 w-4 me-1.5" />}
+                    {t('smsValidateConnection') || 'Validate Connection'}
                   </Button>
                 </div>
 

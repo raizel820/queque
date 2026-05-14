@@ -159,6 +159,16 @@ export async function POST(request: NextRequest) {
     } else {
       lastWhere.reservedDate = null;
     }
+    // Count people currently waiting to estimate wait time
+    const waitWhere: Record<string, unknown> = {
+      agencyId,
+      status: 'WAITING',
+    }
+    if (targetDate) {
+      waitWhere.reservedDate = targetDate;
+    } else {
+      waitWhere.reservedDate = null;
+    }
     const waitingCount = await db.reservation.count({ where: waitWhere })
     const estimatedWait = waitingCount * agency.averageServiceTime
 
@@ -228,7 +238,7 @@ export async function POST(request: NextRequest) {
           entityId: res.id,
           details: JSON.stringify({
             agencyId,
-            serviceId,
+            serviceId: resolvedServiceId,
             displayNumber,
             estimatedWait,
             reservedDate: targetDate,

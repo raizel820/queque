@@ -520,7 +520,7 @@ export function AgencySettings() {
                               {t('addService')}
                             </Button>
                           </div>
-                          {settings?.services.length === 0 ? (
+                          {(settings?.services ?? []).length === 0 ? (
                             <p className="text-sm text-muted-foreground text-center py-4">{t('noData')}</p>
                           ) : (
                             <div className="space-y-2 max-h-72 overflow-y-auto">
