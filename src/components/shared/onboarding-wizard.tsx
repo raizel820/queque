@@ -26,7 +26,7 @@ import {
   Users,
   BarChart3,
   ShieldCheck,
-  Queue,
+  ListOrdered,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -259,7 +259,7 @@ export function OnboardingWizard({ open, user, onComplete, onSkip }: OnboardingP
                   <div className="space-y-3">
                     {[
                       { icon: LayoutDashboard, text: t('agencyTip1'), color: 'from-emerald-100 to-emerald-200 dark:from-emerald-900/40 dark:to-emerald-800/40', iconColor: 'text-emerald-600 dark:text-emerald-400' },
-                      { icon: Queue, text: t('agencyTip2'), color: 'from-teal-100 to-teal-200 dark:from-teal-900/40 dark:to-teal-800/40', iconColor: 'text-teal-600 dark:text-teal-400' },
+                      { icon: ListOrdered, text: t('agencyTip2'), color: 'from-teal-100 to-teal-200 dark:from-teal-900/40 dark:to-teal-800/40', iconColor: 'text-teal-600 dark:text-teal-400' },
                       { icon: BarChart3, text: t('agencyTip3'), color: 'from-amber-100 to-amber-200 dark:from-amber-900/40 dark:to-amber-800/40', iconColor: 'text-amber-600 dark:text-amber-400' },
                       { icon: Users, text: t('agencyTip4'), color: 'from-rose-100 to-rose-200 dark:from-rose-900/40 dark:to-rose-800/40', iconColor: 'text-rose-600 dark:text-rose-400' },
                     ].map((tip, i) => (

@@ -46,7 +46,6 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useRef } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { QueueStatusWidget } from '@/components/agency/queue-status-widget';
 import { WaitTimeChart } from '@/components/agency/wait-time-chart';
 import { RatingDistribution } from '@/components/agency/rating-distribution';
 
@@ -496,18 +495,25 @@ export function AgencyDashboard() {
 
   if (loading) {
     return (
-      <div className="p-4 lg:p-6 space-y-4">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="p-4 lg:p-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-7 w-36 rounded-lg" />
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-20 rounded-lg" />
+            <Skeleton className="h-8 w-8 rounded-lg" />
+          </div>
+        </div>
+        <Skeleton className="h-20 rounded-2xl skeleton-shimmer" />
+        <div className="grid grid-cols-4 gap-2">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-2xl skeleton-shimmer" />
+            <Skeleton key={i} className="h-20 rounded-xl skeleton-shimmer" />
           ))}
         </div>
-        <Skeleton className="h-32 rounded-2xl skeleton-shimmer" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Skeleton className="h-40 rounded-2xl skeleton-shimmer" />
-          <Skeleton className="h-40 rounded-2xl skeleton-shimmer" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <Skeleton className="h-36 rounded-2xl skeleton-shimmer" />
+          <Skeleton className="h-36 rounded-2xl skeleton-shimmer" />
         </div>
-        <Skeleton className="h-64 rounded-2xl skeleton-shimmer" />
+        <Skeleton className="h-44 rounded-2xl skeleton-shimmer" />
       </div>
     );
   }
@@ -518,15 +524,24 @@ export function AgencyDashboard() {
   const sparkData3 = stats?.servedToday ? [Math.round(stats.servedToday * 0.3), Math.round(stats.servedToday * 0.5), stats.servedToday, Math.round(stats.servedToday * 0.7), Math.round(stats.servedToday * 0.9), stats.servedToday, Math.round(stats.servedToday * 0.8)] : [0, 0, 1, 0, 2, 1, 0];
   const sparkData4 = stats?.avgWaitTime ? [Math.round(stats.avgWaitTime * 0.7), Math.round(stats.avgWaitTime * 0.6), stats.avgWaitTime, Math.round(stats.avgWaitTime * 0.8), stats.avgWaitTime, Math.round(stats.avgWaitTime * 0.9), Math.round(stats.avgWaitTime * 0.7)] : [5, 4, 8, 6, 10, 8, 6];
 
-  return (
-    <div className="p-4 lg:p-6 space-y-2 relative" ref={sectionRef}>
-      {/* Gradient top border */}
-      <div className="absolute top-0 start-0 end-0 h-[4px] bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 rounded-full" />
+  // Queue status level for the Now Serving card
+  const avgWait = stats?.avgWaitTime ?? 0;
+  const waitLevel = avgWait <= 10 ? 'low' : avgWait <= 25 ? 'medium' : 'high';
+  const waitLevelConfig = {
+    low: { label: t('lowWait'), dotColor: 'bg-emerald-300' },
+    medium: { label: t('mediumWait'), dotColor: 'bg-amber-300' },
+    high: { label: t('highWait'), dotColor: 'bg-rose-300' },
+  };
 
-      {/* Title with Live Indicator */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+  return (
+    <div className="p-4 lg:p-5 space-y-3 relative" ref={sectionRef}>
+      {/* Gradient top border */}
+      <div className="absolute top-0 start-0 end-0 h-[3px] bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 rounded-full" />
+
+      {/* Title + Quick Stats in one compact row */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
             {t('agencyDashboard')}
             <motion.span
               animate={{ opacity: [1, 0.3, 1] }}
@@ -537,133 +552,115 @@ export function AgencyDashboard() {
               {t('live')}
             </motion.span>
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">{t('autoRefresh')}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={handleExportCsv}
             disabled={exportLoading}
-            className="h-9 px-3 rounded-lg gap-1.5 text-xs"
+            className="h-8 px-2.5 rounded-lg gap-1 text-xs"
           >
             {exportLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">{t('exportCsv') || 'Export CSV'}</span>
+            <span className="hidden sm:inline">{t('exportCsv') || 'Export'}</span>
           </Button>
           <Button
             variant="ghost"
             size="icon"
             onClick={fetchData}
-            className="h-10 w-10"
+            className="h-8 w-8"
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Today's Quick Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden">
-          <CardContent className="p-4 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-900/10 rounded-xl">
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">{t('servedToday')}</span>
-            </div>
-            <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{stats?.servedToday ?? 0}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden">
-          <CardContent className="p-4 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-900/10 rounded-xl">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className="h-4 w-4 text-amber-600" />
-              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">{t('avgWaitTime')}</span>
-            </div>
-            <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{stats?.avgWaitTime ?? 0}<span className="text-sm font-normal ms-0.5">{t('min')}</span></p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden">
-          <CardContent className="p-4 bg-gradient-to-br from-teal-50 to-teal-100/50 dark:from-teal-900/20 dark:to-teal-900/10 rounded-xl">
-            <div className="flex items-center gap-2 mb-1">
-              <Users className="h-4 w-4 text-teal-600" />
-              <span className="text-[11px] font-medium text-teal-700 dark:text-teal-400">{t('queueLength')}</span>
-            </div>
-            <p className="text-2xl font-bold text-teal-700 dark:text-teal-400">{stats?.currentlyWaiting ?? 0}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden">
-          <CardContent className="p-4 bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-900/20 dark:to-rose-900/10 rounded-xl">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="h-4 w-4 text-rose-600" />
-              <span className="text-[11px] font-medium text-rose-700 dark:text-rose-400">{t('noShowRateToday')}</span>
-            </div>
-            <p className="text-2xl font-bold text-rose-700 dark:text-rose-400">{stats?.noShowRate ?? 0}%</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Queue Status Widget */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ delay: 0.05 }}
-      >
-        <QueueStatusWidget agencyId={agencyId} />
-      </motion.div>
-
-      {/* Now Serving + Call Next */}
+      {/* Now Serving + Call Next — compact card */}
       <Card className="border-0 shadow-sm overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-5">
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Radio className="h-4 w-4 text-emerald-200" />
-                <p className="text-emerald-100 text-sm">{t('nowServing')}</p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <Radio className="h-3.5 w-3.5 text-emerald-200" />
+                <p className="text-emerald-100 text-xs font-medium">{t('nowServing')}</p>
+                <motion.div
+                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="flex items-center gap-1"
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${waitLevelConfig[waitLevel].dotColor}`} />
+                  <span className="text-[10px] text-emerald-200">{waitLevelConfig[waitLevel].label}</span>
+                </motion.div>
               </div>
               <motion.p
                 key={stats?.currentQueueNumber}
-                initial={{ y: -20, opacity: 0 }}
+                initial={{ y: -15, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className="text-5xl md:text-6xl font-black text-white"
+                className="text-4xl md:text-5xl font-black text-white tracking-tight"
               >
                 {stats?.currentQueueNumber || '—'}
               </motion.p>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button
                 size="lg"
-                className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold rounded-xl h-14 px-8 text-base shadow-lg min-w-12 transition-all duration-200 hover:scale-[1.03]"
+                className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold rounded-xl h-12 w-12 p-0 shadow-lg transition-all duration-200 hover:scale-[1.05]"
                 onClick={handleCallNext}
                 disabled={actionLoading === 'call' || stats?.isPaused}
               >
                 {actionLoading === 'call' ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <PhoneCall className="h-6 w-6" />
+                  <PhoneCall className="h-5 w-5" />
                 )}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-white/20 text-white border-white/30 hover:bg-white/30 rounded-xl h-10 transition-all duration-200"
+                className="bg-white/20 text-white border-white/30 hover:bg-white/30 rounded-xl h-9 px-3 text-xs transition-all duration-200"
                 onClick={handleTogglePause}
                 disabled={actionLoading === 'pause'}
               >
                 {actionLoading === 'pause' ? (
-                  <Loader2 className="h-4 w-4 animate-spin me-1.5" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin me-1" />
                 ) : stats?.isPaused ? (
-                  <Play className="h-4 w-4 me-1.5" />
+                  <Play className="h-3.5 w-3.5 me-1" />
                 ) : (
-                  <Pause className="h-4 w-4 me-1.5" />
+                  <Pause className="h-3.5 w-3.5 me-1" />
                 )}
-                {stats?.isPaused ? t('resumeQueue') : t('pauseQueue')}
+                <span className="hidden sm:inline">{stats?.isPaused ? t('resumeQueue') : t('pauseQueue')}</span>
               </Button>
             </div>
           </div>
         </div>
       </Card>
 
+      {/* Today's Quick Stats Row */}
+      <div className="grid grid-cols-4 gap-2">
+        <div className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30">
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 mb-1" />
+          <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400 leading-none">{stats?.servedToday ?? 0}</p>
+          <p className="text-[9px] text-emerald-600 dark:text-emerald-500 mt-0.5 font-medium">{t('servedToday')}</p>
+        </div>
+        <div className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/30">
+          <Clock className="h-3.5 w-3.5 text-amber-600 mb-1" />
+          <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-none">{stats?.avgWaitTime ?? 0}<span className="text-[10px] font-normal ms-0.5">{t('min')}</span></p>
+          <p className="text-[9px] text-amber-600 dark:text-amber-500 mt-0.5 font-medium">{t('avgWaitTime')}</p>
+        </div>
+        <div className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-900/30">
+          <Users className="h-3.5 w-3.5 text-teal-600 mb-1" />
+          <p className="text-lg font-bold text-teal-700 dark:text-teal-400 leading-none">{stats?.currentlyWaiting ?? 0}</p>
+          <p className="text-[9px] text-teal-600 dark:text-teal-500 mt-0.5 font-medium">{t('queueLength')}</p>
+        </div>
+        <div className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30">
+          <AlertTriangle className="h-3.5 w-3.5 text-rose-600 mb-1" />
+          <p className="text-lg font-bold text-rose-700 dark:text-rose-400 leading-none">{stats?.noShowRate ?? 0}%</p>
+          <p className="text-[9px] text-rose-600 dark:text-rose-500 mt-0.5 font-medium">{t('noShowRateToday')}</p>
+        </div>
+      </div>
+
       {/* Service Breakdown + Queue Efficiency */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Service Breakdown */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -768,14 +765,14 @@ export function AgencyDashboard() {
         animate={isInView ? { opacity: 1, y: 0 } : {}}
         transition={{ delay: 0.3 }}
       >
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600/90 via-teal-600/90 to-cyan-600/90 p-5 text-white shadow-lg shadow-emerald-500/20 backdrop-blur-xl border border-white/10">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600/90 via-teal-600/90 to-cyan-600/90 p-4 text-white shadow-lg shadow-emerald-500/20 backdrop-blur-xl border border-white/10">
           {/* Decorative circles */}
-          <div className="absolute top-0 end-0 h-32 w-32 rounded-full bg-white/10 -translate-y-10 translate-x-10" />
-          <div className="absolute bottom-0 start-0 h-24 w-24 rounded-full bg-white/5 translate-y-8 -translate-x-8" />
+          <div className="absolute top-0 end-0 h-24 w-24 rounded-full bg-white/10 -translate-y-8 translate-x-8" />
+          <div className="absolute bottom-0 start-0 h-16 w-16 rounded-full bg-white/5 translate-y-6 -translate-x-6" />
           <div className="relative">
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="h-4 w-4 text-emerald-200" />
-              <p className="text-sm font-semibold text-emerald-100">{t('performanceMetrics')}</p>
+            <div className="flex items-center gap-2 mb-3">
+              <Activity className="h-3.5 w-3.5 text-emerald-200" />
+              <p className="text-xs font-semibold text-emerald-100">{t('performanceMetrics')}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {/* Avg Rating */}

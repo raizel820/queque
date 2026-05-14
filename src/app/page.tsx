@@ -36,6 +36,7 @@ import { AdminSettings } from '@/components/admin/admin-settings';
 // Shared
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
+import { OnboardingWizard } from '@/components/shared/onboarding-wizard';
 import { Button } from '@/components/ui/button';
 import {
   Home as HomeIcon,
@@ -61,6 +62,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'sonner';
+import { toast } from 'sonner';
 import {
   Sheet,
   SheetContent,
@@ -522,10 +524,18 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
 }
 
 export default function Home() {
-  const { user, currentView, sidebarOpen, toggleSidebar, setView, setPendingAgencyCode, pendingAgencyCode } = useAppStore();
+  const { user, currentView, sidebarOpen, toggleSidebar, setView, setPendingAgencyCode, pendingAgencyCode, onboarded, setOnboarded } = useAppStore();
  const { t, lang } = useLanguage();
   const [globalAnnouncements, setGlobalAnnouncements] = useState<Array<{ id: string; message: string; type: string; createdAt: string }>>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Listen for onboarding trigger from register form
+  useEffect(() => {
+    const handleShowOnboarding = () => setShowOnboarding(true);
+    window.addEventListener('queuewise:show-onboarding', handleShowOnboarding);
+    return () => window.removeEventListener('queuewise:show-onboarding', handleShowOnboarding);
+  }, []);
 
   // Fetch global announcements
   useEffect(() => {
@@ -768,6 +778,38 @@ export default function Home() {
       </main>
 
       <Toaster richColors position="top-center" />
+
+      {/* Onboarding Wizard */}
+      {showOnboarding && user && (
+        <OnboardingWizard
+          open={showOnboarding}
+          user={user}
+          onComplete={async (prefs) => {
+            try {
+              const res = await fetch('/api/user/profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  ...(prefs.language ? { language: prefs.language } : {}),
+                  ...(prefs.reminderMinutes != null ? { reminderMinutes: prefs.reminderMinutes } : {}),
+                  ...(prefs.smsNotificationsEnabled != null ? { smsNotificationsEnabled: prefs.smsNotificationsEnabled } : {}),
+                }),
+              });
+              if (res.ok) {
+                toast.success(t('preferencesSaved'));
+              }
+            } catch {
+              // silent
+            }
+            setOnboarded(true);
+            setShowOnboarding(false);
+          }}
+          onSkip={() => {
+            setShowOnboarding(false);
+            toast.info(t('onboardingSkipped'));
+          }}
+        />
+      )}
     </div>
   );
 }

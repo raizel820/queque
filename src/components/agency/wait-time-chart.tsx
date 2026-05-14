@@ -70,7 +70,7 @@ export function WaitTimeChart({ data, currentHour }: WaitTimeChartProps) {
       </CardHeader>
       <CardContent className="pt-0">
         {/* Chart area */}
-        <div className="relative h-40 flex items-end gap-[3px] sm:gap-1">
+        <div className="relative h-28 flex items-end gap-[3px] sm:gap-1">
           {/* Grid lines */}
           <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
             {[0, 1, 2, 3].map((i) => (
@@ -114,12 +114,12 @@ export function WaitTimeChart({ data, currentHour }: WaitTimeChartProps) {
         </div>
 
         {/* Throughput row */}
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+        <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-2 mb-2">
             <Activity className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-[11px] font-medium text-muted-foreground">{t('throughputLabel')}</span>
           </div>
-          <div className="flex items-end gap-[3px] sm:gap-1 h-10">
+          <div className="flex items-end gap-[3px] sm:gap-1 h-8">
             {chartData.map((d, idx) => {
               const servedHeight = (d.servedCount / maxServed) * 100;
               return (
@@ -137,22 +137,22 @@ export function WaitTimeChart({ data, currentHour }: WaitTimeChartProps) {
         </div>
 
         {/* Summary stats */}
-        <div className="grid grid-cols-3 gap-2 mt-3">
-          <div className="text-center p-2 rounded-lg bg-blue-50/50 dark:bg-blue-900/10">
-            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <div className="text-center p-1.5 rounded-lg bg-blue-50/50 dark:bg-blue-900/10">
+            <p className="text-base font-bold text-blue-600 dark:text-blue-400">
               {Math.round(chartData.reduce((s, d) => s + d.avgWaitTime, 0) / chartData.length)}
               <span className="text-xs font-normal ml-0.5">{t('min')}</span>
             </p>
             <p className="text-[10px] text-muted-foreground">{t('avgWaitTime')}</p>
           </div>
-          <div className="text-center p-2 rounded-lg bg-teal-50/50 dark:bg-teal-900/10">
-            <p className="text-lg font-bold text-teal-600 dark:text-teal-400">
+          <div className="text-center p-1.5 rounded-lg bg-teal-50/50 dark:bg-teal-900/10">
+            <p className="text-base font-bold text-teal-600 dark:text-teal-400">
               {chartData.reduce((s, d) => s + d.servedCount, 0)}
             </p>
             <p className="text-[10px] text-muted-foreground">{t('servedToday')}</p>
           </div>
-          <div className="text-center p-2 rounded-lg bg-purple-50/50 dark:bg-purple-900/10">
-            <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+          <div className="text-center p-1.5 rounded-lg bg-purple-50/50 dark:bg-purple-900/10">
+            <p className="text-base font-bold text-purple-600 dark:text-purple-400">
               {Math.round(chartData.reduce((s, d) => s + d.servedCount, 0) / chartData.length * 60 / 30)}
             </p>
             <p className="text-[10px] text-muted-foreground">{t('customersPerHour')}</p>

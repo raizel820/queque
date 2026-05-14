@@ -52,14 +52,14 @@ export function RatingDistribution({ ratings, averageRating, totalRatings }: Rat
       </CardHeader>
       <CardContent className="pt-0">
         {/* Big average + total */}
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-3 mb-3">
           <div className="text-center">
-            <p className="text-3xl font-extrabold text-foreground">{avg.toFixed(1)}</p>
-            <div className="flex gap-0.5 mt-1">
+            <p className="text-2xl font-extrabold text-foreground">{avg.toFixed(1)}</p>
+            <div className="flex gap-0.5 mt-0.5">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className={`h-3.5 w-3.5 ${
+                  className={`h-3 w-3 ${
                     star <= Math.round(avg)
                       ? 'text-amber-400 fill-amber-400'
                       : 'text-gray-200 dark:text-gray-700'
@@ -68,9 +68,9 @@ export function RatingDistribution({ ratings, averageRating, totalRatings }: Rat
               ))}
             </div>
           </div>
-          <div className="h-12 w-px bg-gray-200 dark:bg-gray-700" />
+          <div className="h-10 w-px bg-gray-200 dark:bg-gray-700" />
           <div>
-            <p className="text-2xl font-bold text-foreground">{total}</p>
+            <p className="text-xl font-bold text-foreground">{total}</p>
             <p className="text-xs text-muted-foreground">{t('totalRatings')}</p>
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { TicketCheck, ArrowLeft, ArrowRight, Loader2, Eye, EyeOff, UserPlus, Shield, Camera, Check, CircleDot } from 'lucide-react';
+import { TicketCheck, ArrowLeft, ArrowRight, Loader2, Eye, EyeOff, UserPlus, Shield, Camera, Check, CircleDot, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { UserRole } from '@/store/use-app-store';
@@ -112,7 +112,7 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 }
 
 export function RegisterForm() {
-  const { setUser, setView, goBack } = useAppStore();
+  const { setUser, setView, goBack, onboarded, setOnboarded } = useAppStore();
   const { t } = useLanguage();
   const [step, setStep] = useState(1);
   const [username, setUsername] = useState('');
@@ -128,6 +128,29 @@ export function RegisterForm() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast.error(t('avatarMaxSize')); return; }
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) { toast.error(t('error')); return; }
+    setAvatarUploading(true);
+    setAvatarPreview(URL.createObjectURL(file));
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload?type=avatar', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok && data.url) { setAvatarUrl(data.url); toast.success(t('avatarUpdated')); }
+      else { toast.error(data.error || t('error')); setAvatarPreview(null); }
+    } catch { toast.error(t('error')); setAvatarPreview(null); }
+    finally { setAvatarUploading(false); }
+  };
 
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
 
@@ -181,6 +204,7 @@ export function RegisterForm() {
       if (role === 'SUPER_ADMIN') {
         body.adminCode = adminCode.trim();
       }
+      if (avatarUrl) { body.avatarUrl = avatarUrl; }
 
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -193,6 +217,11 @@ export function RegisterForm() {
       if (res.ok && data.user) {
         setUser(data.user);
         toast.success(t('registerSuccess'));
+        if (data.isNewUser && !onboarded) {
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('queuewise:show-onboarding', { detail: data.user }));
+          }, 300);
+        }
       } else {
         toast.error(data.error || t('error'));
       }
@@ -376,18 +405,52 @@ export function RegisterForm() {
                     {/* Step 1: Account */}
                     {step === 1 && (
                       <>
-                        {/* Avatar Upload Placeholder */}
-                        <div className="flex justify-center">
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="relative h-20 w-20 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center border-2 border-dashed border-emerald-300 dark:border-emerald-700 group cursor-pointer"
-                          >
-                            <Camera className="h-6 w-6 text-emerald-500 group-hover:text-emerald-600 transition-colors" />
-                            <div className="absolute -bottom-1 -end-1 h-7 w-7 rounded-full bg-emerald-500 flex items-center justify-center shadow-md">
-                              <span className="text-[10px] text-white font-bold">+</span>
-                            </div>
-                          </motion.button>
+                        {/* Avatar Upload */}
+                        <div className="flex flex-col items-center">
+                          <div className="relative">
+                            <input
+                              ref={avatarInputRef}
+                              type="file"
+                              accept="image/jpeg,image/png,image/gif,image/webp"
+                              className="hidden"
+                              onChange={handleAvatarChange}
+                            />
+                            {avatarPreview ? (
+                              <div className="relative">
+                                <img
+                                  src={avatarPreview}
+                                  alt="Avatar"
+                                  className="h-20 w-20 rounded-full object-cover border-2 border-emerald-300 dark:border-emerald-700 shadow-md"
+                                />
+                                {avatarUploading && (
+                                  <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
+                                    <Loader2 className="h-5 w-5 text-white animate-spin" />
+                                  </div>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => { setAvatarPreview(null); setAvatarUrl(null); }}
+                                  className="absolute -top-1 -end-1 h-6 w-6 rounded-full bg-red-500 flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                                >
+                                  <X className="h-3 w-3 text-white" />
+                                </button>
+                              </div>
+                            ) : (
+                              <motion.button
+                                type="button"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => avatarInputRef.current?.click()}
+                                className="relative h-20 w-20 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center border-2 border-dashed border-emerald-300 dark:border-emerald-700 group cursor-pointer"
+                              >
+                                <Camera className="h-6 w-6 text-emerald-500 group-hover:text-emerald-600 transition-colors" />
+                                <div className="absolute -bottom-1 -end-1 h-7 w-7 rounded-full bg-emerald-500 flex items-center justify-center shadow-md">
+                                  <span className="text-[10px] text-white font-bold">+</span>
+                                </div>
+                              </motion.button>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1.5">{t('uploadAvatar')} · {t('avatarMaxSize')}</p>
                         </div>
 
                         {/* Role Selector */}

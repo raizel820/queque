@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Query 1: Fetch user's active reservations with agency/service info (1 query)
     const reservations = await db.reservation.findMany({
       where: {
         userId,
@@ -43,52 +44,75 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { joinedAt: 'desc' },
+      take: 50, // Safety limit
     })
 
-    // Calculate position, peopleAhead, estimatedWait, currentServingNumber for each
-    const enriched = await Promise.all(
-      reservations.map(async (res) => {
-        // Count people ahead: WAITING reservations for same agency+service joined before this one
-        const peopleAhead = await db.reservation.count({
-          where: {
-            agencyId: res.agencyId,
-            status: 'WAITING',
-            joinedAt: { lt: res.joinedAt },
-            id: { not: res.id },
-          },
-        })
+    if (reservations.length === 0) {
+      return NextResponse.json({ success: true, reservations: [] })
+    }
 
-        const position = res.status === 'CALLED' ? 1 : peopleAhead + 1
+    // Collect unique agency IDs
+    const agencyIds = [...new Set(reservations.map((r) => r.agencyId))]
 
-        // Get current serving number for this agency (latest CALLED or SERVED reservation)
-        const currentServing = await db.reservation.findFirst({
-          where: {
-            agencyId: res.agencyId,
-            status: { in: ['CALLED', 'SERVED'] },
-          },
-          orderBy: { calledAt: 'desc' },
-          select: { displayNumber: true },
-        })
+    // Query 2: Batch-fetch ALL WAITING reservations for these agencies (1 query)
+    const waitingReservations = await db.reservation.findMany({
+      where: {
+        agencyId: { in: agencyIds },
+        status: 'WAITING',
+      },
+      orderBy: { joinedAt: 'asc' },
+      select: { id: true, agencyId: true, joinedAt: true },
+    })
 
-        const currentServingNumber = currentServing?.displayNumber ?? '0'
+    // Query 3: Batch-fetch current serving number per agency (1 query)
+    const currentServings = await db.reservation.findMany({
+      where: {
+        agencyId: { in: agencyIds },
+        status: { in: ['CALLED', 'SERVED'] },
+        calledAt: { not: null },
+      },
+      orderBy: { calledAt: 'desc' },
+      distinct: ['agencyId'],
+      select: { agencyId: true, displayNumber: true },
+    })
 
-        // Calculate estimated wait
-        const avgServiceTime = res.agency.averageServiceTime || 10
-        const estimatedWait = res.status === 'CALLED' ? 0 : peopleAhead * avgServiceTime
+    // Build lookup maps
+    const servingByAgency = new Map(currentServings.map((c) => [c.agencyId, c.displayNumber]))
 
-        return {
-          ...res,
-          peopleAhead,
-          position,
-          currentServingNumber,
-          estimatedWait,
-        }
-      })
-    )
+    const waitingByAgency = new Map<string, { id: string; agencyId: string; joinedAt: Date }[]>()
+    for (const wr of waitingReservations) {
+      if (!waitingByAgency.has(wr.agencyId)) {
+        waitingByAgency.set(wr.agencyId, [])
+      }
+      waitingByAgency.get(wr.agencyId)!.push(wr)
+    }
+
+    // Enrich in-memory (zero additional DB calls)
+    const enriched = reservations.map((res) => {
+      const agencyWaiting = waitingByAgency.get(res.agencyId) ?? []
+      const peopleAhead = agencyWaiting.filter(
+        (w) => w.joinedAt < res.joinedAt && w.id !== res.id
+      ).length
+
+      const position = res.status === 'CALLED' ? 1 : peopleAhead + 1
+      const currentServingNumber = servingByAgency.get(res.agencyId) ?? '0'
+      const avgServiceTime = res.agency.averageServiceTime || 10
+      const estimatedWait = res.status === 'CALLED' ? 0 : peopleAhead * avgServiceTime
+
+      return {
+        ...res,
+        peopleAhead,
+        position,
+        currentServingNumber,
+        estimatedWait,
+      }
+    })
 
     return NextResponse.json({ success: true, reservations: enriched })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
+    const message = process.env.NODE_ENV === 'development' && error instanceof Error
+      ? error.message
+      : 'Internal server error'
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 }

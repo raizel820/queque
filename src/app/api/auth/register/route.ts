@@ -8,7 +8,7 @@ const ADMIN_SECRET = 'QUEUEWISE_ADMIN_2024'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { username, fullName, password, phoneNumber, role, agencyCode, adminCode } = body
+    const { username, fullName, password, phoneNumber, role, agencyCode, adminCode, avatarUrl } = body
 
     // Validate required fields
     if (!username || !fullName || !password) {
@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
         passwordHash,
         phoneNumber,
         role: role || 'CUSTOMER',
+        avatarUrl: avatarUrl || undefined,
       },
       select: {
         id: true,
@@ -104,6 +105,9 @@ export async function POST(request: NextRequest) {
 
     // If agency code provided and role is AGENCY_STAFF or AGENCY_OWNER, link to agency
     let agencyId: string | undefined
+    let agencyName: string | undefined
+    let agencyNameAr: string | undefined
+    let agencyNameFr: string | undefined
     if (agencyCode && (role === 'AGENCY_STAFF' || role === 'AGENCY_OWNER')) {
       const agency = await db.agency.findUnique({
         where: { customCode: agencyCode.toUpperCase() },
@@ -117,10 +121,23 @@ export async function POST(request: NextRequest) {
           },
         })
         agencyId = agency.id
+        agencyName = agency.name
+        agencyNameAr = agency.nameAr
+        agencyNameFr = agency.nameFr
       }
     }
 
-    return NextResponse.json({ success: true, user: { ...user, agencyId } }, { status: 201 })
+    return NextResponse.json({
+      success: true,
+      user: {
+        ...user,
+        agencyId,
+        agencyName,
+        agencyNameAr,
+        agencyNameFr,
+      },
+      isNewUser: true,
+    }, { status: 201 })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(

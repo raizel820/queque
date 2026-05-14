@@ -22,8 +22,15 @@ import {
   ImageIcon,
   Info,
   CheckCircle2,
+  ChevronDown,
+  Zap,
+  Building2,
+  Shield,
+  Globe,
+  Users,
+  MessageSquare,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
 interface Transaction {
@@ -42,6 +49,26 @@ interface SubscriptionData {
   recentTransactions: Transaction[];
 }
 
+// Plan comparison data
+const PLAN_COMPARISON = {
+  maxQueues: { basic: '5', premium: '15', enterprise: 'Unlimited' },
+  maxServices: { basic: '3', premium: '10', enterprise: 'Unlimited' },
+  maxStaff: { basic: '2', premium: '5', enterprise: 'Unlimited' },
+  smsCreditsMonthly: { basic: '50', premium: '200', enterprise: '500' },
+  analytics: { basic: 'basic', premium: 'full', enterprise: 'full' },
+  apiAccess: { basic: false, premium: false, enterprise: true },
+  prioritySupport: { basic: false, premium: false, enterprise: true },
+  customBranding: { basic: false, premium: false, enterprise: true },
+};
+
+const FAQ_ITEMS = [
+  { qKey: 'faqActivation', aKey: 'faqActivationAnswer' },
+  { qKey: 'faqChangePlan', aKey: 'faqChangePlanAnswer' },
+  { qKey: 'faqExpiry', aKey: 'faqExpiryAnswer' },
+  { qKey: 'faqFreeTrial', aKey: 'faqFreeTrialAnswer' },
+  { qKey: 'faqRefund', aKey: 'faqRefundAnswer' },
+];
+
 export function AgencySubscription() {
   const { user } = useAppStore();
   const { t, lang } = useLanguage();
@@ -53,6 +80,12 @@ export function AgencySubscription() {
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // FAQ expand state
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+
+  // Payment instructions expand state
+  const [expandedInstructions, setExpandedInstructions] = useState<string | null>(null);
 
   // Derive current step for the progress stepper
   const currentStep = !selectedPlan || selectedPlan === data?.currentPlan
@@ -85,7 +118,6 @@ export function AgencySubscription() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate size
     if (file.size > 5 * 1024 * 1024) {
       toast.error(t('fileTooLarge'));
       return;
@@ -93,7 +125,6 @@ export function AgencySubscription() {
 
     setReceiptFile(file);
 
-    // Generate preview
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -121,7 +152,6 @@ export function AgencySubscription() {
 
     setSubmitting(true);
     try {
-      // First upload the file
       const uploadForm = new FormData();
       uploadForm.append('file', receiptFile);
 
@@ -139,7 +169,6 @@ export function AgencySubscription() {
       const uploadData = await uploadRes.json();
       const receiptUrl = uploadData.url;
 
-      // Then submit payment with the receipt URL
       const payForm = new FormData();
       payForm.append('plan', selectedPlan);
       payForm.append('method', paymentMethod);
@@ -197,14 +226,74 @@ export function AgencySubscription() {
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // Plans array
+  const plans = [
+    {
+      id: 'BASIC',
+      name: t('basicPlan'),
+      price: t('basicPrice'),
+      features: t('basicFeatures').split(' • '),
+      highlight: false,
+      gradientFrom: 'from-gray-400',
+      gradientTo: 'to-slate-500',
+      icon: Building2,
+    },
+    {
+      id: 'PREMIUM',
+      name: t('premiumPlan'),
+      price: t('premiumPrice'),
+      features: t('premiumFeatures').split(' • '),
+      highlight: true,
+      badge: t('popular'),
+      gradientFrom: 'from-emerald-500',
+      gradientTo: 'to-teal-500',
+      icon: Star,
+    },
+    {
+      id: 'ENTERPRISE',
+      name: t('enterprisePlan'),
+      price: t('enterprisePrice'),
+      features: t('enterpriseFeatures').split(' • '),
+      highlight: true,
+      badge: t('mostValue'),
+      gradientFrom: 'from-slate-800',
+      gradientTo: 'to-slate-900',
+      isEnterprise: true,
+      icon: Shield,
+    },
+  ];
+
+  // Payment methods with instructions
+  const paymentMethods = [
+    {
+      id: 'CCP',
+      label: t('ccpTransfer'),
+      instructions: t('ccpInstructions'),
+      icon: '🏦',
+    },
+    {
+      id: 'BANK_TRANSFER',
+      label: t('bankTransfer'),
+      instructions: t('bankInstructions'),
+      icon: '🏦',
+    },
+    {
+      id: 'ELECTRONIC',
+      label: t('electronicPayment'),
+      instructions: t('eWalletInstructions'),
+      icon: '📱',
+    },
+  ];
+
   if (loading) {
     return (
       <div className="p-4 lg:p-6 space-y-4">
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-28 rounded-2xl" />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Skeleton className="h-64 rounded-2xl" />
           <Skeleton className="h-64 rounded-2xl" />
+          <Skeleton className="h-64 rounded-2xl hidden sm:block" />
         </div>
       </div>
     );
@@ -262,7 +351,7 @@ export function AgencySubscription() {
                 <div>
                   <p className="text-sm text-muted-foreground">{t('currentPlan')}</p>
                   <p className="text-lg font-bold text-foreground">
-                    {data?.currentPlan === 'PREMIUM' ? t('premiumPlan') : t('basicPlan')}
+                    {data?.currentPlan === 'PREMIUM' ? t('premiumPlan') : data?.currentPlan === 'ENTERPRISE' ? t('enterprisePlan') : t('basicPlan')}
                   </p>
                 </div>
               </div>
@@ -286,128 +375,152 @@ export function AgencySubscription() {
         </Card>
       </motion.div>
 
-      {/* Plan Cards - Premium Design */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-        {[
-          {
-            id: 'BASIC',
-            name: t('basicPlan'),
-            price: t('basicPrice'),
-            features: t('basicFeatures').split(' • '),
-            highlight: false,
-            gradientFrom: 'from-gray-400',
-            gradientTo: 'to-slate-500',
-          },
-          {
-            id: 'PREMIUM',
-            name: t('premiumPlan'),
-            price: t('premiumPrice'),
-            features: t('premiumFeatures').split(' • '),
-            highlight: true,
-            gradientFrom: 'from-emerald-500',
-            gradientTo: 'to-teal-500',
-          },
-        ].map((plan, idx) => (
-          <motion.div
-            key={plan.id}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 + idx * 0.05 }}
-            className={plan.highlight && selectedPlan === plan.id ? 'relative' : ''}
-          >
-            {/* Subtle floating animation for recommended plan */}
-            {plan.highlight && selectedPlan === plan.id && (
-              <style>{`
-                @keyframes premium-float {
-                  0%, 100% { transform: translateY(0); }
-                  50% { transform: translateY(-4px); }
-                }
-                @keyframes sparkle-rotate {
-                  0% { transform: rotate(0deg) scale(1); opacity: 0; }
-                  50% { opacity: 1; }
-                  100% { transform: rotate(180deg) scale(0.5); opacity: 0; }
-                }
-                @keyframes checkmark-draw {
-                  0% { stroke-dashoffset: 20; }
-                  100% { stroke-dashoffset: 0; }
-                }
-              `}</style>
-            )}
+      {/* Plan Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+        {plans.map((plan, idx) => {
+          const isSelected = selectedPlan === plan.id;
+          const isCurrent = data?.currentPlan === plan.id && !isSelected;
+          return (
             <motion.div
-              animate={plan.highlight && selectedPlan === plan.id ? { y: [0, -4, 0] } : {}}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              key={plan.id}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 + idx * 0.05 }}
             >
-              <Card
-                className={`border-0 h-full cursor-pointer transition-all duration-300 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden ${
-                  selectedPlan === plan.id
-                    ? 'ring-2 ring-emerald-500 shadow-xl'
-                    : data?.currentPlan === plan.id
-                      ? 'ring-2 ring-emerald-300 dark:ring-emerald-700 shadow-sm'
-                      : 'hover:shadow-md shadow-sm'
-                }`}
-                onClick={() => setSelectedPlan(plan.id)}
+              <motion.div
+                animate={plan.highlight && isSelected ? { y: [0, -4, 0] } : {}}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               >
-                {/* Gradient header stripe */}
-                <div className={`h-1.5 bg-gradient-to-r ${plan.gradientFrom} ${plan.gradientTo}`} />
-                {plan.highlight && (
-                  <div className="bg-gradient-to-r from-amber-400 via-amber-400 to-amber-500 px-3 py-1.5 text-center relative overflow-hidden">
-                    {/* Sparkle animation particles */}
-                    <span className="absolute start-2 top-1 h-1 w-1 rounded-full bg-white" style={{ animation: 'sparkle-rotate 2s ease-in-out infinite' }} />
-                    <span className="absolute end-4 top-2 h-0.5 w-0.5 rounded-full bg-white" style={{ animation: 'sparkle-rotate 2s ease-in-out 0.7s infinite' }} />
-                    <span className="absolute start-1/2 top-0.5 h-1 w-1 rounded-full bg-white/70" style={{ animation: 'sparkle-rotate 2s ease-in-out 1.2s infinite' }} />
-                    <span className="text-xs font-semibold text-white flex items-center justify-center gap-1 relative z-10">
-                      <Star className="h-3 w-3 fill-amber-200" />
-                      {t('popular')}
-                      <Star className="h-3 w-3 fill-amber-200" />
-                    </span>
-                  </div>
-                )}
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-lg text-foreground">{plan.name}</h3>
-                      {plan.highlight && selectedPlan === plan.id && (
-                        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">{t('recommended')}</span>
-                      )}
-                      {data?.currentPlan === plan.id && selectedPlan !== plan.id && (
-                        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">{t('currentPlan')}</span>
-                      )}
+                <Card
+                  className={`border-0 h-full cursor-pointer transition-all duration-300 overflow-hidden ${
+                    plan.isEnterprise
+                      ? 'bg-gradient-to-b from-slate-800 to-slate-900 text-white'
+                      : 'bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50'
+                  } ${
+                    isSelected
+                      ? plan.isEnterprise
+                        ? 'ring-2 ring-emerald-400 shadow-xl'
+                        : 'ring-2 ring-emerald-500 shadow-xl'
+                      : isCurrent
+                        ? 'ring-2 ring-emerald-300 dark:ring-emerald-700 shadow-sm'
+                        : 'hover:shadow-md shadow-sm'
+                  }`}
+                  onClick={() => setSelectedPlan(plan.id)}
+                >
+                  {/* Gradient header stripe */}
+                  <div className={`h-1.5 bg-gradient-to-r ${plan.gradientFrom} ${plan.gradientTo}`} />
+
+                  {/* Badge */}
+                  {plan.badge && (
+                    <div className={`px-3 py-1.5 text-center relative overflow-hidden ${
+                      plan.isEnterprise
+                        ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500'
+                        : 'bg-gradient-to-r from-amber-400 via-amber-400 to-amber-500'
+                    }`}>
+                      <span className="text-xs font-semibold text-white flex items-center justify-center gap-1">
+                        {plan.isEnterprise ? <Zap className="h-3 w-3" /> : <Star className="h-3 w-3 fill-amber-200" />}
+                        {plan.badge}
+                        {plan.isEnterprise ? <Zap className="h-3 w-3" /> : <Star className="h-3 w-3 fill-amber-200" />}
+                      </span>
                     </div>
-                    {selectedPlan === plan.id && (
-                      <div className="h-6 w-6 rounded-full bg-emerald-600 flex items-center justify-center shadow-sm">
-                        <Check className="h-3.5 w-3.5 text-white" />
+                  )}
+
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <h3 className={`font-bold text-lg ${plan.isEnterprise ? 'text-white' : 'text-foreground'}`}>{plan.name}</h3>
+                        {isSelected && (
+                          <div className={`h-6 w-6 rounded-full flex items-center justify-center shadow-sm ${plan.isEnterprise ? 'bg-emerald-600' : 'bg-emerald-600'}`}>
+                            <Check className="h-3.5 w-3.5 text-white" />
+                          </div>
+                        )}
+                        {isCurrent && !isSelected && (
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${plan.isEnterprise ? 'text-emerald-300 bg-emerald-900/30' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30'}`}>{t('currentPlan')}</span>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <p className="text-2xl font-bold text-foreground mb-4">{plan.price}</p>
-                  <ul className="space-y-2.5">
-                    {plan.features.map((f, i) => (
-                      <li key={i} className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                        {/* Animated SVG checkmark */}
-                        <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0">
-                          <circle cx="10" cy="10" r="9" className="fill-emerald-50 dark:fill-emerald-900/30 stroke-emerald-200 dark:stroke-emerald-800" strokeWidth="1" />
-                          <path d="M6 10l3 3 5-6" className="stroke-emerald-600 dark:stroke-emerald-400" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="20" style={{ animation: `checkmark-draw 0.4s ease-out ${i * 0.1}s both` }} />
-                        </svg>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
+                    </div>
+                    <p className={`text-2xl font-bold mb-4 ${plan.isEnterprise ? 'text-white' : 'text-foreground'}`}>{plan.price}</p>
+                    <ul className="space-y-2.5">
+                      {plan.features.map((f, i) => (
+                        <li key={i} className={`flex items-center gap-2.5 text-sm ${plan.isEnterprise ? 'text-slate-300' : 'text-muted-foreground'}`}>
+                          <svg viewBox="0 0 20 20" className="h-4 w-4 flex-shrink-0">
+                            <circle cx="10" cy="10" r="9" className={plan.isEnterprise ? 'fill-emerald-900/50 stroke-emerald-700' : 'fill-emerald-50 dark:fill-emerald-900/30 stroke-emerald-200 dark:stroke-emerald-800'} strokeWidth="1" />
+                            <path d="M6 10l3 3 5-6" className={plan.isEnterprise ? 'stroke-emerald-400' : 'stroke-emerald-600 dark:stroke-emerald-400'} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Comparison arrow between plans */}
-      <div className="flex items-center justify-center gap-2 py-1">
-        <span className="text-xs text-muted-foreground">{t('basicPlan')}</span>
-        <svg viewBox="0 0 60 16" className="w-12 h-4" fill="none">
-          <path d="M2 8h50M42 2l8 6-8 6" className="stroke-emerald-500 dark:stroke-emerald-400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{t('premiumPlan')}</span>
-        <span className="text-xs text-muted-foreground ms-1">— {t('basicToPremium')}</span>
-      </div>
+      {/* Plan Comparison Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Shield className="h-4 w-4 text-emerald-600" />
+              {t('planComparison')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-start py-3 px-3 text-xs font-semibold text-muted-foreground min-w-[120px]">{t('name')}</th>
+                    <th className="text-center py-3 px-3 text-xs font-semibold text-muted-foreground">{t('basicPlan')}</th>
+                    <th className="text-center py-3 px-3 text-xs font-semibold text-muted-foreground">{t('premiumPlan')}</th>
+                    <th className="text-center py-3 px-3 text-xs font-semibold text-muted-foreground">{t('enterprisePlan')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { key: t('maxQueues'), values: [PLAN_COMPARISON.maxQueues.basic, PLAN_COMPARISON.maxQueues.premium, PLAN_COMPARISON.maxQueues.enterprise] },
+                    { key: t('maxServices'), values: [PLAN_COMPARISON.maxServices.basic, PLAN_COMPARISON.maxServices.premium, PLAN_COMPARISON.maxServices.enterprise] },
+                    { key: t('maxStaff'), values: [PLAN_COMPARISON.maxStaff.basic, PLAN_COMPARISON.maxStaff.premium, PLAN_COMPARISON.maxStaff.enterprise] },
+                    { key: t('smsCreditsMonthly'), values: [PLAN_COMPARISON.smsCreditsMonthly.basic, PLAN_COMPARISON.smsCreditsMonthly.premium, PLAN_COMPARISON.smsCreditsMonthly.enterprise] },
+                    { key: t('analytics'), values: [t('basicPlan').toLowerCase() + '/std', t('full'), t('full')] },
+                    { key: t('apiAccess'), values: [false, false, true] },
+                    { key: t('prioritySupport'), values: [false, false, true] },
+                    { key: t('customBranding'), values: [false, false, true] },
+                  ].map((row, i) => (
+                    <tr key={i} className="border-b border-border/50">
+                      <td className="py-2.5 px-3 text-xs text-muted-foreground font-medium">{row.key}</td>
+                      {row.values.map((val, colIdx) => (
+                        <td key={colIdx} className="text-center py-2.5 px-3">
+                          {typeof val === 'boolean' ? (
+                            val ? (
+                              <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+                                <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800">
+                                <X className="h-3.5 w-3.5 text-gray-400" />
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-xs font-medium text-foreground">{val}</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Payment Section */}
       <motion.div
@@ -424,15 +537,54 @@ export function AgencySubscription() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Payment Method */}
-            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="flex gap-4">
-              <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                <RadioGroupItem value="CCP" id="ccp" />
-                <Label htmlFor="ccp" className="text-sm">{t('ccpTransfer')}</Label>
-              </div>
-              <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                <RadioGroupItem value="BANK_TRANSFER" id="bank" />
-                <Label htmlFor="bank" className="text-sm">{t('bankTransfer')}</Label>
-              </div>
+            <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-2">
+              {paymentMethods.map((method) => (
+                <div key={method.id} className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <RadioGroupItem value={method.id} id={method.id} />
+                    <Label htmlFor={method.id} className="text-sm cursor-pointer flex items-center gap-2">
+                      <span>{method.icon}</span>
+                      {method.label}
+                    </Label>
+                  </div>
+                  {/* Expandable Payment Instructions */}
+                  <AnimatePresence>
+                    {expandedInstructions === method.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="me-9 mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200/60 dark:border-amber-800/30">
+                          <div className="flex items-start gap-2 mb-2">
+                            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">{t('paymentInstructions')}</p>
+                              <p className="text-[11px] text-amber-600 dark:text-amber-300 mt-0.5">{t('paymentInstructionsDesc')}</p>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{method.instructions}</p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  {/* Expand/Collapse button */}
+                  <button
+                    type="button"
+                    onClick={() => setExpandedInstructions(expandedInstructions === method.id ? null : method.id)}
+                    className="ms-9 text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                  >
+                    {t('paymentInstructions')}
+                    <motion.span
+                      animate={{ rotate: expandedInstructions === method.id ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </motion.span>
+                  </button>
+                </div>
+              ))}
             </RadioGroup>
 
             {/* Upload Receipt */}
@@ -533,12 +685,61 @@ export function AgencySubscription() {
         </Card>
       </motion.div>
 
+      {/* FAQ Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-emerald-600" />
+              {t('faq')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2">
+              {FAQ_ITEMS.map((item, i) => (
+                <div key={i}>
+                  <button
+                    onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors text-start"
+                  >
+                    <span className="text-sm font-medium text-foreground">{t(item.qKey)}</span>
+                    <motion.span
+                      animate={{ rotate: expandedFaq === i ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </motion.span>
+                  </button>
+                  <AnimatePresence>
+                    {expandedFaq === i && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <p className="text-sm text-muted-foreground px-3 pb-3 leading-relaxed">{t(item.aKey)}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
       {/* Recent Transactions */}
       {data?.recentTransactions && data.recentTransactions.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
         >
           <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
             <CardHeader className="pb-3">
@@ -553,7 +754,7 @@ export function AgencySubscription() {
                   >
                     <div>
                       <p className="text-sm font-medium text-foreground">
-                        {tx.plan === 'PREMIUM' ? t('premiumPlan') : t('basicPlan')}
+                        {tx.plan === 'PREMIUM' ? t('premiumPlan') : tx.plan === 'ENTERPRISE' ? t('enterprisePlan') : t('basicPlan')}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {formatDate(tx.createdAt)} · {tx.method}

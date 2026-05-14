@@ -19,13 +19,8 @@ const DEFAULT_TYPE = 'general';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getUploadDir(type: string) {
-  return path.join(process.cwd(), 'public', 'uploads', type);
-}
-
 function getExtension(filename: string): string {
-  const ext = filename.split('.').pop()?.toLowerCase() || '';
-  return ext;
+  return filename.split('.').pop()?.toLowerCase() || '';
 }
 
 function isValidMimeType(mimeType: string): boolean {
@@ -50,7 +45,7 @@ export async function POST(request: NextRequest) {
     // ── Validate file presence ──
     if (!file) {
       return NextResponse.json(
-        { error: 'No file provided. Use FormData with a "file" field.' },
+        { error: 'No file provided' },
         { status: 400 }
       );
     }
@@ -58,7 +53,7 @@ export async function POST(request: NextRequest) {
     // ── Validate file size ──
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB.` },
+        { error: `File too large. Max ${MAX_FILE_SIZE / 1024 / 1024}MB` },
         { status: 413 }
       );
     }
@@ -67,35 +62,48 @@ export async function POST(request: NextRequest) {
     const ext = getExtension(file.name);
     if (!ALLOWED_EXTENSIONS.has(ext)) {
       return NextResponse.json(
-        {
-          error: `Invalid file type ".${ext}". Allowed types: ${[...ALLOWED_EXTENSIONS].join(', ')}.`,
-        },
+        { error: `Invalid file type .${ext}` },
         { status: 400 }
       );
     }
 
     if (!isValidMimeType(file.type)) {
       return NextResponse.json(
-        { error: `Invalid MIME type "${file.type}".` },
+        { error: `Invalid MIME type "${file.type}"` },
         { status: 400 }
       );
     }
 
-    // ── Generate unique filename & save ──
+    // Try Vercel Blob first
+    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+    if (blobToken) {
+      try {
+        const { put } = await import('@vercel/blob');
+        const uuid = crypto.randomUUID();
+        const filename = `${type}/${uuid}.${ext}`;
+        const blob = await put(filename, file, {
+          access: 'public',
+          addRandomSuffix: false,
+        });
+        return NextResponse.json({
+          url: blob.url,
+          filename: blob.pathname.split('/').pop() || filename,
+        });
+      } catch (blobError) {
+        console.error('[UPLOAD] Blob failed, falling back to local:', blobError);
+      }
+    }
+
+    // Fallback to local storage
     const uuid = crypto.randomUUID();
     const filename = `${uuid}.${ext}`;
-    const uploadDir = getUploadDir(type);
-
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', type);
     await ensureDir(uploadDir);
-
     const filePath = path.join(uploadDir, filename);
     const buffer = Buffer.from(await file.arrayBuffer());
     await fs.writeFile(filePath, buffer);
-
-    const publicUrl = `/uploads/${type}/${filename}`;
-
     return NextResponse.json({
-      url: publicUrl,
+      url: `/uploads/${type}/${filename}`,
       filename,
     });
   } catch (error: unknown) {
@@ -113,41 +121,51 @@ export async function DELETE(request: NextRequest) {
 
     if (!url || typeof url !== 'string') {
       return NextResponse.json(
-        { error: 'Provide a "url" field in the request body.' },
+        { error: 'Provide a "url" field' },
         { status: 400 }
       );
     }
 
-    // Prevent path traversal — only allow /uploads/... paths
+    // For Vercel Blob URLs, delete via blob API
+    if (url.startsWith('https://')) {
+      const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
+      if (blobToken) {
+        try {
+          const { del } = await import('@vercel/blob');
+          await del(url);
+          return NextResponse.json({ success: true });
+        } catch {
+          console.error('[UPLOAD DELETE] Blob delete failed');
+        }
+      }
+    }
+
+    // Local file fallback
     if (!url.startsWith('/uploads/') || url.includes('..')) {
       return NextResponse.json(
-        { error: 'Invalid URL. Only files under /uploads/ can be deleted.' },
+        { error: 'Invalid URL' },
         { status: 400 }
       );
     }
 
     const filePath = path.join(process.cwd(), 'public', url);
-
-    // Verify the resolved path is still under public/uploads
     const resolved = path.resolve(filePath);
     const allowedRoot = path.resolve(path.join(process.cwd(), 'public', 'uploads'));
     if (!resolved.startsWith(allowedRoot)) {
       return NextResponse.json(
-        { error: 'Path traversal detected.' },
+        { error: 'Path traversal detected' },
         { status: 400 }
       );
     }
 
-    await fs.unlink(filePath);
+    try {
+      await fs.unlink(filePath);
+    } catch {
+      // Already gone
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      (error as NodeJS.ErrnoException).code === 'ENOENT'
-    ) {
-      return NextResponse.json({ success: true }); // already gone
-    }
     console.error('[UPLOAD DELETE] Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });

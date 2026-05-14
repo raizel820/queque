@@ -586,6 +586,28 @@ export function CustomerQueue() {
 
   const padZero = (n: number) => String(n).padStart(2, '0');
 
+  // Dynamic font sizing for queue numbers based on string length
+  const getQueueRingClass = (qNum: string) => {
+    const len = qNum.length;
+    if (len > 7) return 'text-xs sm:text-sm font-black';
+    if (len > 4) return 'text-base sm:text-lg font-black';
+    return 'text-2xl sm:text-3xl font-black';
+  };
+
+  const getQueueHeaderClass = (qNum: string) => {
+    const len = qNum.length;
+    if (len > 8) return 'text-base font-black tracking-tight';
+    if (len > 5) return 'text-lg font-black tracking-tight';
+    return 'text-2xl font-black tracking-tight';
+  };
+
+  const getQueueAlertClass = (qNum: string) => {
+    const len = qNum.length;
+    if (len > 8) return 'text-base sm:text-xl font-black tracking-tight drop-shadow-lg';
+    if (len > 5) return 'text-lg sm:text-2xl font-black tracking-tight drop-shadow-lg';
+    return 'text-xl sm:text-4xl font-black tracking-tight drop-shadow-lg';
+  };
+
   // Progress ring helpers
   const ringRadius = 52;
   const ringCircumference = 2 * Math.PI * ringRadius;
@@ -636,7 +658,7 @@ export function CustomerQueue() {
               </div>
               <div>
                 <p className="text-xs font-medium text-emerald-100">{t('yourQueueNumber')}</p>
-                <p className="text-2xl font-black tracking-tight">{activeRes.queueNumber}</p>
+                <p className={`${getQueueHeaderClass(activeRes.queueNumber)} truncate max-w-[160px] sm:max-w-none`}>{activeRes.queueNumber}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -769,7 +791,7 @@ export function CustomerQueue() {
                     <motion.p
                       animate={{ scale: [1, 1.08, 1] }}
                       transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
-                      className="text-xl sm:text-4xl font-black tracking-tight drop-shadow-lg"
+                      className={getQueueAlertClass(activeRes.queueNumber)}
                     >
                       {activeRes.queueNumber}
                     </motion.p>
@@ -962,7 +984,7 @@ export function CustomerQueue() {
                               </div>
                             </motion.div>
                           )}
-                          <span className="text-2xl sm:text-3xl font-black text-foreground tracking-tight leading-tight">
+                          <span className={`${getQueueRingClass(res.queueNumber)} text-foreground tracking-tight leading-tight`}>
                             {res.queueNumber}
                           </span>
                           <span className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">

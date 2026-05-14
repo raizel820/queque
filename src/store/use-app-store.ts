@@ -34,6 +34,9 @@ interface UserState {
   language: Language;
   avatarUrl?: string;
   agencyId?: string;
+  agencyName?: string;
+  agencyNameAr?: string;
+  agencyNameFr?: string;
   phoneNumber?: string;
   freeSmsCount?: number;
   createdAt?: string;
@@ -54,6 +57,9 @@ interface AppState {
   // QR Code deep link
   pendingAgencyCode: string | null;
 
+  // Onboarding
+  onboarded: boolean;
+
   // Actions
   setUser: (user: UserState | null) => void;
   setView: (view: ViewName) => void;
@@ -61,17 +67,19 @@ interface AppState {
   toggleSidebar: () => void;
   logout: () => void;
   setPendingAgencyCode: (code: string | null) => void;
+  setOnboarded: (v: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       isAuthenticated: false,
       currentView: 'landing',
       previousView: null,
       sidebarOpen: false,
       pendingAgencyCode: null,
+      onboarded: false,
 
       setUser: (user) =>
         set({
@@ -106,6 +114,8 @@ export const useAppStore = create<AppState>()(
 
       setPendingAgencyCode: (code) => set({ pendingAgencyCode: code }),
 
+      setOnboarded: (v: boolean) => set({ onboarded: v }),
+
       logout: () => {
         set({
           user: null,
@@ -114,6 +124,7 @@ export const useAppStore = create<AppState>()(
           previousView: null,
           sidebarOpen: false,
           pendingAgencyCode: null,
+          onboarded: false,
         });
         // Clear persisted storage AFTER set (persist middleware writes during set)
         setTimeout(() => {
@@ -131,6 +142,7 @@ export const useAppStore = create<AppState>()(
         user: state.user,
         currentView: state.currentView,
         pendingAgencyCode: state.pendingAgencyCode,
+        onboarded: state.onboarded,
       }),
     }
   )

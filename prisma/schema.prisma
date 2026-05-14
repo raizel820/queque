@@ -169,12 +169,15 @@ model Transaction {
 }
 
 model SmsPurchase {
-  id        String   @id @default(cuid())
-  userId    String
-  quantity  Int
-  price     Int
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  id            String   @id @default(cuid())
+  userId        String
+  quantity      Int
+  price         Int
+  status        String   @default("PENDING")
+  paymentMethod String?
+  receiptUrl    String?
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id])
 }
 
 model Notification {
