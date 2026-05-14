@@ -173,6 +173,7 @@ const fr: Record<TranslationKeys, string> = {
   queuePaused: "File en pause",
   queueResumed: "File reprise",
   noQueue: "Aucun client en attente",
+  noQueueHint: "Tous les clients ont été servis. Excellent travail !",
   todayReservations: "Réservations du jour",
   avgWaitTime: "Temps d'attente moyen",
   servedToday: "Servis aujourd'hui",
@@ -261,6 +262,7 @@ const fr: Record<TranslationKeys, string> = {
   feature4Title: "Facile à utiliser",
   feature4Desc: "Interface simple et intuitive pour tout le monde",
   howItWorks: "Comment ça marche ?",
+  howItWorksDesc: "Suivez ces étapes simples pour commencer à gérer vos files d'attente efficacement",
   step1: "Recherchez l'établissement",
   step1Desc: "Par nom, code ou scan QR",
   step2: "Rejoignez la file",
@@ -332,6 +334,7 @@ const fr: Record<TranslationKeys, string> = {
   notificationTypeSystem: "Système",
   notificationTypeAlert: "Alerte",
   nowServing: "En cours de service",
+  currentServing: "Service en cours",
   queueStatus: "Statut de la file",
   queueOpenStatus: "Ouverte",
   queuePausedStatusLabel: "En pause",
@@ -364,6 +367,7 @@ const fr: Record<TranslationKeys, string> = {
   yourPosition: "Votre position",
   peopleAheadOf: "personnes devant vous",
   estimatedTimeLeft: "Temps restant",
+  joinQueueHint: "Trouvez un établissement à proximité et rejoignez sa file pour gagner du temps",
   yourTurnAlert: "C'EST VOTRE TOUR!",
   yourTurnDesc: "Veuillez vous rendre au comptoir",
   turnCalledAt: "Appelé à",
@@ -502,6 +506,8 @@ const fr: Record<TranslationKeys, string> = {
   deleteAccountDesc: "Votre compte et toutes vos données seront supprimés définitivement. Cette action est irréversible.",
   deleteAccountWarning: "Attention : cette action est irréversible !",
   irreversibleActions: "Actions irréversibles",
+  irreversibleAction: "Cette action est irréversible",
+  deleteUserWarning: "Cette action est permanente et ne peut pas être annulée. Toutes les données associées, y compris les réservations, favoris et notifications, seront supprimées.",
   typeDeleteToConfirm: 'Tapez "supprimer" pour confirmer',
   accountDeleted: "Compte supprimé avec succès",
   deleteAccountError: "Impossible de supprimer le compte",
@@ -630,6 +636,9 @@ const fr: Record<TranslationKeys, string> = {
   // ─── Feature: Bulk Queue Actions ─────
   batchMode: "Mode groupé",
   completeSelected: "Terminer la sélection",
+  batchPartialFail: "Certaines actions ont échoué",
+  loadMore: "Charger plus",
+  moreUsersRemaining: "utilisateurs restants",
   selected: "sélectionné(s)",
   exitBatchMode: "Quitter le mode groupé",
   selectTickets: "Sélectionner des tickets",
@@ -736,7 +745,7 @@ const fr: Record<TranslationKeys, string> = {
   addStaff: "Ajouter un employé",
   staffList: "Liste du personnel",
   staffUsername: "Nom d'utilisateur",
-  staffRole: "Rôle",
+  staffRoleColumn: "Rôle",
   staffJoinDate: "Date d'ajout",
   removeStaff: "Retirer",
   staffAdded: "Employé ajouté",
@@ -877,6 +886,8 @@ const fr: Record<TranslationKeys, string> = {
   reminder20min: "20 minutes",
   reminder30min: "30 minutes",
   noSmsSettings: "SMS non configuré. Contactez l'admin.",
+  platformSettings: "Paramètres de la plateforme",
+  maxSmsPerDay: "Max SMS par jour",
 
   // ─── Task 13-b: Queue Position Sharing ─────
   sharePositionNew: "Partager la position",
@@ -890,7 +901,24 @@ const fr: Record<TranslationKeys, string> = {
 
   // ─── Task 13-b: Peak Hours ─────
   peakHoursDesc: "Heures les plus chargées des 30 derniers jours",
-  reservations: "réservations",
+  reservationsCount: "réservations",
+
+  // ─── Task 3: SMS Purchase & Payment ─────
+  smsPurchaseSuccess: "Crédits SMS achetés avec succès",
+  smsPurchaseFailed: "Échec de l'achat de crédits SMS",
+  smsAlreadyPurchasing: "Vous avez déjà un achat en attente",
+  smsPacksTitle: "Acheter des crédits SMS",
+  smsPackIncludes: "crédits SMS",
+  newBalance: "Nouveau solde",
+  purchaseHistory: "Historique des achats",
+  noPurchases: "Pas encore d'achats",
+  paymentSubmitted: "Paiement soumis pour vérification",
+  waitingApproval: "En attente d'approbation",
+  stepSelectPlan: "Choisir le plan",
+  stepUploadReceipt: "Téléverser le reçu",
+  stepSubmit: "Soumettre",
+  paymentReviewInfo: "Après soumission, votre paiement sera vérifié par un administrateur sous 24-48 heures. Vous recevrez une notification une fois approuvé.",
+  receiptUploadedSuccess: "Reçu téléversé avec succès",
 };
 
 export default fr;

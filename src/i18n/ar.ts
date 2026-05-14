@@ -168,6 +168,7 @@ const ar = {
   queuePaused: "الطابور متوقف مؤقتاً",
   queueResumed: "تم استئناف الطابور",
   noQueue: "لا يوجد عملاء في الطابور",
+  noQueueHint: "تم خدمة جميع العملاء. أحسنت!",
   todayReservations: "حجوزات اليوم",
   avgWaitTime: "متوسط وقت الانتظار",
   servedToday: "تم خدمتهم اليوم",
@@ -256,6 +257,7 @@ const ar = {
   feature4Title: "سهل الاستخدام",
   feature4Desc: "واجهة بسيطة وسهلة للجميع، حتى لأول مرة",
   howItWorks: "كيف يعمل؟",
+  howItWorksDesc: "اتبع هذه الخطوات البسيطة لبدء إدارة طوابيرك بكفاءة",
   step1: "ابحث عن المؤسسة",
   step1Desc: "ابحث بالاسم أو الكود أو امسح رمز QR",
   step2: "انضم للطابور",
@@ -327,6 +329,7 @@ const ar = {
   notificationTypeSystem: "نظام",
   notificationTypeAlert: "تنبيه",
   nowServing: "يُخدم الآن",
+  currentServing: "يُخدم حالياً",
   queueStatus: "حالة الطابور",
   queueOpenStatus: "مفتوح",
   queuePausedStatusLabel: "متوقف",
@@ -359,6 +362,7 @@ const ar = {
   yourPosition: "موقعك",
   peopleAheadOf: "أمامك في الطابور",
   estimatedTimeLeft: "الوقت المتبقي",
+  joinQueueHint: "ابحث عن مؤسسة قريبة وانضم لطابورها لتوفير الوقت",
   yourTurnAlert: "دورك الآن!",
   yourTurnDesc: "يرجى التوجه إلى مكتب الخدمة",
   turnCalledAt: "تم الاستدعاء في",
@@ -497,6 +501,8 @@ const ar = {
   deleteAccountDesc: "سيتم حذف حسابك وجميع بياناتك نهائياً. لا يمكن التراجع عن هذا الإجراء.",
   deleteAccountWarning: "تحذير: هذا الإجراء لا يمكن التراجع عنه!",
   irreversibleActions: "إجراءات لا رجعة فيها",
+  irreversibleAction: "هذا إجراء لا يمكن التراجع عنه",
+  deleteUserWarning: "هذا الإجراء نهائي ولا يمكن التراجع عنه. سيتم حذف جميع البيانات المرتبطة بما في ذلك الحجوزات والمفضلات والإشعارات.",
   typeDeleteToConfirm: "اكتب \"حذف\" للتأكيد",
   accountDeleted: "تم حذف الحساب بنجاح",
   deleteAccountError: "لا يمكن حذف الحساب",
@@ -625,6 +631,9 @@ const ar = {
   // ─── Feature: Bulk Queue Actions ─────
   batchMode: 'وضع الدُفعة',
   completeSelected: 'إتمام المحدد',
+  batchPartialFail: 'فشلت بعض الإجراءات',
+  loadMore: 'تحميل المزيد',
+  moreUsersRemaining: 'مستخدمين متبقين',
   selected: 'محدد',
   exitBatchMode: 'إنهاء وضع الدُفعة',
   selectTickets: 'اختر التذاكر',
@@ -736,7 +745,7 @@ const ar = {
   addStaff: 'إضافة موظف',
   staffList: 'قائمة الموظفين',
   staffUsername: 'اسم المستخدم',
-  staffRole: 'الدور',
+  staffRoleColumn: 'الدور',
   staffJoinDate: 'تاريخ الانضمام',
   removeStaff: 'إزالة',
   staffAdded: 'تم إضافة الموظف',
@@ -877,6 +886,8 @@ const ar = {
   reminder20min: '20 دقيقة',
   reminder30min: '30 دقيقة',
   noSmsSettings: 'الرسائل غير مفعّلة. تواصل مع المدير.',
+  platformSettings: 'إعدادات المنصة',
+  maxSmsPerDay: 'الحد الأقصى للرسائل يومياً',
 
   // ─── Task 13-b: Queue Position Sharing ─────
   sharePositionNew: 'مشاركة المركز',
@@ -890,7 +901,24 @@ const ar = {
 
   // ─── Task 13-b: Peak Hours ─────
   peakHoursDesc: 'أكثر الأوقات ازدحاماً في آخر 30 يوم',
-  reservations: 'حجز',
+  reservationsCount: 'حجز',
+
+  // ─── Task 3: SMS Purchase & Payment ─────
+  smsPurchaseSuccess: 'تم شراء رصيد الرسائل بنجاح',
+  smsPurchaseFailed: 'فشل شراء رصيد الرسائل',
+  smsAlreadyPurchasing: 'لديك عملية شراء معلقة بالفعل',
+  smsPacksTitle: 'شراء رصيد رسائل',
+  smsPackIncludes: 'رصيد رسائل',
+  newBalance: 'الرصيد الجديد',
+  purchaseHistory: 'سجل المشتريات',
+  noPurchases: 'لا مشتريات بعد',
+  paymentSubmitted: 'تم تقديم الدفع للمراجعة',
+  waitingApproval: 'في انتظار موافقة المسؤول',
+  stepSelectPlan: 'اختيار الخطة',
+  stepUploadReceipt: 'رفع الإيصال',
+  stepSubmit: 'تقديم',
+  paymentReviewInfo: 'بعد التقديم، سيتم مراجعة الدفع من قبل المسؤول خلال 24-48 ساعة. ستصلك إشعار بعد الموافقة.',
+  receiptUploadedSuccess: 'تم رفع الإيصال بنجاح',
 };
 
 export default ar;

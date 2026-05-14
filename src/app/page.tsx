@@ -31,6 +31,7 @@ import { AdminAgencies } from '@/components/admin/admin-agencies';
 import { AdminAuditLogs } from '@/components/admin/admin-audit-logs';
 import { AdminUsers } from '@/components/admin/admin-users';
 import { AdminAnalytics } from '@/components/admin/admin-analytics';
+import { AdminSettings } from '@/components/admin/admin-settings';
 
 // Shared
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
@@ -110,6 +111,8 @@ function ViewRouter() {
       return <AdminUsers />;
     case 'admin-analytics':
       return <AdminAnalytics />;
+    case 'admin-settings':
+      return <AdminSettings />;
     default:
       return <LandingPage />;
   }
@@ -406,6 +409,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
 
   const navItems = [
     { view: 'admin-dashboard' as const, icon: LayoutDashboard, label: t('dashboard') },
+    { view: 'admin-settings' as const, icon: Settings, label: t('platformSettings') },
     { view: 'admin-analytics' as const, icon: BarChart3, label: t('analytics') },
     { view: 'admin-transactions' as const, icon: CreditCard, label: t('transactions') },
     { view: 'admin-agencies' as const, icon: Building2, label: t('agencies') },
@@ -583,6 +587,7 @@ export default function Home() {
       'admin-audit': t('auditLogs') + ' - QueueWise',
       'admin-users': t('userManagement') + ' - QueueWise',
       'admin-analytics': t('analytics') + ' - QueueWise',
+    'admin-settings': t('platformSettings') + ' - QueueWise',
     };
     document.title = titles[currentView] || 'QueueWise';
   }, [currentView, t]);

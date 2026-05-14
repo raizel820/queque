@@ -93,6 +93,10 @@ export function CustomerProfile() {
   const [purchasedSms, setPurchasedSms] = useState(0);
   const [smsSettingsSaving, setSmsSettingsSaving] = useState(false);
 
+  // SMS Purchase state
+  const [smsPurchasing, setSmsPurchasing] = useState(false);
+  const [smsPurchasingPackId, setSmsPurchasingPackId] = useState<string | null>(null);
+
   // Queue stats state
   const [queueStats, setQueueStats] = useState<{
     totalQueues: number;
@@ -291,6 +295,39 @@ export function CustomerProfile() {
     } finally {
       setDeleteLoading(false);
       setDeleteConfirmText('');
+    }
+  };
+
+  const handlePurchaseSms = async (packId: string) => {
+    if (!user?.id) return;
+    if (smsPurchasing) {
+      toast.error(t('smsAlreadyPurchasing'));
+      return;
+    }
+    setSmsPurchasing(true);
+    setSmsPurchasingPackId(packId);
+    try {
+      const res = await fetch('/api/sms/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packId, userId: user.id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(`${t('smsPurchaseSuccess')} — ${t('newBalance')}: ${data.newBalance}`);
+        setPurchasedSms((prev) => prev + parseInt(packId, 10));
+        await fetchProfile();
+      } else if (res.status === 429) {
+        toast.error(t('smsAlreadyPurchasing'));
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('smsPurchaseFailed'));
+      }
+    } catch {
+      toast.error(t('smsPurchaseFailed'));
+    } finally {
+      setSmsPurchasing(false);
+      setSmsPurchasingPackId(null);
     }
   };
 
@@ -895,23 +932,33 @@ export function CustomerProfile() {
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 text-end">{smsRemaining}/{smsMax}</p>
             </div>
-            <p className="text-sm font-medium text-foreground mb-3">{t('smsPackages')}</p>
+            <p className="text-sm font-medium text-foreground mb-3">{t('smsPacksTitle')}</p>
             <div className="grid grid-cols-3 gap-2">
-              {smsPacks.map((pack) => (
-                <div
-                  key={pack.count}
-                  className="relative p-3 rounded-xl border border-border cursor-not-allowed opacity-75 text-center"
-                >
-                  <div className="flex items-center justify-center mb-1">
-                    <CreditCard className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <p className="text-sm font-semibold text-foreground">{pack.count}</p>
-                  <p className="text-[10px] text-muted-foreground">{pack.price} {t('currency')}</p>
-                  <span className="absolute top-1.5 end-1.5 text-[9px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
-                    {t('comingSoon')}
-                  </span>
-                </div>
-              ))}
+              {smsPacks.map((pack) => {
+                const packId = String(pack.count);
+                const isPurchasingThisPack = smsPurchasing && smsPurchasingPackId === packId;
+                return (
+                  <motion.button
+                    key={pack.count}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => handlePurchaseSms(packId)}
+                    disabled={smsPurchasing}
+                    className="relative p-3 rounded-xl border border-border text-center transition-all duration-200 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-md bg-gradient-to-br from-emerald-50/50 to-teal-50/50 dark:from-emerald-900/10 dark:to-teal-900/10"
+                  >
+                    <div className="flex items-center justify-center mb-1">
+                      {isPurchasingThisPack ? (
+                        <Loader2 className="h-4 w-4 text-emerald-600 animate-spin" />
+                      ) : (
+                        <CreditCard className="h-4 w-4 text-emerald-600" />
+                      )}
+                    </div>
+                    <p className="text-sm font-semibold text-foreground">{pack.count}</p>
+                    <p className="text-[10px] text-muted-foreground">{pack.price} {t('currency')}</p>
+                    <p className="text-[9px] text-emerald-600 dark:text-emerald-400 mt-0.5">{t('smsPackIncludes')}</p>
+                  </motion.button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

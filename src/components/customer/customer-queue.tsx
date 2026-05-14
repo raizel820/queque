@@ -899,7 +899,7 @@ export function CustomerQueue() {
                     {/* Progress Ring with Queue Number */}
                     <div className="flex justify-center mb-4">
                       <div className="relative">
-                        <svg className="h-28 w-28 sm:h-32 sm:w-32" viewBox="0 0 120 120">
+                        <svg className="h-32 w-32 sm:h-36 sm:w-36" viewBox="0 0 120 120">
                           <defs>
                             <linearGradient
                               id={`ring-grad-${res.id}`}
@@ -962,10 +962,10 @@ export function CustomerQueue() {
                               </div>
                             </motion.div>
                           )}
-                          <span className="text-3xl font-black text-foreground tracking-tight">
+                          <span className="text-2xl sm:text-3xl font-black text-foreground tracking-tight leading-tight">
                             {res.queueNumber}
                           </span>
-                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">
+                          <span className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">
                             {t('yourQueueNumber')}
                           </span>
                           {/* Live indicator */}

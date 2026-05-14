@@ -264,8 +264,8 @@ export function CustomerHistory() {
                       <CardContent className="p-3 sm:p-4">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                            <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
-                              <span className="text-sm sm:text-base font-bold text-emerald-700 dark:text-emerald-400">
+                            <div className="min-h-10 min-w-10 px-2.5 py-1 sm:min-h-11 sm:px-3 sm:py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
                                 {item.queueNumber}
                               </span>
                             </div>

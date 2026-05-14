@@ -20,6 +20,8 @@ import {
   X,
   FileText,
   ImageIcon,
+  Info,
+  CheckCircle2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -51,6 +53,13 @@ export function AgencySubscription() {
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Derive current step for the progress stepper
+  const currentStep = !selectedPlan || selectedPlan === data?.currentPlan
+    ? 1
+    : !receiptFile
+      ? 2
+      : 3;
 
   useEffect(() => {
     fetchSubscription();
@@ -205,6 +214,39 @@ export function AgencySubscription() {
     <div className="p-4 lg:p-6 space-y-5">
       <h1 className="text-2xl font-bold text-foreground">{t('subscription')}</h1>
 
+      {/* Progress Stepper */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-center gap-0 py-2"
+      >
+        {[
+          { step: 1, label: t('stepSelectPlan') },
+          { step: 2, label: t('stepUploadReceipt') },
+          { step: 3, label: t('stepSubmit') },
+        ].map((item, idx) => (
+          <div key={item.step} className="flex items-center">
+            <div className="flex flex-col items-center">
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                  currentStep >= item.step
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'bg-gray-200 dark:bg-gray-700 text-muted-foreground'
+                }`}
+              >
+                {currentStep > item.step ? <Check className="h-3.5 w-3.5" /> : item.step}
+              </div>
+              <span className={`text-[10px] mt-1 hidden sm:block ${currentStep >= item.step ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-muted-foreground'}`}>
+                {item.label}
+              </span>
+            </div>
+            {idx < 2 && (
+              <div className={`h-0.5 w-8 sm:w-16 mx-1 rounded-full transition-colors duration-300 ${currentStep > item.step ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'}`} />
+            )}
+          </div>
+        ))}
+      </motion.div>
+
       {/* Current Plan */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -299,7 +341,9 @@ export function AgencySubscription() {
                 className={`border-0 h-full cursor-pointer transition-all duration-300 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 overflow-hidden ${
                   selectedPlan === plan.id
                     ? 'ring-2 ring-emerald-500 shadow-xl'
-                    : 'hover:shadow-md shadow-sm'
+                    : data?.currentPlan === plan.id
+                      ? 'ring-2 ring-emerald-300 dark:ring-emerald-700 shadow-sm'
+                      : 'hover:shadow-md shadow-sm'
                 }`}
                 onClick={() => setSelectedPlan(plan.id)}
               >
@@ -324,6 +368,9 @@ export function AgencySubscription() {
                       <h3 className="font-bold text-lg text-foreground">{plan.name}</h3>
                       {plan.highlight && selectedPlan === plan.id && (
                         <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">{t('recommended')}</span>
+                      )}
+                      {data?.currentPlan === plan.id && selectedPlan !== plan.id && (
+                        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">{t('currentPlan')}</span>
                       )}
                     </div>
                     {selectedPlan === plan.id && (
@@ -440,6 +487,23 @@ export function AgencySubscription() {
               )}
             </div>
 
+            {/* Receipt Upload Success Indicator */}
+            {receiptFile && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800"
+              >
+                <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-800/40 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{t('receiptUploadedSuccess')}</p>
+                  <p className="text-xs text-muted-foreground truncate">{receiptFile.name} &middot; {getFileSize()}</p>
+                </div>
+              </motion.div>
+            )}
+
             <Button
               className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl"
               onClick={handleSubmitPayment}
@@ -452,6 +516,19 @@ export function AgencySubscription() {
               )}
               {t('submitPayment')}
             </Button>
+
+            {/* Payment Status Info Box */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200/60 dark:border-amber-800/30"
+            >
+              <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+                {t('paymentReviewInfo')}
+              </p>
+            </motion.div>
           </CardContent>
         </Card>
       </motion.div>

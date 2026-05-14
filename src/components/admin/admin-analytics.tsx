@@ -490,7 +490,7 @@ export function AdminAnalytics() {
                             transition={{ delay: idx * 0.05 + 0.2 }}
                             className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full"
                           >
-                            {agency.reservationCount} {t('reservations')}
+                            {agency.reservationCount} {t('reservationsCount')}
                           </motion.span>
                         </div>
                         {/* Progress bar */}

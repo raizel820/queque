@@ -132,7 +132,9 @@ model Reservation {
   completedAt         DateTime?
   cancelledAt         DateTime?
   rating              Int?
+  feedback            String?
   notes               String?
+  ratedAt             DateTime?
   reminderSent        Boolean   @default(false)
   reminderSentAt      DateTime?
   smsReminderSent     Boolean   @default(false)
@@ -180,12 +182,14 @@ model Notification {
   userId    String
   type      String
   title     String
-  message   String
+  message   String   @default("")
   isRead    Boolean  @default(false)
+  entityId  String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId, isRead])
+  @@index([entityId])
 }
 
 model Favorite {

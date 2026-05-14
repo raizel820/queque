@@ -93,10 +93,17 @@ export async function POST(request: NextRequest) {
         username: true,
         fullName: true,
         role: true,
+        language: true,
+        avatarUrl: true,
+        freeSmsCount: true,
+        isActive: true,
+        phoneNumber: true,
+        createdAt: true,
       },
     })
 
     // If agency code provided and role is AGENCY_STAFF or AGENCY_OWNER, link to agency
+    let agencyId: string | undefined
     if (agencyCode && (role === 'AGENCY_STAFF' || role === 'AGENCY_OWNER')) {
       const agency = await db.agency.findUnique({
         where: { customCode: agencyCode.toUpperCase() },
@@ -109,10 +116,11 @@ export async function POST(request: NextRequest) {
             role: role === 'AGENCY_OWNER' ? 'OWNER' : 'STAFF',
           },
         })
+        agencyId = agency.id
       }
     }
 
-    return NextResponse.json({ success: true, user }, { status: 201 })
+    return NextResponse.json({ success: true, user: { ...user, agencyId } }, { status: 201 })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(

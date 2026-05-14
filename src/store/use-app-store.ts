@@ -23,7 +23,8 @@ export type ViewName =
   | 'admin-agencies'
   | 'admin-audit'
   | 'admin-users'
-  | 'admin-analytics';
+  | 'admin-analytics'
+  | 'admin-settings';
 
 interface UserState {
   id: string;

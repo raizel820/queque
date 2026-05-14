@@ -991,12 +991,12 @@ export function AgencyDashboard() {
                   }
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center transition-colors duration-200 ${
+                    <div className={`min-h-10 min-w-10 px-2.5 py-1 rounded-xl flex items-center justify-center transition-colors duration-200 ${
                       entry.status === 'CALLED'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-emerald-100 dark:bg-emerald-900/30'
                     }`}>
-                      <span className={`text-sm font-bold ${entry.status === 'CALLED' ? 'text-white' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                      <span className={`text-xs sm:text-sm font-bold whitespace-nowrap ${entry.status === 'CALLED' ? 'text-white' : 'text-emerald-700 dark:text-emerald-400'}`}>
                         {entry.queueNumber}
                       </span>
                     </div>
