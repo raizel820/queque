@@ -16,12 +16,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      const searchLower = search.toLowerCase()
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { nameFr: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search } },
+        { nameFr: { contains: search } },
         { nameAr: { contains: search } },
-        { customCode: { contains: search, mode: 'insensitive' } },
+        { customCode: { contains: search } },
       ]
     }
 
@@ -44,6 +43,9 @@ export async function GET(request: NextRequest) {
           reservations: {
             select: { id: true },
             where: { status: { in: ['WAITING', 'CALLED'] } },
+          },
+          reviews: {
+            select: { rating: true },
           },
         },
         orderBy: [
@@ -76,6 +78,10 @@ export async function GET(request: NextRequest) {
       workingHoursEnd: agency.workingHoursEnd,
       isPaused: agency.queueSettings.length > 0 ? agency.queueSettings[0].isPaused : false,
       avgServiceTime: agency.averageServiceTime,
+      averageRating: agency.reviews.length > 0
+        ? Math.round((agency.reviews.reduce((sum, r) => sum + r.rating, 0) / agency.reviews.length) * 10) / 10
+        : 0,
+      reviewCount: agency.reviews.length,
       createdAt: agency.createdAt,
     }))
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
@@ -24,9 +25,13 @@ import {
   Loader2,
   Star,
   CalendarDays,
+  ArrowUpDown,
+  Search,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+
+type SortOption = 'name' | 'rating' | 'recent';
 
 interface FavoriteAgency {
   id: string;
@@ -51,6 +56,8 @@ export function CustomerFavorites() {
   const [favorites, setFavorites] = useState<FavoriteAgency[]>([]);
   const [loading, setLoading] = useState(true);
   const [unfavoriting, setUnfavoriting] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [heartBreakingId, setHeartBreakingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFavorites();
@@ -75,6 +82,7 @@ export function CustomerFavorites() {
   const toggleFavorite = async (agencyId: string) => {
     if (!user?.id) return;
     setUnfavoriting(agencyId);
+    setHeartBreakingId(agencyId);
     try {
       const res = await fetch('/api/favorites', {
         method: 'POST',
@@ -84,12 +92,17 @@ export function CustomerFavorites() {
       if (res.ok) {
         const data = await res.json();
         if (!data.favorited) {
-          setFavorites((prev) => prev.filter((f) => f.agencyId !== agencyId));
+          // Wait for heart break animation to complete
+          setTimeout(() => {
+            setFavorites((prev) => prev.filter((f) => f.agencyId !== agencyId));
+            setHeartBreakingId(null);
+          }, 400);
           toast.success(t('unfavoriteAgency'));
         }
       }
     } catch {
       toast.error(t('error'));
+      setHeartBreakingId(null);
     } finally {
       setUnfavoriting(null);
     }
@@ -159,6 +172,24 @@ export function CustomerFavorites() {
     return currentMinutes >= startMinutes && currentMinutes < endMinutes;
   };
 
+  // Sorted favorites
+  const sortedFavorites = useMemo(() => {
+    const sorted = [...favorites];
+    switch (sortBy) {
+      case 'name':
+        return sorted.sort((a, b) => {
+          const nameA = getAgencyName(a).toLowerCase();
+          const nameB = getAgencyName(b).toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+      case 'rating':
+        return sorted.sort((a, b) => (b.isSponsored ? 1 : 0) - (a.isSponsored ? 1 : 0));
+      case 'recent':
+      default:
+        return sorted.sort((a, b) => new Date(b.favoritedAt).getTime() - new Date(a.favoritedAt).getTime());
+    }
+  }, [favorites, sortBy, lang]);
+
   // Date Picker Dialog
   const dateDialog = (
     <Dialog open={dateDialogOpen} onOpenChange={(open) => { setDateDialogOpen(open); if (!open) { setPendingAgencyId(null); setSelectedDate(undefined); } }}>
@@ -168,6 +199,7 @@ export function CustomerFavorites() {
             <CalendarDays className="h-5 w-5 text-emerald-600" />
             {t('reserveForDate')}
           </DialogTitle>
+          <DialogDescription className="sr-only">{t('selectDate')}</DialogDescription>
         </DialogHeader>
         <div className="py-2">
           <p className="text-sm text-muted-foreground mb-4">{t('selectDate')}</p>
@@ -218,7 +250,9 @@ export function CustomerFavorites() {
       <div className="px-4 py-4 pb-24 space-y-4">
         <Skeleton className="h-8 w-32" />
         {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-32 rounded-2xl" />
+          <div key={i} className="rounded-2xl overflow-hidden shimmer-loading">
+            <Skeleton className="h-32 rounded-2xl skeleton-shimmer-enhanced" />
+          </div>
         ))}
       </div>
     );
@@ -226,7 +260,23 @@ export function CustomerFavorites() {
 
   return (
     <div className="px-4 py-4 pb-24">
-      <h1 className="text-2xl font-bold text-foreground mb-5">{t('favorites')}</h1>
+      <div className="flex items-center justify-between mb-5">
+        <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">{t('favorites')}</h1>
+        {favorites.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="h-8 px-2.5 py-0 text-[11px] rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/20 text-foreground focus:ring-emerald-500/20 outline-none cursor-pointer"
+            >
+              <option value="recent">{t('recentlyAdded') || 'Recent'}</option>
+              <option value="name">{t('sortByName') || 'Name'}</option>
+              <option value="rating">{t('sortByRating') || 'Rating'}</option>
+            </select>
+          </div>
+        )}
+      </div>
 
       {favorites.length === 0 ? (
         <motion.div
@@ -234,35 +284,96 @@ export function CustomerFavorites() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center py-16"
         >
-          <div className="relative mx-auto mb-6 h-24 w-24">
-            <Heart className="h-16 w-16 text-muted-foreground/30 mx-auto absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          {/* SVG illustration - broken heart / empty favorites */}
+          <div className="relative mx-auto mb-8 flex items-center justify-center">
             <motion.div
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity }}
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <Heart className="h-24 w-24 text-emerald-500/20 mx-auto" />
+              <svg width="120" height="100" viewBox="0 0 120 100" fill="none" className="mx-auto">
+                {/* Heart outline */}
+                <motion.path
+                  d="M60 90 C60 90 10 60 10 35 C10 20 20 10 35 10 C45 10 55 18 60 28 C65 18 75 10 85 10 C100 10 110 20 110 35 C110 60 60 90 60 90Z"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  className="text-emerald-300 dark:text-emerald-700"
+                  fill="none"
+                  strokeDasharray="6 4"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1.5, ease: 'easeInOut' }}
+                />
+                {/* Small heart inside */}
+                <motion.path
+                  d="M60 72 C60 72 32 54 32 40 C32 33 37 28 44 28 C49 28 54 32 56 36 L60 44 L64 36 C66 32 71 28 76 28 C83 28 88 33 88 40 C88 54 60 72 60 72Z"
+                  className="fill-emerald-100 dark:fill-emerald-900/30"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.8, type: 'spring', stiffness: 200, damping: 15 }}
+                  style={{ transformOrigin: '60px 50px' }}
+                />
+                {/* Sparkle dots */}
+                <motion.circle cx="20" cy="20" r="2" className="fill-emerald-400"
+                  animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                />
+                <motion.circle cx="100" cy="15" r="1.5" className="fill-teal-400"
+                  animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                />
+                <motion.circle cx="108" cy="50" r="1.5" className="fill-emerald-300"
+                  animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 1.5 }}
+                />
+              </svg>
+            </motion.div>
+            {/* Floating small hearts */}
+            <motion.div
+              animate={{ y: [-5, 5, -5], opacity: [0.3, 0.6, 0.3] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -top-2 end-8"
+            >
+              <Heart className="h-4 w-4 text-emerald-300 dark:text-emerald-700 fill-emerald-300 dark:fill-emerald-700" />
+            </motion.div>
+            <motion.div
+              animate={{ y: [5, -5, 5], opacity: [0.2, 0.5, 0.2] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+              className="absolute top-4 -start-4"
+            >
+              <Heart className="h-3 w-3 text-teal-300 dark:text-teal-700 fill-teal-300 dark:fill-teal-700" />
             </motion.div>
           </div>
           <p className="text-lg font-semibold text-foreground mb-1">{t('noFavoritesYet')}</p>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto">{t('noFavoritesDesc')}</p>
+          <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">{t('noFavoritesDesc')}</p>
+          <Button
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 rounded-xl h-11 shadow-lg shadow-emerald-500/20"
+            onClick={() => setView('customer-home')}
+          >
+            <Search className="h-4 w-4 me-2" />
+            {t('joinQueue')}
+          </Button>
         </motion.div>
       ) : (
         <div className="space-y-3">
           <AnimatePresence>
-            {favorites.map((fav, idx) => {
+            {sortedFavorites.map((fav, idx) => {
               const open = isOpenNow(fav.workingHoursStart, fav.workingHoursEnd);
+              const isBreaking = heartBreakingId === fav.agencyId;
               return (
                 <motion.div
                   key={fav.agencyId}
                   initial={{ opacity: 0, y: 15 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  transition={{ duration: 0.3, delay: idx * 0.05 }}
+                  exit={{ opacity: 0, x: -200, scale: 0.8 }}
+                  transition={{ duration: 0.4, delay: idx * 0.05 }}
+                  className="group"
                 >
-                  <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
+                  <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-200 card-hover-scale relative overflow-hidden">
+                    {/* Subtle gradient top border */}
+                    <div className="absolute top-0 start-0 end-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
-                        <div className="h-11 w-11 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                        <div className="h-11 w-11 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800/50 transition-colors duration-300">
                           <TicketCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -289,7 +400,12 @@ export function CustomerFavorites() {
                                   : 'text-[10px] bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200'
                               }
                             >
-                              {fav.isQueueOpen && open ? t('openNow') : t('closed')}
+                              {fav.isQueueOpen && open ? (
+                                <span className="flex items-center gap-1">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 status-dot-blink" />
+                                  {t('openNow')}
+                                </span>
+                              ) : t('closed')}
                             </Badge>
                             {fav.workingHoursStart && fav.workingHoursEnd && (
                               <span className="text-[10px] text-muted-foreground flex items-center gap-0.5" dir="ltr">
@@ -303,12 +419,17 @@ export function CustomerFavorites() {
                           <button
                             onClick={() => toggleFavorite(fav.agencyId)}
                             disabled={unfavoriting === fav.agencyId}
-                            className="h-9 w-9 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                            className={`h-9 w-9 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors ${isBreaking ? 'heart-break-animation' : ''}`}
                           >
                             {unfavoriting === fav.agencyId ? (
                               <Loader2 className="h-4 w-4 text-red-500 animate-spin" />
                             ) : (
-                              <Heart className="h-[18px] w-[18px] text-red-500 fill-red-500" />
+                              <motion.div
+                                whileHover={{ scale: 1.2 }}
+                                whileTap={{ scale: 0.8 }}
+                              >
+                                <Heart className="h-[18px] w-[18px] text-red-500 fill-red-500" />
+                              </motion.div>
                             )}
                           </button>
                         </div>
@@ -317,7 +438,7 @@ export function CustomerFavorites() {
                       <div className="mt-3 flex items-center justify-end gap-2">
                         <Button
                           size="sm"
-                          className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs"
+                          className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs shadow-sm hover:shadow-md transition-all duration-200"
                           onClick={() => handleJoinQueue(fav.agencyId)}
                           disabled={!fav.isQueueOpen}
                         >

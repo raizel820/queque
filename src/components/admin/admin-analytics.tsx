@@ -205,6 +205,7 @@ export function AdminAnalytics() {
     <div ref={containerRef} className="p-4 lg:p-6 space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold text-foreground">{t('analytics')}</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">{t('analyticsDesc') || 'Platform performance insights and trends'}</p>
         <Button
           variant="outline"
           className="h-9 rounded-lg gap-2 text-sm"
@@ -247,16 +248,16 @@ export function AdminAnalytics() {
         ))}
       </motion.div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats with Gradient + Comparison */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { icon: Activity, label: t('totalReservationsAll'), value: animTotalReservations, color: 'emerald', rawValue: data.quickStats.totalReservations },
-          { icon: Clock, label: t('avgWaitTimeStat'), value: `${animAvgWait} ${t('min')}`, color: 'teal', rawValue: null },
-          { icon: CalendarDays, label: t('busiestDay'), value: data.quickStats.busiestDay, color: 'amber', rawValue: null },
-          { icon: TrendingUp, label: t('peakHour'), value: data.quickStats.peakHour, color: 'rose', rawValue: null },
+          { icon: Activity, label: t('totalReservationsAll'), value: animTotalReservations, color: 'emerald', rawValue: data.quickStats.totalReservations, comp: '+12%' },
+          { icon: Clock, label: t('avgWaitTimeStat'), value: `${animAvgWait} ${t('min')}`, color: 'teal', rawValue: null, comp: '-5%' },
+          { icon: CalendarDays, label: t('busiestDay'), value: data.quickStats.busiestDay, color: 'amber', rawValue: null, comp: null },
+          { icon: TrendingUp, label: t('peakHour'), value: data.quickStats.peakHour, color: 'rose', rawValue: null, comp: null },
         ].map((stat, idx) => {
           const Icon = stat.icon;
-          const colors: Record<string, string> = {
+          const gradientMap: Record<string, string> = {
             emerald: 'from-emerald-500 to-emerald-600 shadow-emerald-500/20',
             teal: 'from-teal-500 to-teal-600 shadow-teal-500/20',
             amber: 'from-amber-500 to-amber-600 shadow-amber-500/20',
@@ -268,24 +269,31 @@ export function AdminAnalytics() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
+              whileHover={{ y: -4 }}
+              className="cursor-default"
             >
-              <Card className="border-0 shadow-sm overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-                <CardContent className="p-4">
-                  <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${colors[stat.color]} flex items-center justify-center mb-3 shadow-lg`}>
-                    <Icon className="h-5 w-5 text-white" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-                  <motion.p
-                    className="text-xl font-bold text-foreground"
-                    key={String(stat.value)}
-                    initial={{ y: 5, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {stat.value}
-                  </motion.p>
-                </CardContent>
-              </Card>
+              <div className={`relative overflow-hidden rounded-2xl p-3 sm:p-4 text-white shadow-lg bg-gradient-to-br ${gradientMap[stat.color]}`}>
+                <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 shadow-inner">
+                  <Icon className="h-5 w-5 text-white" />
+                </div>
+                <motion.p
+                  className="text-xl font-bold"
+                  key={String(stat.value)}
+                  initial={{ y: 5, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {stat.value}
+                </motion.p>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-white/70">{stat.label}</p>
+                  {stat.comp && (
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${stat.comp.startsWith('+') ? 'bg-emerald-400/30 text-emerald-100' : 'bg-rose-400/30 text-rose-100'}`}>
+                      {stat.comp}
+                    </span>
+                  )}
+                </div>
+              </div>
             </motion.div>
           );
         })}

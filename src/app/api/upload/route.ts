@@ -1,115 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-
-// ─── Configuration ───────────────────────────────────────────────────────────
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf']);
-const ALLOWED_MIME_PREFIXES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/svg+xml',
-  'application/pdf',
-];
-
-const VALID_TYPES = new Set(['general', 'receipt', 'logo', 'avatar']);
-const DEFAULT_TYPE = 'general';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function getExtension(filename: string): string {
-  return filename.split('.').pop()?.toLowerCase() || '';
-}
-
-function isValidMimeType(mimeType: string): boolean {
-  return ALLOWED_MIME_PREFIXES.some((prefix) => mimeType.startsWith(prefix));
-}
-
-async function ensureDir(dir: string) {
-  await fs.mkdir(dir, { recursive: true });
-}
+import {
+  uploadFile,
+  deleteFile,
+  getFileMetadata,
+  listFiles,
+  isValidType,
+  DEFAULT_TYPE,
+  isVercelBlobConfigured,
+} from '@/lib/upload';
 
 // ─── POST: Upload file ──────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const type = VALID_TYPES.has(searchParams.get('type') || '')
+    const type = isValidType(searchParams.get('type') || '')
       ? searchParams.get('type')!
       : DEFAULT_TYPE;
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
 
-    // ── Validate file presence ──
     if (!file) {
       return NextResponse.json(
         { error: 'No file provided' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // ── Validate file size ──
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: `File too large. Max ${MAX_FILE_SIZE / 1024 / 1024}MB` },
-        { status: 413 }
-      );
-    }
-
-    // ── Validate file type ──
-    const ext = getExtension(file.name);
-    if (!ALLOWED_EXTENSIONS.has(ext)) {
-      return NextResponse.json(
-        { error: `Invalid file type .${ext}` },
-        { status: 400 }
-      );
-    }
-
-    if (!isValidMimeType(file.type)) {
-      return NextResponse.json(
-        { error: `Invalid MIME type "${file.type}"` },
-        { status: 400 }
-      );
-    }
-
-    // Try Vercel Blob first
-    const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-    if (blobToken) {
-      try {
-        const { put } = await import('@vercel/blob');
-        const uuid = crypto.randomUUID();
-        const filename = `${type}/${uuid}.${ext}`;
-        const blob = await put(filename, file, {
-          access: 'public',
-          addRandomSuffix: false,
-        });
-        return NextResponse.json({
-          url: blob.url,
-          filename: blob.pathname.split('/').pop() || filename,
-        });
-      } catch (blobError) {
-        console.error('[UPLOAD] Blob failed, falling back to local:', blobError);
+    // Optional metadata from form data
+    const metadata: Record<string, string> = {};
+    const metaKeys = ['userId', 'agencyId', 'description'];
+    for (const key of metaKeys) {
+      const val = formData.get(key);
+      if (val && typeof val === 'string') {
+        metadata[key] = val;
       }
     }
 
-    // Fallback to local storage
-    const uuid = crypto.randomUUID();
-    const filename = `${uuid}.${ext}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', type);
-    await ensureDir(uploadDir);
-    const filePath = path.join(uploadDir, filename);
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(filePath, buffer);
+    const result = await uploadFile(file, type, {
+      addRandomSuffix: false,
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+    });
+
     return NextResponse.json({
-      url: `/uploads/${type}/${filename}`,
-      filename,
+      url: result.url,
+      filename: result.filename,
+      provider: result.provider,
+      size: result.size,
     });
   } catch (error: unknown) {
     console.error('[UPLOAD] Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = message.includes('too large') ? 413
+      : message.includes('Invalid') ? 400
+      : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
@@ -122,52 +67,55 @@ export async function DELETE(request: NextRequest) {
     if (!url || typeof url !== 'string') {
       return NextResponse.json(
         { error: 'Provide a "url" field' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // For Vercel Blob URLs, delete via blob API
-    if (url.startsWith('https://')) {
-      const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-      if (blobToken) {
-        try {
-          const { del } = await import('@vercel/blob');
-          await del(url);
-          return NextResponse.json({ success: true });
-        } catch {
-          console.error('[UPLOAD DELETE] Blob delete failed');
-        }
-      }
-    }
-
-    // Local file fallback
-    if (!url.startsWith('/uploads/') || url.includes('..')) {
-      return NextResponse.json(
-        { error: 'Invalid URL' },
-        { status: 400 }
-      );
-    }
-
-    const filePath = path.join(process.cwd(), 'public', url);
-    const resolved = path.resolve(filePath);
-    const allowedRoot = path.resolve(path.join(process.cwd(), 'public', 'uploads'));
-    if (!resolved.startsWith(allowedRoot)) {
-      return NextResponse.json(
-        { error: 'Path traversal detected' },
-        { status: 400 }
-      );
-    }
-
-    try {
-      await fs.unlink(filePath);
-    } catch {
-      // Already gone
-    }
-
-    return NextResponse.json({ success: true });
+    const result = await deleteFile(url);
+    return NextResponse.json({ success: result.success, provider: result.provider });
   } catch (error: unknown) {
     console.error('[UPLOAD DELETE] Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
+    const status = message.includes('Invalid') || message.includes('Cannot') ? 400 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+// ─── GET: List or get file metadata ─────────────────────────────────────────
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const url = searchParams.get('url');
+    const prefix = searchParams.get('prefix') || '';
+    const limit = parseInt(searchParams.get('limit') || '100', 10);
+    const cursor = searchParams.get('cursor') || undefined;
+
+    // If a specific URL is provided, return its metadata
+    if (url) {
+      const metadata = await getFileMetadata(url);
+      if (!metadata) {
+        return NextResponse.json(
+          { error: 'File not found' },
+          { status: 404 },
+        );
+      }
+      return NextResponse.json(metadata);
+    }
+
+    // Otherwise, list files
+    const result = await listFiles({ prefix, limit, cursor });
+    return NextResponse.json(result);
+  } catch (error: unknown) {
+    console.error('[UPLOAD GET] Error:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+// ─── HEAD: Check storage status ─────────────────────────────────────────────
+export async function HEAD() {
+  return NextResponse.json({
+    storage: isVercelBlobConfigured() ? 'vercel-blob' : 'local',
+    configured: isVercelBlobConfigured(),
+  });
 }

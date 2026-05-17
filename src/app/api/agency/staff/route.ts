@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       where: { agencyId },
       include: {
         user: {
-          select: { id: true, username: true, fullName: true, role: true },
+          select: { id: true, username: true, fullName: true, role: true, isActive: true },
         },
       },
       orderBy: { joinedAt: 'desc' },

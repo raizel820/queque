@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -78,6 +79,7 @@ export function AdminAgencies() {
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   // Delete confirmation state
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -170,9 +172,10 @@ export function AdminAgencies() {
 
   const filteredAgencies = agencies.filter((a) => {
     const matchStatus = statusFilter === 'ALL' || a.status === statusFilter;
+    const matchCategory = categoryFilter === 'ALL' || a.category.toUpperCase() === categoryFilter;
     const query = searchQuery.toLowerCase().trim();
     const matchSearch = !query || a.name.toLowerCase().includes(query);
-    return matchStatus && matchSearch;
+    return matchStatus && matchCategory && matchSearch;
   });
 
   const getCategoryLabel = (cat: string) => {
@@ -195,32 +198,60 @@ export function AdminAgencies() {
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t('search')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="ps-10 h-10 rounded-xl"
-          />
-        </div>
-        <div className="flex gap-2">
-          {statusOptions.map((opt) => (
+      <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+        <CardContent className="p-4 space-y-3">
+          <div className="relative">
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t('search')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="ps-10 h-10 rounded-xl"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {/* Category Filters */}
             <button
-              key={opt.value}
-              onClick={() => setStatusFilter(opt.value)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors min-h-10 ${
-                statusFilter === opt.value
-                  ? 'bg-emerald-600 text-white'
+              onClick={() => setCategoryFilter('ALL')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                categoryFilter === 'ALL'
+                  ? 'filter-chip-active'
                   : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              {t(opt.key)}
+              {t('all')}
             </button>
-          ))}
-        </div>
-      </div>
+            {categoryOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setCategoryFilter(opt.value)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                  categoryFilter === opt.value
+                    ? 'filter-chip-active'
+                    : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {t(opt.key)}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            {statusOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setStatusFilter(opt.value)}
+                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 min-h-10 ${
+                  statusFilter === opt.value
+                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
+                    : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
+                }`}
+              >
+                {t(opt.key)}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Agencies List */}
       {loading ? (
@@ -245,12 +276,16 @@ export function AdminAgencies() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.03 }}
             >
-              <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+              <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                     <div className="flex items-center gap-3 flex-1">
-                      <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      <div className={`h-11 w-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        agency.status === 'ACTIVE'
+                          ? 'bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40 shadow-sm'
+                          : 'bg-gradient-to-br from-red-200 to-red-300 dark:from-red-900/40 dark:to-red-800/40 shadow-sm'
+                      }`}>
+                        <Building2 className={`h-5 w-5 ${agency.status === 'ACTIVE' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`} />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate">
@@ -356,6 +391,7 @@ export function AdminAgencies() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('createAgency')}</DialogTitle>
+            <DialogDescription className="sr-only">{t('createAgency')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">

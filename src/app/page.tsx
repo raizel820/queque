@@ -23,6 +23,7 @@ import { AgencyDashboard } from '@/components/agency/agency-dashboard';
 import { AgencySettings } from '@/components/agency/agency-settings';
 import { AgencyProfile } from '@/components/agency/agency-profile';
 import { AgencySubscription } from '@/components/agency/agency-subscription';
+import { AgencyReviews } from '@/components/agency/agency-reviews';
 
 // Admin Views
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
@@ -101,6 +102,8 @@ function ViewRouter() {
       return <AgencyProfile />;
     case 'agency-subscription':
       return <AgencySubscription />;
+    case 'agency-reviews':
+      return <AgencyReviews />;
     case 'admin-dashboard':
       return <AdminDashboard />;
     case 'admin-transactions':
@@ -122,7 +125,7 @@ function ViewRouter() {
 
 // Customer Bottom Navigation — 4 tabs + More Sheet
 function CustomerBottomNav() {
-  const { currentView, setView, user } = useAppStore();
+  const { currentView, setView, user, logout } = useAppStore();
   const { t } = useLanguage();
   const [moreOpen, setMoreOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -272,6 +275,14 @@ function CustomerBottomNav() {
                   <Settings className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-medium text-foreground">{t('settings')}</span>
                 </button>
+                <div className="h-px bg-border mx-3 my-1" />
+                <button
+                  onClick={() => { logout(); setMoreOpen(false); }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                >
+                  <LogOut className="h-5 w-5 text-red-500" />
+                  <span className="text-sm font-medium text-red-600 dark:text-red-400">{t('logout')}</span>
+                </button>
               </div>
             </SheetContent>
           </Sheet>
@@ -288,6 +299,7 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
 
   const navItems = [
     { view: 'agency-dashboard' as const, icon: LayoutDashboard, label: t('dashboard') },
+    { view: 'agency-reviews' as const, icon: Star, label: t('reviewsPage') },
     { view: 'agency-settings' as const, icon: Settings, label: t('settings') },
     { view: 'agency-profile' as const, icon: Building2, label: t('agencyProfile') },
     { view: 'agency-subscription' as const, icon: CreditCard, label: t('subscription') },

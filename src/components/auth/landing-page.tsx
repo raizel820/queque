@@ -521,7 +521,7 @@ export function LandingPage() {
               <div
                 className="flex gap-4 w-max"
                 style={{
-                  animation: 'carousel-scroll 25s linear infinite',
+                  animation: `${typeof document !== 'undefined' && document.documentElement.dir === 'rtl' ? 'carousel-scroll-rtl' : 'carousel-scroll'} 25s linear infinite`,
                 }}
               >
                 {[...testimonials, ...testimonials, ...testimonials, ...testimonials].map((testimonial, idx) => (
@@ -568,11 +568,15 @@ export function LandingPage() {
               ))}
             </div>
           </div>
-          {/* CSS animations for carousel */}
+          {/* CSS animations for carousel - RTL aware */}
           <style>{`
             @keyframes carousel-scroll {
               0% { transform: translateX(0); }
               100% { transform: translateX(-33.333%); }
+            }
+            @keyframes carousel-scroll-rtl {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(33.333%); }
             }
             @keyframes carousel-dot-pulse {
               0%, 100% { opacity: 0.3; transform: scale(1); }

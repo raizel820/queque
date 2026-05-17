@@ -83,6 +83,10 @@ export function OnboardingWizard({ open, user, onComplete, onSkip }: OnboardingP
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onSkip(); }}>
       <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden border-0 bg-white dark:bg-gray-950">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{t('welcomeTo')} QueueWise</DialogTitle>
+          <DialogDescription>{t('setupAccountDesc')}</DialogDescription>
+        </DialogHeader>
         {/* Step indicator */}
         <div className="px-6 pt-6 pb-4">
           <div className="flex items-center gap-2 mb-4">

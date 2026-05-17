@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -43,6 +44,7 @@ export function AdminTransactions() {
   const [payments, setPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('PENDING');
 
   // Reject dialog
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -55,12 +57,13 @@ export function AdminTransactions() {
 
   useEffect(() => {
     fetchPayments();
-  }, []);
+  }, [statusFilter]);
 
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/transactions?status=PENDING');
+      const statusParam = statusFilter !== 'ALL' ? `?status=${statusFilter}` : '';
+      const res = await fetch(`/api/transactions${statusParam}`);
       if (res.ok) {
         const data = await res.json();
         const mapped = (data.transactions ?? []).map((tx: Record<string, unknown>) => {
@@ -158,7 +161,27 @@ export function AdminTransactions() {
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
-      <h1 className="text-2xl font-bold text-foreground">{t('pendingPayments')}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-foreground">{t('pendingPayments')}</h1>
+      </div>
+
+      {/* Status Filter */}
+      <div className="flex gap-2">
+        {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map((status) => (
+          <button
+            key={status}
+            onClick={() => { setStatusFilter(status); }}
+            className={`px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+              statusFilter === status
+              ? 'filter-chip-active'
+              : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`
+          }
+          >
+            {status === 'ALL' ? t('all') : status}
+          </button>
+        ))}
+      </div>
 
       {payments.length === 0 ? (
         <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
@@ -176,12 +199,12 @@ export function AdminTransactions() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.03 }}
             >
-              <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+              <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                     {/* Agency Info */}
                     <div className="flex items-center gap-3 flex-1">
-                      <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40 flex items-center justify-center flex-shrink-0 shadow-sm">
                         <Building2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                       </div>
                       <div className="min-w-0">
@@ -191,6 +214,17 @@ export function AdminTransactions() {
                         <div className="flex items-center gap-2 flex-wrap mt-0.5">
                           <Badge variant="secondary" className="text-[10px]">
                             {payment.plan === 'PREMIUM' ? t('premiumPlan') : t('basicPlan')}
+                          </Badge>
+                          <Badge
+                            className={`text-[10px] ${
+                              payment.status === 'PENDING'
+                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                : payment.status === 'APPROVED'
+                                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            }`}
+                          >
+                            {payment.status}
                           </Badge>
                           <span className="text-xs text-muted-foreground">{payment.method}</span>
                           <span className="text-xs text-muted-foreground">
@@ -257,6 +291,7 @@ export function AdminTransactions() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{t('rejectTransaction')}</DialogTitle>
+            <DialogDescription className="sr-only">{t('rejectionReason')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -294,6 +329,7 @@ export function AdminTransactions() {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t('paymentProof')}</DialogTitle>
+            <DialogDescription className="sr-only">Dialog for viewing payment proof receipt</DialogDescription>
           </DialogHeader>
           <div className="py-4 flex items-center justify-center">
             {previewUrl ? (

@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
@@ -112,7 +113,7 @@ export function AgencySettings() {
   const originalSettingsRef = useRef<AgencySettingsData | null>(null);
 
   // Staff state
-  const [staffList, setStaffList] = useState<Array<{ id: string; role: string; joinedAt: string; user: { username: string; fullName: string; role: string } }>>([]);
+  const [staffList, setStaffList] = useState<Array<{ id: string; role: string; joinedAt: string; isActive: boolean; user: { username: string; fullName: string; role: string; isActive: boolean } }>>([]);
   const [staffLoading, setStaffLoading] = useState(false);
   const [addStaffOpen, setAddStaffOpen] = useState(false);
   const [addStaffLoading, setAddStaffLoading] = useState(false);
@@ -121,6 +122,14 @@ export function AgencySettings() {
   const [newStaffFullName, setNewStaffFullName] = useState('');
   const [newStaffPassword, setNewStaffPassword] = useState('');
   const [newStaffRole, setNewStaffRole] = useState<'STAFF' | 'MANAGER'>('STAFF');
+
+  // Edit staff state
+  const [editStaffOpen, setEditStaffOpen] = useState(false);
+  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
+  const [editFullName, setEditFullName] = useState('');
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [editRole, setEditRole] = useState<'STAFF' | 'MANAGER'>('STAFF');
+  const [editStaffLoading, setEditStaffLoading] = useState(false);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -156,6 +165,62 @@ export function AgencySettings() {
     setNewStaffFullName('');
     setNewStaffPassword('');
     setNewStaffRole('STAFF');
+  };
+
+  const openEditStaffDialog = (staff: { id: string; role: string; user: { fullName: string; isActive: boolean } }) => {
+    setEditingStaffId(staff.id);
+    setEditFullName(staff.user.fullName);
+    setEditIsActive(staff.user.isActive);
+    setEditRole(staff.role === 'MANAGER' ? 'MANAGER' : 'STAFF');
+    setEditStaffOpen(true);
+  };
+
+  const handleUpdateStaff = async () => {
+    if (!editingStaffId || !editFullName.trim()) return;
+    setEditStaffLoading(true);
+    try {
+      const res = await fetch(`/api/agency/staff/${editingStaffId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: editFullName.trim(),
+          isActive: editIsActive,
+          role: editRole,
+        }),
+      });
+      if (res.ok) {
+        toast.success(t('success'));
+        setEditStaffOpen(false);
+        setEditingStaffId(null);
+        fetchStaff();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setEditStaffLoading(false);
+    }
+  };
+
+  const handleToggleStaffActive = async (staffId: string, currentActive: boolean) => {
+    try {
+      const res = await fetch(`/api/agency/staff/${staffId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !currentActive }),
+      });
+      if (res.ok) {
+        toast.success(t('success'));
+        fetchStaff();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    }
   };
 
   const handleCreateStaff = async () => {
@@ -199,7 +264,7 @@ export function AgencySettings() {
   const handleRemoveStaff = async (staffId: string) => {
     if (!user?.agencyId) return;
     try {
-      const res = await fetch(`/api/agency/staff?staffId=${staffId}&agencyId=${user.agencyId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/agency/staff/${staffId}`, { method: 'DELETE' });
       if (res.ok) {
         toast.success(t('staffRemoved'));
         fetchStaff();
@@ -413,7 +478,7 @@ export function AgencySettings() {
             transition={{ delay: sectionIdx * 0.04 }}
           >
             <Card className={`border-0 shadow-sm overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 ${
-              isDanger ? 'ring-1 ring-red-200 dark:ring-red-800/50' : ''
+              isDanger ? 'ring-1 ring-red-200 dark:ring-red-800/50 danger-zone-card' : ''
             }`}>
               {/* Collapsible Header */}
               <button
@@ -467,6 +532,7 @@ export function AgencySettings() {
                       {/* General Info Section */}
                       {section.id === 'general' && (
                         <div className="space-y-4">
+                          <p className="text-xs text-muted-foreground -mt-1 mb-2">{t('generalSettingsDesc') || 'Control your queue availability and basic settings'}</p>
                           <CustomToggle
                             checked={settings?.isQueueOpen ?? false}
                             onCheckedChange={(v) => updateSetting('isQueueOpen', v)}
@@ -479,6 +545,7 @@ export function AgencySettings() {
                       {/* Working Hours Section */}
                       {section.id === 'hours' && (
                         <div className="space-y-4">
+                          <p className="text-xs text-muted-foreground -mt-1 mb-2">{t('workingHoursDesc') || 'Set your business operating hours'}</p>
                           <Label className="text-sm flex items-center gap-2">
                             <Clock className="h-4 w-4 text-muted-foreground" />
                             {t('workingHours')}
@@ -506,6 +573,7 @@ export function AgencySettings() {
                       {/* Services Section */}
                       {section.id === 'services' && (
                         <div className="space-y-3">
+                          <p className="text-xs text-muted-foreground -mt-1 mb-2">{t('servicesDesc') || 'Manage the services your agency offers'}</p>
                           <div className="flex items-center justify-between">
                             <Label className="text-sm flex items-center gap-2">
                               <Briefcase className="h-4 w-4 text-muted-foreground" />
@@ -570,6 +638,7 @@ export function AgencySettings() {
                       {/* Queue Capacity Section */}
                       {section.id === 'capacity' && (
                         <div className="space-y-5">
+                          <p className="text-xs text-muted-foreground -mt-1 mb-2">{t('capacityDesc') || 'Configure queue limits and service timing'}</p>
                           {/* Max Active Reservations */}
                           <div className="space-y-2">
                             <Label className="text-sm flex items-center gap-2">
@@ -645,6 +714,7 @@ export function AgencySettings() {
                               <DialogContent className="sm:max-w-md">
                                 <DialogHeader>
                                   <DialogTitle>{t('createStaffAccount')}</DialogTitle>
+                                  <DialogDescription className="sr-only">{t('createStaffAccount')}</DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 py-2">
                                   <div className="space-y-2">
@@ -715,24 +785,28 @@ export function AgencySettings() {
                           ) : staffList.length === 0 ? (
                             <p className="text-sm text-muted-foreground text-center py-4">{t('noData')}</p>
                           ) : (
-                            <div className="space-y-2 max-h-72 overflow-y-auto">
+                            <div className="space-y-2 max-h-96 overflow-y-auto">
                               {staffList.map((staff) => {
                                 const isOwner = staff.role === 'OWNER';
-                                const isCreatedByOwner = staff.user.role === 'AGENCY_STAFF';
+                                const isUserActive = staff.user.isActive;
                                 return (
-                                  <div
+                                  <motion.div
                                     key={staff.id}
-                                    className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                                    initial={{ opacity: 0.95 }}
+                                    animate={{ opacity: 1 }}
+                                    className={`flex items-center justify-between p-3 rounded-xl transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50 ${
+                                      !isUserActive ? 'bg-gray-50/50 dark:bg-gray-900/30 opacity-70' : 'bg-gray-50 dark:bg-gray-900/50'
+                                    }`}
                                   >
                                     <div className="flex items-center gap-3 min-w-0">
-                                      <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                      <div className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
                                         isOwner
                                           ? 'bg-amber-100 dark:bg-amber-900/30'
                                           : staff.role === 'MANAGER'
                                             ? 'bg-purple-100 dark:bg-purple-900/30'
                                             : 'bg-emerald-100 dark:bg-emerald-900/30'
                                       }`}>
-                                        <Shield className={`h-4 w-4 ${
+                                        <Shield className={`h-4.5 w-4.5 ${
                                           isOwner
                                             ? 'text-amber-700 dark:text-amber-400'
                                             : staff.role === 'MANAGER'
@@ -752,33 +826,138 @@ export function AgencySettings() {
                                           {!isOwner && staff.role === 'STAFF' && (
                                             <span className="text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded-full flex-shrink-0">{t('staffRoleStaff')}</span>
                                           )}
+                                          {!isUserActive && (
+                                            <span className="text-[9px] font-bold bg-gray-200 dark:bg-gray-700/60 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded-full flex-shrink-0">{t('inactive')}</span>
+                                          )}
                                         </div>
                                         <p className="text-xs text-muted-foreground">@{staff.user.username}</p>
-                                        {isCreatedByOwner && !isOwner && (
+                                        {staff.user.role === 'AGENCY_STAFF' && !isOwner && (
                                           <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">{t('initialAccountCreated')}</p>
                                         )}
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-2 flex-shrink-0">
-                                      <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      <span className="text-[10px] text-muted-foreground hidden sm:inline me-1">
                                         {new Date(staff.joinedAt).toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US')}
                                       </span>
+                                      {/* Active/Inactive toggle */}
+                                      {!isOwner && (
+                                        <button
+                                          type="button"
+                                          role="switch"
+                                          aria-checked={isUserActive}
+                                          aria-label={isUserActive ? t('active') : t('inactive')}
+                                          onClick={() => handleToggleStaffActive(staff.id, isUserActive)}
+                                          className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-2 dark:focus:ring-offset-gray-900 cursor-pointer ${
+                                            isUserActive
+                                              ? 'bg-emerald-500 shadow-inner shadow-emerald-600/30'
+                                              : 'bg-gray-300 dark:bg-gray-600 shadow-inner shadow-gray-400/30'
+                                          }`}
+                                        >
+                                          <span
+                                            className={`pointer-events-none absolute top-[2px] h-5 w-5 rounded-full shadow-md bg-white transition-all duration-300 ease-in-out ${
+                                              isUserActive ? 'start-[22px]' : 'start-[2px]'
+                                            }`}
+                                          />
+                                        </button>
+                                      )}
+                                      {/* Edit button */}
                                       {!isOwner && (
                                         <Button
                                           size="sm"
                                           variant="ghost"
-                                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
+                                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                                          onClick={() => openEditStaffDialog(staff)}
+                                        >
+                                          <Edit3 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      )}
+                                      {/* Delete button */}
+                                      {!isOwner && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
                                           onClick={() => handleRemoveStaff(staff.id)}
                                         >
                                           <Trash2 className="h-3.5 w-3.5" />
                                         </Button>
                                       )}
                                     </div>
-                                  </div>
+                                  </motion.div>
                                 );
                               })}
                             </div>
                           )}
+
+                          {/* Edit Staff Dialog */}
+                          <Dialog open={editStaffOpen} onOpenChange={(open) => { setEditStaffOpen(open); if (!open) setEditingStaffId(null); }}>
+                            <DialogContent className="sm:max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>{t('editStaffMember')}</DialogTitle>
+                                <DialogDescription className="sr-only">{t('editStaffMember')}</DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4 py-2">
+                                <div className="space-y-2">
+                                  <Label>{t('staffFullName')}</Label>
+                                  <Input
+                                    value={editFullName}
+                                    onChange={(e) => setEditFullName(e.target.value)}
+                                    placeholder={t('staffFullName')}
+                                    className="h-11"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>{t('staffRoleSelect')}</Label>
+                                  <Select value={editRole} onValueChange={(v) => setEditRole(v as 'STAFF' | 'MANAGER')}>
+                                    <SelectTrigger className="h-11">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="STAFF">{t('staffRoleStaff')}</SelectItem>
+                                      <SelectItem value="MANAGER">{t('staffRoleManager')}</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium text-foreground">{t('status')}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{editIsActive ? t('active') : t('inactive')}</p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={editIsActive}
+                                    onClick={() => setEditIsActive(!editIsActive)}
+                                    className={`relative inline-flex h-7 w-12 flex-shrink-0 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:ring-offset-2 dark:focus:ring-offset-gray-900 cursor-pointer ${
+                                      editIsActive
+                                        ? 'bg-emerald-500 shadow-inner shadow-emerald-600/30'
+                                        : 'bg-gray-300 dark:bg-gray-600 shadow-inner shadow-gray-400/30'
+                                    }`}
+                                  >
+                                    <span
+                                      className={`pointer-events-none absolute top-[3px] h-5 w-5 rounded-full shadow-md bg-white transition-all duration-300 ease-in-out ${
+                                        editIsActive ? 'start-[25px]' : 'start-[3px]'
+                                      }`}
+                                    />
+                                  </button>
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button variant="outline" onClick={() => { setEditStaffOpen(false); setEditingStaffId(null); }}>
+                                  {t('cancel')}
+                                </Button>
+                                <Button
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                  onClick={handleUpdateStaff}
+                                  disabled={editStaffLoading || !editFullName.trim()}
+                                >
+                                  {editStaffLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : null}
+                                  {t('save')}
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       )}
 
@@ -854,6 +1033,9 @@ export function AgencySettings() {
             <DialogTitle>
               {editingService ? t('edit') : t('addService')}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              {editingService ? t('edit') : t('addService')}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">

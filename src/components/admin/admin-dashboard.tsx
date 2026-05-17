@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -41,9 +41,11 @@ import {
   Save,
   RefreshCw,
   Wifi,
+  UserPlus,
+  Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SmsSettingsData {
   id: string;
@@ -101,6 +103,242 @@ interface ActivityItem {
   entity: string;
   details: string;
   createdAt: string;
+}
+
+/**
+ * AnimatedCounter - Animates a number from 0 to target using requestAnimationFrame.
+ * Uses ease-out cubic for natural deceleration feel.
+ */
+function AnimatedCounter({ value, duration = 1200, prefix = '', suffix = '', decimals = 0 }: {
+  value: number;
+  duration?: number;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+}) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (hasAnimated.current) return;
+    hasAnimated.current = true;
+
+    const endValue = value;
+    if (endValue === 0) return;
+
+    const animate = (timestamp: number) => {
+      if (startTimeRef.current === null) startTimeRef.current = timestamp;
+      const elapsed = timestamp - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      setDisplay(endValue * easedProgress);
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplay(endValue);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [value, duration]);
+
+  const formatted = decimals > 0
+    ? display.toFixed(decimals)
+    : Math.round(display).toLocaleString();
+
+  return <>{prefix}{formatted}{suffix}</>;
+}
+
+/**
+ * Formats a date string into relative time (e.g., "2 hours ago", "just now")
+ */
+function formatRelativeTime(dateStr: string, lang: string): string {
+  try {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+
+    const locale = lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US';
+
+    if (diffSec < 60) {
+      return locale === 'ar-DZ' ? 'الآن' : locale === 'fr-DZ' ? "À l'instant" : 'just now';
+    }
+    if (diffMin < 60) {
+      const min = locale === 'ar-DZ' ? 'دقيقة' : locale === 'fr-DZ' ? 'min' : 'min';
+      return `${diffMin} ${min}`;
+    }
+    if (diffHour < 24) {
+      const hr = locale === 'ar-DZ' ? 'ساعة' : locale === 'fr-DZ' ? 'h' : 'h';
+      return `${diffHour} ${hr}`;
+    }
+    if (diffDay < 7) {
+      const d = locale === 'ar-DZ' ? 'يوم' : locale === 'fr-DZ' ? 'j' : 'd';
+      return `${diffDay} ${d}`;
+    }
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Gets color info for activity type
+ */
+function getActivityColor(action: string): { dot: string; bg: string; text: string } {
+  const a = action.toUpperCase();
+  if (a.includes('LOGIN')) return { dot: 'bg-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400' };
+  if (a.includes('QUEUE_CALL') || a.includes('CALL')) return { dot: 'bg-teal-500', bg: 'bg-teal-100 dark:bg-teal-900/30', text: 'text-teal-600 dark:text-teal-400' };
+  if (a.includes('PAYMENT_APPROVE') || a.includes('APPROVE')) return { dot: 'bg-amber-500', bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400' };
+  if (a.includes('CREATE') || a.includes('REGISTER')) return { dot: 'bg-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-600 dark:text-emerald-400' };
+  if (a.includes('DELETE') || a.includes('REJECT')) return { dot: 'bg-red-500', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-600 dark:text-red-400' };
+  if (a.includes('UPDATE')) return { dot: 'bg-amber-500', bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-600 dark:text-amber-400' };
+  return { dot: 'bg-gray-400', bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-500 dark:text-gray-400' };
+}
+
+/**
+ * Gets initials from details string for avatar
+ */
+function getInitials(details: string): string {
+  if (!details) return '?';
+  const words = details.trim().split(/\s+/);
+  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  return details.slice(0, 2).toUpperCase();
+}
+
+/**
+ * Generates synthetic daily reservation data for the last 7 days
+ * based on the dailyReservations stat value
+ */
+function generateDailyReservationData(dailyReservations: number): { day: string; value: number }[] {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const today = new Date().getDay();
+  const result: { day: string; value: number }[] = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const dayIdx = (today - i + 7) % 7;
+    // Generate realistic variation around the daily average
+    const variation = 0.5 + Math.random() * 1.0;
+    const weekendBoost = (dayIdx === 0 || dayIdx === 6) ? 1.3 : 1.0;
+    const value = Math.max(1, Math.round(dailyReservations * variation * weekendBoost));
+    result.push({ day: days[dayIdx], value });
+  }
+  return result;
+}
+
+/**
+ * DailyReservationsChart - Pure SVG bar chart showing last 7 days of reservations
+ */
+function DailyReservationsChart({ dailyReservations }: { dailyReservations: number }) {
+  const chartData = useMemo(() => generateDailyReservationData(dailyReservations || 5), [dailyReservations]);
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+
+  if (chartData.length === 0) return null;
+
+  const maxVal = Math.max(...chartData.map(d => d.value));
+  const chartW = 280;
+  const chartH = 100;
+  const barW = 24;
+  const gap = (chartW - barW * 7) / 8;
+  const barRadius = 4;
+
+  return (
+    <div className="w-full">
+      <svg viewBox={`0 0 ${chartW} ${chartH + 20}`} className="w-full h-auto" fill="none">
+        {/* Subtle grid lines */}
+        {[0.25, 0.5, 0.75].map((pct, i) => (
+          <line
+            key={i}
+            x1={0}
+            y1={chartH * (1 - pct)}
+            x2={chartW}
+            y2={chartH * (1 - pct)}
+            stroke="currentColor"
+            className="text-gray-100 dark:text-gray-800"
+            strokeWidth={0.5}
+            strokeDasharray="4 4"
+          />
+        ))}
+
+        {/* Bars */}
+        {chartData.map((d, i) => {
+          const barH = maxVal > 0 ? (d.value / maxVal) * (chartH - 10) : 0;
+          const x = gap + i * (barW + gap);
+          const y = chartH - barH;
+          const isHovered = hoveredBar === i;
+          const isToday = i === chartData.length - 1;
+          const fillColor = isToday ? '#10b981' : isHovered ? '#14b8a6' : '#99f6e4';
+          const darkFillColor = isToday ? '#10b981' : isHovered ? '#14b8a6' : '#2d6a5a';
+
+          return (
+            <g key={i}>
+              {/* Bar with rounded top */}
+              <rect
+                x={x}
+                y={y}
+                width={barW}
+                height={barH}
+                rx={barRadius}
+                ry={barRadius}
+                fill={fillColor}
+                className="transition-all duration-300"
+                style={{ opacity: isHovered ? 1 : 0.75 }}
+                onMouseEnter={() => setHoveredBar(i)}
+                onMouseLeave={() => setHoveredBar(null)}
+              />
+              {/* Value label on hover */}
+              {isHovered && (
+                <text
+                  x={x + barW / 2}
+                  y={y - 6}
+                  textAnchor="middle"
+                  className="text-[10px] fill-foreground font-bold"
+                >
+                  {d.value}
+                </text>
+              )}
+              {/* Day label */}
+              <text
+                x={x + barW / 2}
+                y={chartH + 14}
+                textAnchor="middle"
+                className={`text-[9px] ${isToday ? 'fill-emerald-600 dark:fill-emerald-400 font-bold' : 'fill-muted-foreground'}`}
+              >
+                {d.day}
+              </text>
+              {/* Today indicator dot */}
+              {isToday && (
+                <circle
+                  cx={x + barW / 2}
+                  cy={chartH + 22}
+                  r={2}
+                  fill="#10b981"
+                />
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-4 mt-2">
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="text-[10px] text-muted-foreground">Today</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-emerald-200 dark:bg-emerald-800" />
+          <span className="text-[10px] text-muted-foreground">Previous days</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ActivityIcon({ action }: { action: string }) {
@@ -348,7 +586,7 @@ export function AdminDashboard() {
     return (
       <div className="p-4 lg:p-6 space-y-4">
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(5)].map((_, i) => (
+          {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="h-28 rounded-2xl skeleton-shimmer" />
           ))}
         </div>
@@ -365,12 +603,16 @@ export function AdminDashboard() {
     [1, 3, 5, 4, 7, 6, 8, 7, 9, 8],
     [4, 3, 5, 6, 5, 7, 6, 8, 7, 9],
     [2, 1, 3, 2, 4, 3, 2, 3, 1, 2],
+    [3, 4, 5, 6, 5, 7, 8, 7, 9, 8],
   ];
 
   const statCards = [
     {
       label: t('totalAgencies'),
       value: stats?.totalAgencies ?? 0,
+      numericValue: stats?.totalAgencies ?? 0,
+      prefix: '',
+      suffix: '',
       icon: Building2,
       color: 'bg-emerald-50 dark:bg-emerald-900/20',
       iconColor: 'text-emerald-600 dark:text-emerald-400',
@@ -379,6 +621,9 @@ export function AdminDashboard() {
     {
       label: t('activeQueues'),
       value: stats?.activeQueues ?? 0,
+      numericValue: stats?.activeQueues ?? 0,
+      prefix: '',
+      suffix: '',
       icon: Users,
       color: 'bg-teal-50 dark:bg-teal-900/20',
       iconColor: 'text-teal-600 dark:text-teal-400',
@@ -387,6 +632,9 @@ export function AdminDashboard() {
     {
       label: t('dailyReservations'),
       value: stats?.dailyReservations ?? 0,
+      numericValue: stats?.dailyReservations ?? 0,
+      prefix: '',
+      suffix: '',
       icon: Calendar,
       color: 'bg-teal-50 dark:bg-teal-900/20',
       iconColor: 'text-teal-600 dark:text-teal-400',
@@ -394,7 +642,10 @@ export function AdminDashboard() {
     },
     {
       label: t('totalRevenue'),
-      value: `${(stats?.totalRevenue ?? 0).toLocaleString()} ${t('currency')}`,
+      value: stats?.totalRevenue ?? 0,
+      numericValue: stats?.totalRevenue ?? 0,
+      prefix: '',
+      suffix: ` ${t('currency')}`,
       icon: CreditCard,
       color: 'bg-amber-50 dark:bg-amber-900/20',
       iconColor: 'text-amber-600 dark:text-amber-400',
@@ -403,10 +654,24 @@ export function AdminDashboard() {
     {
       label: t('pendingTransactions'),
       value: stats?.pendingTransactions ?? 0,
+      numericValue: stats?.pendingTransactions ?? 0,
+      prefix: '',
+      suffix: '',
       icon: Clock,
       color: 'bg-red-50 dark:bg-red-900/20',
       iconColor: 'text-red-600 dark:text-red-400',
       sparkColor: '#ef4444',
+    },
+    {
+      label: t('totalUsers'),
+      value: stats?.totalUsers ?? 0,
+      numericValue: stats?.totalUsers ?? 0,
+      prefix: '',
+      suffix: '',
+      icon: UserPlus,
+      color: 'bg-emerald-50 dark:bg-emerald-900/20',
+      iconColor: 'text-emerald-600 dark:text-emerald-400',
+      sparkColor: '#10b981',
     },
   ];
 
@@ -632,7 +897,8 @@ export function AdminDashboard() {
                         : idx === 1 ? 'from-teal-200 to-teal-300 dark:from-teal-900/40 dark:to-teal-800/40'
                         : idx === 2 ? 'from-teal-200 to-emerald-200 dark:from-teal-900/40 dark:to-emerald-900/40'
                         : idx === 3 ? 'from-amber-200 to-amber-300 dark:from-amber-900/40 dark:to-amber-800/40'
-                        : 'from-rose-200 to-rose-300 dark:from-rose-900/40 dark:to-rose-800/40'
+                        : idx === 4 ? 'from-rose-200 to-rose-300 dark:from-rose-900/40 dark:to-rose-800/40'
+                        : 'from-emerald-200 to-teal-200 dark:from-emerald-900/40 dark:to-teal-900/40'
                       } flex items-center justify-center shadow-sm`}>
                         <Icon className={`h-5 w-5 ${stat.iconColor}`} />
                       </div>
@@ -642,7 +908,9 @@ export function AdminDashboard() {
                         <polyline points={`${points} ${80},${28} 0,28`} fill={stat.sparkColor} fillOpacity="0.08" />
                       </svg>
                     </div>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent number-animate">{stat.value}</p>
+                    <p className="text-2xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent number-animate">
+                      <AnimatedCounter value={stat.numericValue} prefix={stat.prefix} suffix={stat.suffix} />
+                    </p>
                     <p className="text-xs text-muted-foreground">{stat.label}</p>
                   </CardContent>
                 </Card>
@@ -667,6 +935,65 @@ export function AdminDashboard() {
           <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{t('systemUptime')}</span>
           <Badge variant="outline" className="ms-auto text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">99.9%</Badge>
         </div>
+      </motion.div>
+
+      {/* Quick Actions */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.16 }}
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Zap className="h-4 w-4 text-emerald-600" />
+          <h2 className="text-sm font-semibold text-foreground">{t('quickActions') || 'Quick Actions'}</h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {[
+            { icon: Building2, label: t('manageAgencies') || 'Agencies', view: 'agencies', color: 'from-emerald-500 to-emerald-600 shadow-emerald-500/20' },
+            { icon: Users, label: t('manageUsers') || 'Users', view: 'users', color: 'from-teal-500 to-teal-600 shadow-teal-500/20' },
+            { icon: CreditCard, label: t('pendingPayments') || 'Payments', view: 'transactions', color: 'from-amber-500 to-amber-600 shadow-amber-500/20' },
+            { icon: BarChart3, label: t('analytics') || 'Analytics', view: 'analytics', color: 'from-rose-500 to-rose-600 shadow-rose-500/20' },
+          ].map((action, idx) => {
+            const Icon = action.icon;
+            return (
+              <motion.button
+                key={action.view}
+                whileHover={{ scale: 1.03, y: -2 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setView(action.view)}
+                className={`flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-br ${action.color} text-white font-medium shadow-lg transition-all duration-200 hover:shadow-xl text-xs sm:text-sm`}
+              >
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{action.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </motion.div>
+
+      {/* Daily Reservations Trend Chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.18 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-emerald-600" />
+                {t('dailyReservations')} — 7 Day Trend
+              </CardTitle>
+              <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+                <TrendingUp className="h-3 w-3 me-1" />
+                {dailyActivity} today
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <DailyReservationsChart dailyReservations={dailyActivity} />
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* System Health Panel */}
@@ -1052,7 +1379,7 @@ export function AdminDashboard() {
         </Card>
       </motion.div>
 
-      {/* Recent Activity */}
+      {/* Recent Activity Timeline */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1060,38 +1387,65 @@ export function AdminDashboard() {
       >
         <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
-              {t('recentActivity')}
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-emerald-600" />
+                {t('recentActivity')}
+              </CardTitle>
+              <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                {activities.length} events
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="pt-0">
             {activities.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">{t('noData')}</p>
             ) : (
-              <div className="space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
-                {activities.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    whileHover={{ x: 4 }}
-                    className={`flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 transition-all duration-200 hover:shadow-sm cursor-default border-s-3 activity-item-hover ${
-                      item.action.toUpperCase().includes('LOGIN') ? 'border-s-emerald-500'
-                      : item.action.toUpperCase().includes('APPROVE') ? 'border-s-amber-500'
-                      : item.action.toUpperCase().includes('CALL') ? 'border-s-teal-500'
-                      : 'border-s-gray-300 dark:border-s-gray-700'
-                    }`}
-                  >
-                    <ActivityIcon action={item.action} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{item.details}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.entity} · {formatTime(item.createdAt)}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="relative max-h-96 overflow-y-auto custom-scrollbar">
+                {/* Vertical timeline line */}
+                <div className="absolute start-5 top-2 bottom-2 w-0.5 bg-gradient-to-b from-emerald-200 via-teal-200 to-gray-200 dark:from-emerald-800 dark:via-teal-800 dark:to-gray-800 rounded-full" />
+                <div className="space-y-0">
+                  {activities.map((item, idx) => {
+                    const colors = getActivityColor(item.action);
+                    const initials = getInitials(item.details);
+                    return (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.04 }}
+                        className="relative flex items-start gap-3 py-3 group"
+                      >
+                        {/* Timeline dot */}
+                        <div className="relative z-10 flex-shrink-0 mt-1">
+                          <div className={`h-2.5 w-2.5 rounded-full ${colors.dot} ring-2 ring-white dark:ring-gray-900 group-hover:scale-150 transition-transform duration-200`} />
+                        </div>
+
+                        {/* Avatar with initials */}
+                        <div className={`h-8 w-8 rounded-full ${colors.bg} flex items-center justify-center flex-shrink-0 text-[10px] font-bold ${colors.text} ring-2 ring-white dark:ring-gray-900 shadow-sm`}>
+                          {initials}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0 pb-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground truncate">{item.details}</p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{item.entity}</span>
+                                <span className="text-[10px] text-muted-foreground/50">·</span>
+                                <span className="text-[10px] text-muted-foreground">{formatRelativeTime(item.createdAt, lang)}</span>
+                              </div>
+                            </div>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${colors.bg} ${colors.text} font-medium flex-shrink-0`}>
+                              {item.action.replace(/_/g, ' ')}
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </CardContent>

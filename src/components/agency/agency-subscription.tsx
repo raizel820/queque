@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
+import { useUpload } from '@/hooks/use-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -81,6 +82,14 @@ export function AgencySubscription() {
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const receiptUpload = useUpload({
+    type: 'receipt',
+    maxSize: 5 * 1024 * 1024,
+    onError: (error) => {
+      toast.error(error);
+    },
+  });
+
   // FAQ expand state
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
@@ -152,22 +161,17 @@ export function AgencySubscription() {
 
     setSubmitting(true);
     try {
-      const uploadForm = new FormData();
-      uploadForm.append('file', receiptFile);
-
-      const uploadRes = await fetch('/api/upload', {
-        method: 'POST',
-        body: uploadForm,
+      // Upload receipt using useUpload hook (Vercel Blob in production, local in dev)
+      const uploadResult = await receiptUpload.upload(receiptFile, {
+        agencyId: user?.agencyId || '',
       });
 
-      if (!uploadRes.ok) {
-        const uploadData = await uploadRes.json();
-        toast.error(uploadData.error || t('error'));
+      if (!uploadResult.url) {
+        toast.error(uploadResult.error || t('error'));
         return;
       }
 
-      const uploadData = await uploadRes.json();
-      const receiptUrl = uploadData.url;
+      const receiptUrl = uploadResult.url;
 
       const payForm = new FormData();
       payForm.append('plan', selectedPlan);
@@ -186,6 +190,7 @@ export function AgencySubscription() {
         toast.success(t('submitPayment'));
         setSelectedPlan(data?.currentPlan || 'BASIC');
         handleRemoveFile();
+        receiptUpload.reset();
         fetchSubscription();
       } else {
         const d = await res.json();

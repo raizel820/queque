@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
+import { useUpload } from '@/hooks/use-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -129,27 +130,27 @@ export function RegisterForm() {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const avatarUpload = useUpload({
+    type: 'avatar',
+    maxSize: 2 * 1024 * 1024,
+    accept: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+    onSuccess: (result) => {
+      setAvatarPreview(result.url);
+      toast.success(t('avatarUpdated'));
+    },
+    onError: (error) => {
+      toast.error(error);
+      setAvatarPreview(null);
+    },
+  });
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { toast.error(t('avatarMaxSize')); return; }
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) { toast.error(t('error')); return; }
-    setAvatarUploading(true);
     setAvatarPreview(URL.createObjectURL(file));
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload?type=avatar', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (res.ok && data.url) { setAvatarUrl(data.url); toast.success(t('avatarUpdated')); }
-      else { toast.error(data.error || t('error')); setAvatarPreview(null); }
-    } catch { toast.error(t('error')); setAvatarPreview(null); }
-    finally { setAvatarUploading(false); }
+    await avatarUpload.upload(file);
   };
 
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
@@ -204,7 +205,7 @@ export function RegisterForm() {
       if (role === 'SUPER_ADMIN') {
         body.adminCode = adminCode.trim();
       }
-      if (avatarUrl) { body.avatarUrl = avatarUrl; }
+      if (avatarUpload.url) { body.avatarUrl = avatarUpload.url; }
 
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -216,6 +217,7 @@ export function RegisterForm() {
 
       if (res.ok && data.user) {
         setUser(data.user);
+        setRegistrationSuccess(true);
         toast.success(t('registerSuccess'));
         if (data.isNewUser && !onboarded) {
           setTimeout(() => {
@@ -265,6 +267,7 @@ export function RegisterForm() {
   };
 
   const [direction, setDirection] = useState(0);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
@@ -347,11 +350,11 @@ export function RegisterForm() {
                               backgroundColor: stepState === 'completed' ? '#10b981' : stepState === 'active' ? '#10b981' : 'transparent',
                             }}
                             transition={stepState === 'active' ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.3 }}
-                            className={`h-8 w-8 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${
+                            className={`h-9 w-9 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${
                               stepState === 'completed'
-                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/25'
                                 : stepState === 'active'
-                                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                                  ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-500/15'
                                   : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500'
                             }`}
                           >
@@ -363,25 +366,24 @@ export function RegisterForm() {
                               <span className="text-xs font-bold">{s.id}</span>
                             )}
                           </motion.div>
-                          <span className={`text-[10px] mt-1 font-medium transition-colors duration-300 ${
+                          <span className={`text-[10px] mt-1.5 font-semibold transition-colors duration-300 ${
                             stepState === 'active' ? 'text-emerald-600 dark:text-emerald-400' : stepState === 'completed' ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'
                           }`}>
-                            {step === 1 && s.id === 1 ? t('account') || 'Account' :
-                             step === 1 && s.id === 2 ? t('fullName') || 'Profile' :
-                             step === 1 && s.id === 3 ? t('confirm') || 'Confirm' :
-                             step === 2 && s.id === 1 ? t('account') || 'Account' :
-                             step === 2 && s.id === 2 ? t('fullName') || 'Profile' :
-                             step === 2 && s.id === 3 ? t('confirm') || 'Confirm' :
-                             step === 3 && s.id === 1 ? t('account') || 'Account' :
-                             step === 3 && s.id === 2 ? t('fullName') || 'Profile' :
+                            {s.id === 1 ? t('account') || 'Account' :
+                             s.id === 2 ? t('fullName') || 'Profile' :
                              t('confirm') || 'Confirm'}
                           </span>
                         </div>
                         {idx < STEPS.length - 1 && (
-                          <div className="flex-1 mx-2 mb-4">
-                            <div className={`h-0.5 rounded-full transition-all duration-500 ${
-                              s.id < step ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-700'
-                            }`} />
+                          <div className="flex-1 mx-2 mb-5">
+                            <div className="h-[3px] rounded-full transition-all duration-500 overflow-hidden bg-gray-200 dark:bg-gray-700">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: s.id < step ? '100%' : '0%' }}
+                                transition={{ duration: 0.5, ease: 'easeOut' }}
+                                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500"
+                              />
+                            </div>
                           </div>
                         )}
                       </div>
@@ -422,14 +424,14 @@ export function RegisterForm() {
                                   alt="Avatar"
                                   className="h-20 w-20 rounded-full object-cover border-2 border-emerald-300 dark:border-emerald-700 shadow-md"
                                 />
-                                {avatarUploading && (
+                                {avatarUpload.uploading && (
                                   <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
                                     <Loader2 className="h-5 w-5 text-white animate-spin" />
                                   </div>
                                 )}
                                 <button
                                   type="button"
-                                  onClick={() => { setAvatarPreview(null); setAvatarUrl(null); }}
+                                  onClick={() => { setAvatarPreview(null); avatarUpload.reset(); }}
                                   className="absolute -top-1 -end-1 h-6 w-6 rounded-full bg-red-500 flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
                                 >
                                   <X className="h-3 w-3 text-white" />
@@ -765,6 +767,54 @@ export function RegisterForm() {
                 </p>
               </CardFooter>
             </Card>
+
+            {/* Success Animation Overlay */}
+            <AnimatePresence>
+              {registrationSuccess && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="absolute inset-0 z-50 flex items-center justify-center bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-2xl"
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                    className="flex flex-col items-center gap-4"
+                  >
+                    <motion.div
+                      animate={{
+                        boxShadow: [
+                          '0 0 0 0 rgba(16, 185, 129, 0.4)',
+                          '0 0 0 20px rgba(16, 185, 129, 0)',
+                          '0 0 0 0 rgba(16, 185, 129, 0)',
+                        ],
+                      }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                      className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-2xl"
+                    >
+                      <motion.div
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
+                      >
+                        <Check className="h-10 w-10 text-white" />
+                      </motion.div>
+                    </motion.div>
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 }}
+                      className="text-center"
+                    >
+                      <p className="text-lg font-bold text-foreground">{t('registerSuccess')}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Welcome to QueueWise!</p>
+                    </motion.div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Branded Footer */}

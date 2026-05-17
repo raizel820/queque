@@ -32,6 +32,7 @@ model User {
   reservations            Reservation[]
   smsPurchases            SmsPurchase[]
   managedTransactions     Transaction[]  @relation("ReviewedBy")
+  reviews                 Review[]
 }
 
 model Agency {
@@ -73,6 +74,7 @@ model Agency {
   reservations          Reservation[]
   services              Service[]
   transactions          Transaction[]
+  reviews               Review[]
 }
 
 model AgencyStaff {
@@ -145,6 +147,7 @@ model Reservation {
   agency              Agency    @relation(fields: [agencyId], references: [id])
   service             Service   @relation(fields: [serviceId], references: [id])
   user                User      @relation(fields: [userId], references: [id])
+  review              Review?
 
   @@index([agencyId, status])
   @@index([userId, status])
@@ -245,15 +248,15 @@ model SmsSettings {
 }
 
 model SmsLog {
-  id          String   @id @default(cuid())
-  userId      String?
-  phoneNumber String
-  message     String
-  status      String   @default("PENDING")
-  provider    String   @default("")
+  id           String      @id @default(cuid())
+  userId       String?
+  phoneNumber  String
+  message      String
+  status       String      @default("PENDING")
+  provider     String      @default("")
   errorMessage String?
-  createdAt   DateTime @default(now())
-  smsSettings SmsSettings? @relation(fields: [smsSettingsId], references: [id])
+  createdAt    DateTime    @default(now())
+  smsSettings  SmsSettings? @relation(fields: [smsSettingsId], references: [id])
   smsSettingsId String?
 }
 
@@ -272,3 +275,23 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
 }
+
+model Review {
+  id            String       @id @default(cuid())
+  rating        Int
+  comment       String?
+  replyText     String?
+  repliedAt     DateTime?
+  createdAt     DateTime     @default(now())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id])
+  agencyId      String
+  agency        Agency       @relation(fields: [agencyId], references: [id])
+  reservationId String?     @unique
+  reservation   Reservation? @relation(fields: [reservationId], references: [id])
+
+  @@index([agencyId])
+  @@index([userId])
+  @@index([createdAt])
+}
+

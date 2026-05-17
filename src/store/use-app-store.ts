@@ -17,6 +17,7 @@ export type ViewName =
   | 'agency-dashboard'
   | 'agency-settings'
   | 'agency-profile'
+  | 'agency-reviews'
   | 'agency-subscription'
   | 'admin-dashboard'
   | 'admin-transactions'

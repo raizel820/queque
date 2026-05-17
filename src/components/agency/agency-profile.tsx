@@ -3,12 +3,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
+import { useUpload } from '@/hooks/use-upload';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -35,6 +37,9 @@ import {
   MessageCircle,
   Send,
   BadgeCheck,
+  Radio,
+  Zap,
+  Volume2,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -208,11 +213,27 @@ export function AgencyProfile() {
     return (
       <div className="p-4 lg:p-6 space-y-4">
         <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-48 rounded-2xl" />
-        <Skeleton className="h-40 rounded-2xl" />
+        <div className="rounded-2xl overflow-hidden shimmer-loading">
+          <Skeleton className="h-32 skeleton-shimmer-enhanced" />
+          <Skeleton className="h-48 skeleton-shimmer-enhanced" />
+        </div>
+        <Skeleton className="h-40 rounded-2xl skeleton-shimmer-enhanced" />
       </div>
     );
   }
+
+  // Check if agency is currently open
+  const isCurrentlyOpen = (() => {
+    if (!profile?.workingHoursStart || !profile?.workingHoursEnd) return null;
+    const now = new Date();
+    const [sh, sm] = profile.workingHoursStart.split(':').map(Number);
+    const [eh, em] = profile.workingHoursEnd.split(':').map(Number);
+    const cur = now.getHours() * 60 + now.getMinutes();
+    const startMin = sh * 60 + sm;
+    const endMin = eh * 60 + em;
+    if (startMin > endMin) return cur >= startMin || cur < endMin;
+    return cur >= startMin && cur < endMin;
+  })();
 
   return (
     <div className="p-4 lg:p-6 space-y-5">
@@ -255,16 +276,50 @@ export function AgencyProfile() {
         )}
       </div>
 
-      {/* Agency Info Card */}
+      {/* Agency Info Card with Hero Banner */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <Card className="border-0 shadow-sm overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-          {/* Cover/Logo Area */}
-          <div className="h-28 bg-gradient-to-r from-emerald-500 to-teal-600 relative">
+          {/* Hero Banner with gradient overlay */}
+          <div className="h-36 bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 relative overflow-hidden">
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 hero-gradient-overlay" />
+            {/* Decorative elements */}
+            <div className="absolute -top-8 -end-8 h-32 w-32 rounded-full bg-white/10 blur-sm" />
+            <div className="absolute bottom-0 -start-6 h-24 w-24 rounded-full bg-white/5" />
+            <div className="absolute top-4 end-6 flex items-center gap-2">
+              {/* Open/Closed status indicator with animated dot */}
+              {isCurrentlyOpen !== null && (
+                <Badge className={`text-xs px-2.5 py-1 ${
+                  isCurrentlyOpen
+                    ? 'bg-emerald-400/20 text-white border-emerald-400/30'
+                    : 'bg-red-400/20 text-white border-red-400/30'
+                }`}>
+                  <span className={`h-2 w-2 rounded-full me-1.5 inline-block ${isCurrentlyOpen ? 'bg-emerald-300 status-dot-blink' : 'bg-red-300'}`} />
+                  {isCurrentlyOpen ? t('openNow') : t('closed')}
+                </Badge>
+              )}
+              {/* Queue Status Badge */}
+              <Badge className="bg-white/20 text-white border-white/30 text-xs px-2.5 py-1">
+                <motion.span
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  className="inline-flex items-center gap-1"
+                >
+                  <Radio className="h-3 w-3" />
+                  {t('queueActive') || 'Queue Active'}
+                </motion.span>
+              </Badge>
+            </div>
             <div className="absolute -bottom-10 start-5">
-              <div className="h-20 w-20 rounded-2xl bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center border-4 border-white dark:border-gray-800">
+              {/* Animated agency logo/icon with floating animation */}
+              <motion.div
+                animate={{ y: [0, -4, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                className="h-20 w-20 rounded-2xl bg-white dark:bg-gray-800 shadow-lg flex items-center justify-center border-4 border-white dark:border-gray-800"
+              >
                 {profile?.logoUrl ? (
                   <img
                     src={profile.logoUrl}
@@ -274,7 +329,7 @@ export function AgencyProfile() {
                 ) : (
                   <Building2 className="h-8 w-8 text-emerald-600" />
                 )}
-              </div>
+              </motion.div>
             </div>
             {editMode && (
               <>
@@ -292,7 +347,7 @@ export function AgencyProfile() {
                     const form = new FormData();
                     form.append('file', file);
                     try {
-                      const uploadRes = await fetch('/api/upload', { method: 'POST', body: form });
+                      const uploadRes = await fetch('/api/upload?type=logo', { method: 'POST', body: form });
                       if (uploadRes.ok) {
                         const uploadData = await uploadRes.json();
                         updateField('logoUrl', uploadData.url);
@@ -327,7 +382,7 @@ export function AgencyProfile() {
                     <Input
                       value={profile?.name ?? ''}
                       onChange={(e) => updateField('name', e.target.value)}
-                      className="h-11"
+                      className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
                   <div className="space-y-2">
@@ -335,7 +390,7 @@ export function AgencyProfile() {
                     <Input
                       value={profile?.nameAr ?? ''}
                       onChange={(e) => updateField('nameAr', e.target.value)}
-                      className="h-11"
+                      className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                       dir="rtl"
                     />
                   </div>
@@ -344,7 +399,7 @@ export function AgencyProfile() {
                     <Input
                       value={profile?.nameFr ?? ''}
                       onChange={(e) => updateField('nameFr', e.target.value)}
-                      className="h-11"
+                      className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
                   <div className="space-y-2">
@@ -353,7 +408,7 @@ export function AgencyProfile() {
                       value={profile?.category ?? 'OTHER'}
                       onValueChange={(v) => updateField('category', v)}
                     >
-                      <SelectTrigger className="h-11">
+                      <SelectTrigger className="h-11 rounded-xl">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -370,7 +425,7 @@ export function AgencyProfile() {
                     <Input
                       value={profile?.address ?? ''}
                       onChange={(e) => updateField('address', e.target.value)}
-                      className="h-11"
+                      className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
                   <div className="space-y-2">
@@ -378,7 +433,7 @@ export function AgencyProfile() {
                     <Input
                       value={profile?.phone ?? ''}
                       onChange={(e) => updateField('phone', e.target.value)}
-                      className="h-11"
+                      className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
                   <div className="space-y-2">
@@ -387,7 +442,7 @@ export function AgencyProfile() {
                       type="email"
                       value={profile?.email ?? ''}
                       onChange={(e) => updateField('email', e.target.value)}
-                      className="h-11"
+                      className="h-11 rounded-xl border-gray-200 dark:border-gray-700 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
                 </div>

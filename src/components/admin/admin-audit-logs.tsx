@@ -42,20 +42,26 @@ export function AdminAuditLogs() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('ALL');
+  const [page, setPage] = useState(1);
+  const [totalLogs, setTotalLogs] = useState(0);
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     fetchLogs();
-  }, [actionFilter]);
+  }, [actionFilter, page]);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (actionFilter !== 'ALL') params.set('action', actionFilter);
+      params.set('page', String(page));
+      params.set('limit', String(PAGE_SIZE));
       const res = await fetch(`/api/admin/audit-logs?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setLogs(data.logs ?? data.auditLogs ?? []);
+        setTotalLogs(data.total ?? (data.logs ?? data.auditLogs ?? []).length);
       }
     } catch {
       toast.error(t('error'));
@@ -102,14 +108,17 @@ export function AdminAuditLogs() {
   return (
     <div className="p-4 lg:p-6 space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{t('auditLogsPage')}</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t('auditLogsPage')}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('auditLogsDesc') || 'Track all system activities and changes'}</p>
+        </div>
         <Button variant="ghost" size="icon" onClick={fetchLogs} className="h-10 w-10">
           <RefreshCw className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Filters */}
-      <Card className="border-0 shadow-sm">
+      <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -139,11 +148,16 @@ export function AdminAuditLogs() {
       </Card>
 
       {/* Logs List */}
-      <Card className="border-0 shadow-sm">
+      <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <FileText className="h-4 w-4 text-emerald-600" />
             {filteredLogs.length} {t('auditLogs')}
+            {totalLogs > PAGE_SIZE && (
+              <span className="text-[10px] text-muted-foreground font-normal">
+                ({t('showing') || 'showing'} {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, totalLogs)} {t('of') || 'of'} {totalLogs})
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
@@ -160,8 +174,14 @@ export function AdminAuditLogs() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: idx * 0.02 }}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-all duration-200 activity-item-hover"
                 >
+                  {/* User avatar */}
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
+                      {(log.user?.fullName || 'System').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'S'}
+                    </span>
+                  </div>
                   <Badge
                     variant="outline"
                     className={`text-[10px] px-2 font-mono ${actionColors[log.action] || 'bg-gray-100 text-gray-600'}`}
@@ -170,9 +190,13 @@ export function AdminAuditLogs() {
                   </Badge>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-foreground truncate">{log.details}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {log.user?.fullName || 'System'} · {log.entityType} · {formatTime(log.createdAt)}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{log.user?.fullName || 'System'}</span>
+                      <span className="text-[10px] text-muted-foreground">·</span>
+                      <span className="text-[10px] text-muted-foreground">{log.entityType}</span>
+                      <span className="text-[10px] text-muted-foreground">·</span>
+                      <span className="text-[10px] text-muted-foreground">{formatTime(log.createdAt)}</span>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -180,6 +204,33 @@ export function AdminAuditLogs() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalLogs > PAGE_SIZE && (
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => { setPage(p => Math.max(1, p - 1)); fetchLogs(); }}
+            className="rounded-xl border-emerald-200 dark:border-emerald-800"
+          >
+            {t('previous') || 'Previous'}
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {t('page') || 'Page'} {page} / {Math.ceil(totalLogs / PAGE_SIZE)}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page * PAGE_SIZE >= totalLogs}
+            onClick={() => { setPage(p => p + 1); fetchLogs(); }}
+            className="rounded-xl border-emerald-200 dark:border-emerald-800"
+          >
+            {t('next') || 'Next'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -489,7 +489,15 @@ export function CustomerQueue() {
     return (
       <div className="px-4 py-4 pb-24">
         <Skeleton className="h-8 w-32 mb-6 skeleton-shimmer" />
-        <Skeleton className="h-72 rounded-2xl mb-4 skeleton-shimmer" />
+        {/* Ticket card skeleton */}
+        <div className="relative rounded-2xl overflow-hidden shimmer-loading mb-4">
+          <Skeleton className="h-10 rounded-t-2xl skeleton-shimmer" />
+          <Skeleton className="h-36 skeleton-shimmer" />
+          <div className="h-[2px] border-t-2 border-dashed border-gray-200 dark:border-gray-700" />
+          <Skeleton className="h-32 skeleton-shimmer" />
+          <div className="h-[2px] border-t-2 border-dashed border-gray-200 dark:border-gray-700" />
+          <Skeleton className="h-16 rounded-b-2xl skeleton-shimmer" />
+        </div>
         <Skeleton className="h-40 rounded-2xl skeleton-shimmer" />
       </div>
     );
@@ -703,7 +711,7 @@ export function CustomerQueue() {
         >
           <span className="text-[11px] text-muted-foreground">{t('refreshEvery')}:</span>
           <Select value={String(refreshInterval)} onValueChange={(v) => setRefreshInterval(Number(v))}>
-            <SelectTrigger className="h-7 w-auto px-2 py-0 text-[11px] rounded-lg border-border">
+            <SelectTrigger className="h-8 w-auto px-2.5 py-0 text-[11px] rounded-xl border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-900/20 focus:ring-emerald-500/20">
               <SelectValue />
               <ChevronDown className="h-3 w-3 ms-1 opacity-50" />
             </SelectTrigger>
@@ -1147,55 +1155,86 @@ export function CustomerQueue() {
                       </motion.div>
                     )}
 
-                    {/* Position indicator */}
-                    <div className="flex items-center justify-between mb-4 px-1">
-                      <span className="text-xs text-muted-foreground">{t('queuePosition')}</span>
-                      <div className="flex items-center gap-1.5">
-                        <div aria-live="polite">
-                          <span className="text-xs font-medium text-foreground">#{res.position}</span>
+                    {/* Position indicator with pulsing animation & progress bar */}
+                    <div className="mb-4 px-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-muted-foreground">{t('queuePosition')}</span>
+                        <div className="flex items-center gap-1.5" aria-live="polite">
+                          <motion.span
+                            key={res.position}
+                            initial={{ scale: 1.4, color: '#059669' }}
+                            animate={{ scale: 1, color: '#0f172a' }}
+                            transition={{ duration: 0.5, ease: 'easeOut' }}
+                            className="text-sm font-bold text-foreground"
+                          >
+                            #{res.position}
+                          </motion.span>
                           <span className="text-[10px] text-muted-foreground">/</span>
                           <span className="text-[10px] text-muted-foreground">
                             {res.peopleAhead + res.position}
                           </span>
+                          {/* Pulsing indicator */}
+                          <motion.div
+                            animate={{ scale: [1, 1.5, 1], opacity: [0.7, 1, 0.7] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                            className="h-2 w-2 rounded-full bg-emerald-500 pulse-ring"
+                          />
                         </div>
+                      </div>
+                      {/* Progress bar showing position in queue */}
+                      <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{
+                            width: `${Math.max(5, Math.min(100, 100 - (res.peopleAhead / Math.max(res.peopleAhead + res.position, 1)) * 100))}%`,
+                          }}
+                          transition={{ duration: 0.8, ease: 'easeOut' }}
+                          className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500"
+                        />
                       </div>
                     </div>
 
-                    {/* Wait Time Prediction with Progress Bar */}
+                    {/* Estimated Wait Time Display with clock icon and gradient background */}
                     {!isCalled && res.estimatedWait > 0 && (
                       <motion.div
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="mb-4 p-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 border border-amber-200/50 dark:border-amber-800/30"
+                        className="mb-4 p-3.5 rounded-xl bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50 dark:from-amber-900/15 dark:via-orange-900/10 dark:to-amber-900/15 border border-amber-200/50 dark:border-amber-800/30 relative overflow-hidden"
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1.5">
-                            <Timer className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                            <span className="text-xs font-medium text-amber-700 dark:text-amber-400">{t('remainingTime')}</span>
+                        {/* Subtle animated background shimmer */}
+                        <div className="absolute inset-0 shimmer-loading" />
+                        <div className="relative">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm shadow-amber-500/20">
+                                <Clock className="h-3.5 w-3.5 text-white" />
+                              </div>
+                              <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">{t('remainingTime')}</span>
+                            </div>
+                            <span className="text-sm font-bold tabular-nums text-amber-700 dark:text-amber-400 bg-amber-100/60 dark:bg-amber-900/30 px-2 py-0.5 rounded-lg">
+                              {countdown.hours > 0
+                                ? `${padZero(countdown.hours)}:${padZero(countdown.minutes)}:${padZero(countdown.seconds)}`
+                                : `${padZero(countdown.minutes)}:${padZero(countdown.seconds)}`
+                              }
+                            </span>
                           </div>
-                          <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
-                            {countdown.hours > 0
-                              ? `${padZero(countdown.hours)}:${padZero(countdown.minutes)}:${padZero(countdown.seconds)}`
-                              : `${padZero(countdown.minutes)}:${padZero(countdown.seconds)}`
+                          <div className="h-2.5 w-full rounded-full bg-amber-200/40 dark:bg-amber-900/30 overflow-hidden">
+                            <motion.div
+                              className="h-full rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500"
+                              initial={{ width: '0%' }}
+                              animate={{
+                                width: `${countdownProgress}%`,
+                              }}
+                              transition={{ duration: 1, ease: 'linear' }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-1.5 text-center font-medium">
+                            ~{res.estimatedWait > 60
+                              ? `${Math.floor(res.estimatedWait / 60)}${t('hours')} ${res.estimatedWait % 60 > 0 ? `${res.estimatedWait % 60}${t('min')}` : ''}`
+                              : `${res.estimatedWait} ${t('min')}`
                             }
-                          </span>
+                          </p>
                         </div>
-                        <div className="h-2 w-full rounded-full bg-amber-200/50 dark:bg-amber-900/40 overflow-hidden">
-                          <motion.div
-                            className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
-                            initial={{ width: '0%' }}
-                            animate={{
-                              width: `${countdownProgress}%`,
-                            }}
-                            transition={{ duration: 1, ease: 'linear' }}
-                          />
-                        </div>
-                        <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-1 text-center">
-                          ~{res.estimatedWait > 60
-                            ? `${Math.floor(res.estimatedWait / 60)}${t('hours')} ${res.estimatedWait % 60 > 0 ? `${res.estimatedWait % 60}${t('min')}` : ''}`
-                            : `${res.estimatedWait} ${t('min')}`
-                          }
-                        </p>
                       </motion.div>
                     )}
 
@@ -1205,10 +1244,12 @@ export function CustomerQueue() {
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
                         <Button
                           variant="outline"
-                          className="w-full h-10 rounded-xl border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 gap-2"
+                          className="w-full h-10 rounded-xl border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 gap-2 shadow-sm hover:shadow-md transition-all duration-200"
                           onClick={() => handleSharePosition(res)}
                         >
                           <Share2 className="h-4 w-4" />
@@ -1219,10 +1260,12 @@ export function CustomerQueue() {
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.25 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
                         <Button
                           variant="outline"
-                          className="w-full h-10 rounded-xl border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 gap-2"
+                          className="w-full h-10 rounded-xl border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 gap-2 shadow-sm hover:shadow-md transition-all duration-200"
                           onClick={() => {
                             setQrReservation(res);
                             setQrDialogOpen(true);
@@ -1234,33 +1277,35 @@ export function CustomerQueue() {
                       </motion.div>
                     </div>
 
-                    {/* Cancel Button */}
+                    {/* Cancel & Leave Queue Buttons */}
                     {res.status === 'WAITING' && (
-                      <Button
-                        variant="outline"
-                        className="w-full h-11 rounded-xl border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 transition-all duration-300"
-                        onClick={() => handleCancel(res.id)}
-                        disabled={cancelling === res.id}
-                      >
-                        {cancelling === res.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin me-2" />
-                        ) : (
-                          <XCircle className="h-4 w-4 me-2" />
-                        )}
-                        {t('cancelReservation')}
-                      </Button>
-                    )}
-
-                    {/* Leave Queue Button */}
-                    {res.status === 'WAITING' && (
-                      <Button
-                        variant="outline"
-                        className="w-full h-11 rounded-xl border-2 border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 font-semibold transition-all duration-300 gap-2"
-                        onClick={() => setLeaveDialogOpen(true)}
-                      >
-                        <XCircle className="h-4 w-4" />
-                        {t('leaveQueue')}
-                      </Button>
+                      <div className="flex gap-2">
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
+                          <Button
+                            variant="outline"
+                            className="w-full h-11 rounded-xl border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300"
+                            onClick={() => handleCancel(res.id)}
+                            disabled={cancelling === res.id}
+                          >
+                            {cancelling === res.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin me-2" />
+                            ) : (
+                              <XCircle className="h-4 w-4 me-2" />
+                            )}
+                            <span className="text-sm">{t('cancelReservation')}</span>
+                          </Button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
+                          <Button
+                            variant="outline"
+                            className="w-full h-11 rounded-xl border-2 border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 font-semibold transition-all duration-300 gap-2"
+                            onClick={() => setLeaveDialogOpen(true)}
+                          >
+                            <XCircle className="h-4 w-4" />
+                            <span className="text-sm">{t('leaveQueue')}</span>
+                          </Button>
+                        </motion.div>
+                      </div>
                     )}
 
                     {/* Skipped - Reclaim Button */}

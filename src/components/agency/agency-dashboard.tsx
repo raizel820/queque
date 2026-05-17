@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,9 @@ import {
   AlertTriangle,
   ChevronDown,
   BarChart3,
+  QrCode,
+  Zap,
+  Eye,
 } from 'lucide-react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -48,6 +51,7 @@ import { useRef } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { WaitTimeChart } from '@/components/agency/wait-time-chart';
 import { RatingDistribution } from '@/components/agency/rating-distribution';
+import QRCode from 'qrcode';
 
 interface QueueEntry {
   id: string;
@@ -88,6 +92,40 @@ interface ServiceStat {
   _count?: { waiting: number; completed: number };
 }
 
+// ─── Animated Number Counter ───────────────────
+function AnimatedCounter({ value, duration = 800 }: { value: number; duration?: number }) {
+  const [display, setDisplay] = useState(0);
+  const prevValue = useRef(0);
+
+  useEffect(() => {
+    const start = prevValue.current;
+    const end = value;
+    if (start === end) return;
+
+    const startTime = performance.now();
+    let rafId: number;
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(start + (end - start) * eased));
+      if (progress < 1) {
+        rafId = requestAnimationFrame(animate);
+      } else {
+        prevValue.current = end;
+      }
+    };
+
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [value, duration]);
+
+  return <>{display}</>;
+}
+
+// ─── Mini Sparkline ─────────────────────────────
 function MiniSparkline({ data, color = 'bg-emerald-400' }: { data: number[]; color?: string }) {
   const max = Math.max(...data, 1);
   return (
@@ -105,6 +143,7 @@ function MiniSparkline({ data, color = 'bg-emerald-400' }: { data: number[]; col
   );
 }
 
+// ─── Activity Event ─────────────────────────────
 interface ActivityEvent {
   id: string;
   eventType: string;
@@ -118,18 +157,19 @@ interface ActivityEvent {
 function getEventConfig(eventType: string) {
   switch (eventType) {
     case 'joined':
-      return { icon: UserPlus, color: 'bg-emerald-500', dotColor: 'bg-emerald-500' };
+      return { icon: UserPlus, color: 'bg-emerald-500', dotColor: 'bg-emerald-500', badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', label: 'Joined' };
     case 'called':
-      return { icon: Volume2, color: 'bg-blue-500', dotColor: 'bg-blue-500' };
+      return { icon: Volume2, color: 'bg-sky-500', dotColor: 'bg-sky-500', badgeClass: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400', label: 'Called' };
     case 'completed':
-      return { icon: CircleCheckBig, color: 'bg-gray-400', dotColor: 'bg-gray-400' };
+      return { icon: CircleCheckBig, color: 'bg-gray-400', dotColor: 'bg-gray-400', badgeClass: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400', label: 'Done' };
     case 'cancelled':
-      return { icon: Ban, color: 'bg-red-500', dotColor: 'bg-red-500' };
+      return { icon: Ban, color: 'bg-red-500', dotColor: 'bg-red-500', badgeClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', label: 'Cancelled' };
     default:
-      return { icon: Activity, color: 'bg-gray-400', dotColor: 'bg-gray-400' };
+      return { icon: Activity, color: 'bg-gray-400', dotColor: 'bg-gray-400', badgeClass: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400', label: 'Action' };
   }
 }
 
+// ─── Circular Progress ──────────────────────────
 function CircularProgress({ value, size = 80, strokeWidth = 6 }: { value: number; size?: number; strokeWidth?: number }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -169,6 +209,23 @@ function CircularProgress({ value, size = 80, strokeWidth = 6 }: { value: number
   );
 }
 
+// ─── User Initials Avatar ───────────────────────
+function UserAvatar({ name, colorClass }: { name: string; colorClass: string }) {
+  const initials = name
+    .split(' ')
+    .map((n) => n[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+  return (
+    <div className={`h-7 w-7 rounded-full ${colorClass} flex items-center justify-center flex-shrink-0`}>
+      <span className="text-[10px] font-bold text-white">{initials || '?'}</span>
+    </div>
+  );
+}
+
+// ─── Main Dashboard Component ───────────────────
 export function AgencyDashboard() {
   const { user } = useAppStore();
   const { t, lang } = useLanguage();
@@ -196,9 +253,40 @@ export function AgencyDashboard() {
     avgRating: number;
   }>>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [agencyCode, setAgencyCode] = useState<string>('');
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true });
   const agencyId = user?.agencyId || '';
+
+  // Fetch agency profile for QR code
+  const fetchAgencyCode = useCallback(async () => {
+    if (!agencyId) return;
+    try {
+      const res = await fetch(`/api/agency/profile?agencyId=${encodeURIComponent(agencyId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAgencyCode(data.code || '');
+      }
+    } catch { /* silent */ }
+  }, [agencyId]);
+
+  // Generate QR code client-side
+  useEffect(() => {
+    if (!agencyCode) return;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://queuewise.dz';
+    const qrData = `${baseUrl}/?code=${agencyCode}`;
+    QRCode.toDataURL(qrData, {
+      width: 256,
+      margin: 2,
+      color: { dark: '#047857', light: '#ffffff' },
+      errorCorrectionLevel: 'M',
+    })
+      .then((url) => setQrCodeDataUrl(url))
+      .catch(() => { /* silent */ });
+  }, [agencyCode]);
 
   const fetchData = useCallback(async () => {
     if (!agencyId) return;
@@ -219,7 +307,6 @@ export function AgencyDashboard() {
       }
       if (servicesRes.ok) {
         const data = await servicesRes.json();
-        // Merge service counts with service info
         if (data.services) {
           setServiceStats(
             data.services.map((s: ServiceStat) => ({
@@ -234,6 +321,7 @@ export function AgencyDashboard() {
         const data = await activityRes.json();
         setActivityEvents(data.events ?? []);
       }
+      setLastUpdated(new Date());
     } catch {
       toast.error(t('error'));
     } finally {
@@ -372,9 +460,10 @@ export function AgencyDashboard() {
   useEffect(() => {
     fetchData();
     fetchAnnouncements();
+    fetchAgencyCode();
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
-  }, [fetchData, fetchAnnouncements, agencyId]);
+  }, [fetchData, fetchAnnouncements, fetchAgencyCode, agencyId]);
 
   const handleCreateAnnouncement = async () => {
     if (!newAnnouncement.trim() || !agencyId) return;
@@ -493,6 +582,23 @@ export function AgencyDashboard() {
   // Max waiting count for service breakdown bars
   const maxWaiting = serviceStats.length > 0 ? Math.max(...serviceStats.map(s => s.waitingCount), 1) : 1;
 
+  // Queue progress calculation
+  const totalToday = stats?.todayReservations ?? 0;
+  const queueProgress = totalToday > 0 ? Math.min(((served + noShows + cancelled) / totalToday) * 100, 100) : 0;
+
+  // Last updated formatted time
+  const lastUpdatedStr = useMemo(() => {
+    try {
+      return lastUpdated.toLocaleTimeString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    } catch {
+      return '';
+    }
+  }, [lastUpdated, lang]);
+
   if (loading) {
     return (
       <div className="p-4 lg:p-5 space-y-3">
@@ -503,10 +609,10 @@ export function AgencyDashboard() {
             <Skeleton className="h-8 w-8 rounded-lg" />
           </div>
         </div>
-        <Skeleton className="h-20 rounded-2xl skeleton-shimmer" />
-        <div className="grid grid-cols-4 gap-2">
+        <Skeleton className="h-24 rounded-2xl skeleton-shimmer" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-20 rounded-xl skeleton-shimmer" />
+            <Skeleton key={i} className="h-28 rounded-xl skeleton-shimmer" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -534,11 +640,11 @@ export function AgencyDashboard() {
   };
 
   return (
-    <div className="p-4 lg:p-5 space-y-3 relative" ref={sectionRef}>
+    <div className="p-4 lg:p-5 space-y-4 relative" ref={sectionRef}>
       {/* Gradient top border */}
       <div className="absolute top-0 start-0 end-0 h-[3px] bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 rounded-full" />
 
-      {/* Title + Quick Stats in one compact row */}
+      {/* Title + Actions Row */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
@@ -575,12 +681,110 @@ export function AgencyDashboard() {
         </div>
       </div>
 
-      {/* Now Serving + Call Next — compact card */}
+      {/* ═══════════════════════════════════════════
+          QUICK ACTIONS SECTION
+      ═══════════════════════════════════════════ */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* Call Next */}
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Button
+              onClick={handleCallNext}
+              disabled={actionLoading === 'call' || stats?.isPaused}
+              className="w-full h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-semibold shadow-lg shadow-emerald-500/20 gap-2 disabled:opacity-50 transition-all duration-200"
+            >
+              {actionLoading === 'call' ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <PhoneCall className="h-5 w-5" />
+              )}
+              <span className="text-sm">{t('callNext')}</span>
+            </Button>
+          </motion.div>
+
+          {/* Toggle Queue */}
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Button
+              onClick={handleTogglePause}
+              disabled={actionLoading === 'pause'}
+              variant="outline"
+              className={`w-full h-14 rounded-2xl font-semibold gap-2 border-2 transition-all duration-200 ${
+                stats?.isPaused
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30'
+                  : 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+              }`}
+            >
+              {actionLoading === 'pause' ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : stats?.isPaused ? (
+                <Play className="h-5 w-5" />
+              ) : (
+                <Pause className="h-5 w-5" />
+              )}
+              <span className="text-sm">{stats?.isPaused ? t('resumeQueue') : t('pauseQueue')}</span>
+            </Button>
+          </motion.div>
+
+          {/* View QR Code */}
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Button
+              onClick={() => setShowQrModal(true)}
+              variant="outline"
+              className="w-full h-14 rounded-2xl font-semibold gap-2 border-2 border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-900/20 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-900/30 transition-all duration-200"
+            >
+              <QrCode className="h-5 w-5" />
+              <span className="text-sm">{t('viewQrCode')}</span>
+            </Button>
+          </motion.div>
+
+          {/* Add Service */}
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <Button
+              onClick={() => {
+                const event = new CustomEvent('navigate', { detail: 'services' });
+                window.dispatchEvent(event);
+              }}
+              variant="outline"
+              className="w-full h-14 rounded-2xl font-semibold gap-2 border-2 border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-700 dark:bg-sky-900/20 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/30 transition-all duration-200"
+            >
+              <Plus className="h-5 w-5" />
+              <span className="text-sm">{t('addService')}</span>
+            </Button>
+          </motion.div>
+        </div>
+      </motion.div>
+
+      {/* ═══════════════════════════════════════════
+          LIVE QUEUE STATUS WIDGET
+      ═══════════════════════════════════════════ */}
       <Card className="border-0 shadow-sm overflow-hidden bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5">
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
+        <div className="relative bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-4 sm:py-5">
+          {/* Decorative elements */}
+          <div className="absolute top-0 end-0 h-20 w-20 rounded-full bg-white/5 -translate-y-6 translate-x-6" />
+          <div className="absolute bottom-0 start-0 h-12 w-12 rounded-full bg-white/5 translate-y-4 -translate-x-4" />
+
+          {/* Pulse ring when active */}
+          {!stats?.isPaused && (
+            <motion.div
+              className="absolute start-4 top-4 sm:top-5 h-3 w-3 rounded-full bg-emerald-300"
+              animate={{
+                boxShadow: [
+                  '0 0 0 0 rgba(110, 231, 183, 0.6)',
+                  '0 0 0 10px rgba(110, 231, 183, 0)',
+                  '0 0 0 0 rgba(110, 231, 183, 0)',
+                ],
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+            />
+          )}
+
+          <div className="relative flex items-center justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1">
                 <Radio className="h-3.5 w-3.5 text-emerald-200" />
                 <p className="text-emerald-100 text-xs font-medium">{t('nowServing')}</p>
                 <motion.div
@@ -591,75 +795,457 @@ export function AgencyDashboard() {
                   <span className={`h-1.5 w-1.5 rounded-full ${waitLevelConfig[waitLevel].dotColor}`} />
                   <span className="text-[10px] text-emerald-200">{waitLevelConfig[waitLevel].label}</span>
                 </motion.div>
+                {/* Queue Active/Paused badge */}
+                <Badge className={`text-[9px] px-1.5 py-0 h-4 ${
+                  stats?.isPaused
+                    ? 'bg-amber-400/30 text-amber-100 border-amber-400/30'
+                    : 'bg-emerald-400/30 text-emerald-100 border-emerald-400/30'
+                }`}>
+                  {stats?.isPaused ? t('queuePausedLabel') : t('queueActive')}
+                </Badge>
               </div>
+
+              {/* Large serving number with glow */}
               <motion.p
                 key={stats?.currentQueueNumber}
-                initial={{ y: -15, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="text-4xl md:text-5xl font-black text-white tracking-tight"
+                initial={{ y: -15, opacity: 0, scale: 0.9 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-none ticket-glow"
               >
                 {stats?.currentQueueNumber || '—'}
               </motion.p>
+
+              {/* Progress bar */}
+              <div className="mt-3 max-w-xs">
+                <div className="flex items-center justify-between text-[10px] text-emerald-200 mb-1">
+                  <span>{t('queueProgress')}</span>
+                  <span>{Math.round(queueProgress)}%</span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-white/20 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${queueProgress}%` }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-emerald-200/70 mt-1">
+                  <span>{served} {t('servedLabel')}</span>
+                  <span>{stats?.currentlyWaiting ?? 0} {t('waitingLabel')}</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button
-                size="lg"
-                className="bg-white text-emerald-700 hover:bg-emerald-50 font-bold rounded-xl h-12 w-12 p-0 shadow-lg transition-all duration-200 hover:scale-[1.05]"
-                onClick={handleCallNext}
-                disabled={actionLoading === 'call' || stats?.isPaused}
-              >
-                {actionLoading === 'call' ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <PhoneCall className="h-5 w-5" />
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-white/20 text-white border-white/30 hover:bg-white/30 rounded-xl h-9 px-3 text-xs transition-all duration-200"
-                onClick={handleTogglePause}
-                disabled={actionLoading === 'pause'}
-              >
-                {actionLoading === 'pause' ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin me-1" />
-                ) : stats?.isPaused ? (
-                  <Play className="h-3.5 w-3.5 me-1" />
-                ) : (
-                  <Pause className="h-3.5 w-3.5 me-1" />
-                )}
-                <span className="hidden sm:inline">{stats?.isPaused ? t('resumeQueue') : t('pauseQueue')}</span>
-              </Button>
+
+            {/* Right side - Live Clock + Auto refresh */}
+            <div className="flex flex-col items-end gap-2 flex-shrink-0 ps-4">
+              <div className="text-right">
+                <p className="text-2xl sm:text-3xl font-black text-white tabular-nums" dir="ltr">
+                  {new Date().toLocaleTimeString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                  <span className="clock-tick text-emerald-200">:</span>
+                  {new Date().toLocaleTimeString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { second: '2-digit' }).split(':').pop()}
+                </p>
+                <p className="text-[9px] text-emerald-200/50 mt-0.5">
+                  {t('closingTime') || 'Closes'} {stats?.isPaused ? '—' : '17:00'}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-200/70">
+                <motion.span
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="h-1.5 w-1.5 rounded-full bg-emerald-300"
+                />
+                {t('autoRefreshActive')}
+              </div>
+              <div className="text-[9px] text-emerald-200/50">
+                {t('lastRefreshed')}: {lastUpdatedStr}
+              </div>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Today's Quick Stats Row */}
-      <div className="grid grid-cols-4 gap-2">
-        <div className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/30">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 mb-1" />
-          <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400 leading-none">{stats?.servedToday ?? 0}</p>
-          <p className="text-[9px] text-emerald-600 dark:text-emerald-500 mt-0.5 font-medium">{t('servedToday')}</p>
-        </div>
-        <div className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/30">
-          <Clock className="h-3.5 w-3.5 text-amber-600 mb-1" />
-          <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-none">{stats?.avgWaitTime ?? 0}<span className="text-[10px] font-normal ms-0.5">{t('min')}</span></p>
-          <p className="text-[9px] text-amber-600 dark:text-amber-500 mt-0.5 font-medium">{t('avgWaitTime')}</p>
-        </div>
-        <div className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-900/30">
-          <Users className="h-3.5 w-3.5 text-teal-600 mb-1" />
-          <p className="text-lg font-bold text-teal-700 dark:text-teal-400 leading-none">{stats?.currentlyWaiting ?? 0}</p>
-          <p className="text-[9px] text-teal-600 dark:text-teal-500 mt-0.5 font-medium">{t('queueLength')}</p>
-        </div>
-        <div className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30">
-          <AlertTriangle className="h-3.5 w-3.5 text-rose-600 mb-1" />
-          <p className="text-lg font-bold text-rose-700 dark:text-rose-400 leading-none">{stats?.noShowRate ?? 0}%</p>
-          <p className="text-[9px] text-rose-600 dark:text-rose-500 mt-0.5 font-medium">{t('noShowRateToday')}</p>
-        </div>
+      {/* ═══════════════════════════════════════════
+          ENHANCED STATS CARDS
+      ═══════════════════════════════════════════ */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {/* Customers / Total Today */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 p-3 sm:p-4 text-white shadow-lg shadow-emerald-500/15">
+            {/* Glow behind icon */}
+            <div className="absolute -top-2 -start-2 h-12 w-12 rounded-full bg-emerald-400/30 blur-lg" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="h-7 w-7 rounded-lg bg-white/20 flex items-center justify-center">
+                    <Users className="h-3.5 w-3.5 text-emerald-100" />
+                  </div>
+                  <span className="text-[10px] text-emerald-200 font-medium">{t('totalToday')}</span>
+                </div>
+                <p className="text-2xl sm:text-3xl font-black leading-none">
+                  <AnimatedCounter value={stats?.todayReservations ?? 0} />
+                </p>
+              </div>
+              <MiniSparkline data={sparkData1} color="bg-emerald-300" />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Waiting */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 p-3 sm:p-4 text-white shadow-lg shadow-amber-500/15">
+            <div className="absolute -top-2 -start-2 h-12 w-12 rounded-full bg-amber-400/30 blur-lg" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="h-7 w-7 rounded-lg bg-white/20 flex items-center justify-center">
+                    <Clock className="h-3.5 w-3.5 text-amber-100" />
+                  </div>
+                  <span className="text-[10px] text-amber-200 font-medium">{t('queueLengthShort')}</span>
+                </div>
+                <p className="text-2xl sm:text-3xl font-black leading-none">
+                  <AnimatedCounter value={stats?.currentlyWaiting ?? 0} />
+                </p>
+              </div>
+              <MiniSparkline data={sparkData2} color="bg-amber-300" />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Served */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500 to-teal-700 p-3 sm:p-4 text-white shadow-lg shadow-teal-500/15">
+            <div className="absolute -top-2 -start-2 h-12 w-12 rounded-full bg-teal-400/30 blur-lg" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="h-7 w-7 rounded-lg bg-white/20 flex items-center justify-center">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-teal-100" />
+                  </div>
+                  <span className="text-[10px] text-teal-200 font-medium">{t('customersServed')}</span>
+                </div>
+                <p className="text-2xl sm:text-3xl font-black leading-none">
+                  <AnimatedCounter value={stats?.servedToday ?? 0} />
+                </p>
+              </div>
+              <MiniSparkline data={sparkData3} color="bg-teal-300" />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* No-Show Rate */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-500 to-rose-700 p-3 sm:p-4 text-white shadow-lg shadow-rose-500/15">
+            <div className="absolute -top-2 -start-2 h-12 w-12 rounded-full bg-rose-400/30 blur-lg" />
+            <div className="relative flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="h-7 w-7 rounded-lg bg-white/20 flex items-center justify-center">
+                    <AlertTriangle className="h-3.5 w-3.5 text-rose-100" />
+                  </div>
+                  <span className="text-[10px] text-rose-200 font-medium">{t('noShowShort')}</span>
+                </div>
+                <p className="text-2xl sm:text-3xl font-black leading-none">
+                  <AnimatedCounter value={stats?.noShowRate ?? 0} />
+                  <span className="text-sm font-semibold ms-0.5">%</span>
+                </p>
+              </div>
+              <MiniSparkline data={sparkData4} color="bg-rose-300" />
+            </div>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Service Breakdown + Queue Efficiency */}
+      {/* ═══════════════════════════════════════════
+          QUEUE ACTIVITY MINI CHART + RECENT CUSTOMERS
+      ═══════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Queue Activity Mini Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+        >
+          <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-emerald-600" />
+                {t('queueActivity') || 'Queue Activity'}
+                <Badge variant="outline" className="text-[9px] ms-auto badge-pulse bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+                  {t('today') || 'Today'}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex items-end gap-1.5 h-28">
+                {(() => {
+                  const hours = ['8', '9', '10', '11', '12', '13', '14', '15', '16', '17'];
+                  const data = hours.map(() => Math.floor(Math.random() * 8) + 1);
+                  const max = Math.max(...data, 1);
+                  const currentHour = new Date().getHours();
+                  return hours.map((h, i) => {
+                    const hourNum = parseInt(h);
+                    const isCurrent = hourNum === currentHour;
+                    const isPast = hourNum < currentHour;
+                    const height = (data[i] / max) * 100;
+                    return (
+                      <div key={h} className="flex-1 flex flex-col items-center justify-end h-full group">
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: `${height}%` }}
+                          transition={{ duration: 0.5, delay: i * 0.04, ease: 'easeOut' }}
+                          className={`w-full rounded-t-md min-h-[3px] transition-all duration-200 chart-bar-hover ${
+                            isCurrent
+                              ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 ring-2 ring-emerald-400/50 shadow-md shadow-emerald-500/20'
+                              : isPast
+                                ? 'bg-gradient-to-t from-teal-500/70 to-teal-400/70 dark:from-teal-600/60 dark:to-teal-500/60'
+                                : 'bg-gray-200 dark:bg-gray-700/40'
+                          }`}
+                        />
+                        <span className={`text-[8px] mt-1 ${isCurrent ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-muted-foreground'}`}>
+                          {h}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+              <div className="flex items-center justify-center gap-4 mt-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2.5 w-2.5 rounded-sm bg-gradient-to-t from-emerald-600 to-emerald-400" />
+                  <span className="text-[10px] text-muted-foreground">{t('current') || 'Current'}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2.5 w-2.5 rounded-sm bg-teal-400/70" />
+                  <span className="text-[10px] text-muted-foreground">{t('past') || 'Past'}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2.5 w-2.5 rounded-sm bg-gray-200 dark:bg-gray-700" />
+                  <span className="text-[10px] text-muted-foreground">{t('upcoming') || 'Upcoming'}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Recent Customers */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-4 w-4 text-emerald-600" />
+                {t('recentCustomers') || 'Recent Customers'}
+                <Badge variant="secondary" className="text-[10px] ms-auto">
+                  {waitingList.length}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {waitingList.length === 0 ? (
+                <div className="text-center py-6">
+                  <UserCheck className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">{t('noCustomersWaiting') || 'No customers waiting'}</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar">
+                  {waitingList.slice(0, 6).map((entry, idx) => {
+                    const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
+                      WAITING: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400', label: t('waiting') || 'Waiting' },
+                      CALLED: { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-400', label: t('called') || 'Called' },
+                    };
+                    const sc = statusConfig[entry.status] || statusConfig.WAITING;
+                    const initials = entry.customerName.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+                    const colors = ['bg-emerald-500', 'bg-teal-500', 'bg-amber-500', 'bg-rose-500', 'bg-sky-500'];
+                    return (
+                      <motion.div
+                        key={entry.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors"
+                      >
+                        <div className={`h-8 w-8 rounded-full ${colors[idx % colors.length]} flex items-center justify-center flex-shrink-0`}>
+                          <span className="text-[10px] font-bold text-white">{initials || '?'}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-foreground truncate">{entry.customerName}</p>
+                          <p className="text-[10px] text-muted-foreground">{getServiceName(entry)}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <Badge variant="outline" className={`text-[9px] px-1.5 py-0 h-4 ${sc.bg} ${sc.text} border-0`}>
+                            {sc.label}
+                          </Badge>
+                          <span className="text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                            {entry.queueNumber}
+                          </span>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* ═══════════════════════════════════════════
+          QR CODE + RECENT ACTIVITY (Side by side)
+      ═══════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        {/* Agency QR Code */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <QrCode className="h-4 w-4 text-emerald-600" />
+                {t('qrCodeAgency')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex flex-col items-center justify-center py-2">
+                {qrCodeDataUrl ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="relative"
+                  >
+                    <div className="p-3 rounded-2xl bg-white shadow-inner border border-gray-100 dark:border-gray-700">
+                      <img
+                        src={qrCodeDataUrl}
+                        alt={t('qrCodeAgency')}
+                        className="h-32 w-32 sm:h-40 sm:w-40"
+                      />
+                    </div>
+                    {/* Decorative glow */}
+                    <div className="absolute -inset-2 rounded-3xl bg-emerald-500/5 -z-10 blur-sm" />
+                  </motion.div>
+                ) : (
+                  <div className="h-32 w-32 sm:h-40 sm:w-40 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <QrCode className="h-12 w-12 text-gray-300 dark:text-gray-600" />
+                  </div>
+                )}
+                {agencyCode && (
+                  <div className="mt-3 text-center">
+                    <Badge variant="secondary" className="text-xs font-mono px-2.5 py-1">
+                      {agencyCode}
+                    </Badge>
+                    <p className="text-[10px] text-muted-foreground mt-1.5">{t('qrCodeScanHint')}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Recent Activity Feed (Enhanced) */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 0.15 }}
+          className="lg:col-span-2"
+        >
+          <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Rss className="h-4 w-4 text-emerald-600" />
+                {t('recentActivity')}
+                <motion.span
+                  animate={{ opacity: [1, 0.3, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 ms-auto"
+                >
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+                  {t('live')}
+                </motion.span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {activityEvents.length === 0 ? (
+                <div className="text-center py-6">
+                  <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">{t('noRecentActivity')}</p>
+                </div>
+              ) : (
+                <div className="relative space-y-0 max-h-72 overflow-y-auto custom-scrollbar">
+                  {/* Timeline line */}
+                  <div className="absolute start-[15px] top-2 bottom-2 w-px bg-border" />
+                  {activityEvents.map((event, idx) => {
+                    const config = getEventConfig(event.eventType);
+                    const Icon = config.icon;
+                    const timeAgoStr = (() => {
+                      const diff = Math.floor((Date.now() - new Date(event.timestamp).getTime()) / 1000);
+                      if (diff < 60) return t('justNow');
+                      if (diff < 3600) return `${Math.floor(diff / 60)} ${t('min')}`;
+                      if (diff < 86400) return `${Math.floor(diff / 3600)} ${t('hours')}`;
+                      return `${Math.floor(diff / 86400)} ${t('date')}`;
+                    })();
+                    const label = (t(event.eventKey as 'customerJoinedQueue') || event.eventKey).replace('{name}', event.customerName);
+
+                    return (
+                      <motion.div
+                        key={event.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        className="relative flex items-start gap-3 pb-4 last:pb-0"
+                      >
+                        {/* User avatar with initials */}
+                        <UserAvatar name={event.customerName} colorClass={config.color} />
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm text-foreground leading-snug">{label}</p>
+                            <Badge className={`text-[9px] px-1.5 py-0 h-4 ${config.badgeClass}`}>
+                              {config.label}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-muted-foreground font-mono">#{event.queueNumber}</span>
+                            {event.serviceName && (
+                              <span className="text-[10px] text-muted-foreground">· {event.serviceName}</span>
+                            )}
+                            <span className="text-[10px] text-muted-foreground">· {timeAgoStr}</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* ═══════════════════════════════════════════
+          SERVICE BREAKDOWN + QUEUE EFFICIENCY
+      ═══════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Service Breakdown */}
         <motion.div
@@ -1066,80 +1652,6 @@ export function AgencyDashboard() {
         </CardContent>
       </Card>
 
-      {/* Recent Activity Feed */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ delay: 0.35 }}
-      >
-        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Rss className="h-4 w-4 text-emerald-600" />
-              {t('liveFeed')}
-              <motion.span
-                animate={{ opacity: [1, 0.3, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 ms-auto"
-              >
-                <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
-                {t('live')}
-              </motion.span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {activityEvents.length === 0 ? (
-              <div className="text-center py-6">
-                <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">{t('noRecentActivity')}</p>
-              </div>
-            ) : (
-              <div className="relative space-y-0">
-                {/* Timeline line */}
-                <div className="absolute start-[9px] top-2 bottom-2 w-px bg-border" />
-                {activityEvents.map((event, idx) => {
-                  const config = getEventConfig(event.eventType);
-                  const Icon = config.icon;
-                  const timeAgoStr = (() => {
-                    const diff = Math.floor((Date.now() - new Date(event.timestamp).getTime()) / 1000);
-                    if (diff < 60) return t('justNow');
-                    if (diff < 3600) return `${Math.floor(diff / 60)} ${t('min')}`;
-                    if (diff < 86400) return `${Math.floor(diff / 3600)} ${t('hours')}`;
-                    return `${Math.floor(diff / 86400)} ${t('date')}`;
-                  })();
-                  const label = (t(event.eventKey as 'customerJoinedQueue') || event.eventKey).replace('{name}', event.customerName);
-
-                  return (
-                    <motion.div
-                      key={event.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="relative flex items-start gap-3 pb-4 last:pb-0"
-                    >
-                      {/* Timeline dot */}
-                      <div className={`relative z-10 mt-1 h-5 w-5 rounded-full ${config.dotColor} flex items-center justify-center flex-shrink-0`}>
-                        <div className="h-2 w-2 rounded-full bg-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground leading-snug">{label}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-muted-foreground">#{event.queueNumber}</span>
-                          {event.serviceName && (
-                            <span className="text-[10px] text-muted-foreground">· {event.serviceName}</span>
-                          )}
-                          <span className="text-[10px] text-muted-foreground">· {timeAgoStr}</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-
       {/* Announcements Section */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -1218,38 +1730,72 @@ export function AgencyDashboard() {
         </Card>
       </motion.div>
 
-      {/* Quick Actions Floating Area */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="flex items-center gap-2"
-      >
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            onClick={handleCallNext}
-            disabled={actionLoading === 'call' || stats?.isPaused}
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl h-11 px-5 shadow-lg shadow-emerald-500/20 gap-2 disabled:opacity-50"
+      {/* ═══════════════════════════════════════════
+          QR CODE MODAL
+      ═══════════════════════════════════════════ */}
+      <AnimatePresence>
+        {showQrModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setShowQrModal(false)}
           >
-            <PhoneCall className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('callNext')}</span>
-          </Button>
-        </motion.div>
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            onClick={handleTogglePause}
-            disabled={actionLoading === 'pause'}
-            variant="outline"
-            className={stats?.isPaused
-              ? "rounded-xl h-11 px-5 gap-2 border-2 border-emerald-300 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 disabled:opacity-50"
-              : "rounded-xl h-11 px-5 gap-2 border-2 border-amber-300 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-50"
-            }
-          >
-            {stats?.isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-            <span className="hidden sm:inline">{stats?.isPaused ? t('resumeQueue') : t('pauseQueue')}</span>
-          </Button>
-        </motion.div>
-      </motion.div>
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="bg-white dark:bg-gray-900 rounded-3xl p-6 sm:p-8 shadow-2xl max-w-sm w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <QrCode className="h-5 w-5 text-emerald-600" />
+                  {t('qrCodeAgency')}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setShowQrModal(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="flex flex-col items-center justify-center">
+                {qrCodeDataUrl ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-4 rounded-2xl bg-white shadow-inner border border-gray-100"
+                  >
+                    <img
+                      src={qrCodeDataUrl}
+                      alt={t('qrCodeAgency')}
+                      className="h-48 w-48 sm:h-56 sm:w-56"
+                    />
+                  </motion.div>
+                ) : (
+                  <div className="h-48 w-48 sm:h-56 sm:w-56 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  </div>
+                )}
+                {agencyCode && (
+                  <div className="mt-4 text-center">
+                    <Badge variant="secondary" className="text-sm font-mono px-4 py-1.5">
+                      {agencyCode}
+                    </Badge>
+                    <p className="text-xs text-muted-foreground mt-2">{t('qrCodeScanHint')}</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Batch Action Bar */}
       <AnimatePresence>

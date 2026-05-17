@@ -28,9 +28,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate staffRole
-    if (!['STAFF', 'MANAGER'].includes(staffRole)) {
+    if (!['STAFF', 'MANAGER', 'AGENCY_STAFF', 'AGENCY_OWNER'].includes(staffRole)) {
       return NextResponse.json({ error: 'Invalid staff role' }, { status: 400 });
     }
+
+    // Map AGENCY_STAFF -> AGENCY_STAFF user role, AGENCY_OWNER -> AGENCY_OWNER user role
+    const userRole = staffRole === 'AGENCY_OWNER' ? 'AGENCY_OWNER' : 'AGENCY_STAFF';
+    // Map to AgencyStaff role
+    const agencyStaffRole = staffRole === 'AGENCY_OWNER' ? 'OWNER' : staffRole === 'MANAGER' ? 'MANAGER' : 'STAFF';
 
     // Verify agency exists
     const agency = await db.agency.findUnique({
@@ -53,13 +58,13 @@ export async function POST(req: NextRequest) {
     // Hash the password
     const passwordHash = hashPassword(password);
 
-    // Create User with role 'AGENCY_STAFF'
+    // Create User with appropriate role
     const user = await db.user.create({
       data: {
         username: username.trim(),
         fullName: fullName.trim(),
         passwordHash,
-        role: 'AGENCY_STAFF',
+        role: userRole,
         language: 'ar',
         isActive: true,
       },
@@ -70,11 +75,11 @@ export async function POST(req: NextRequest) {
       data: {
         userId: user.id,
         agencyId,
-        role: staffRole,
+        role: agencyStaffRole,
       },
       include: {
         user: {
-          select: { id: true, username: true, fullName: true, role: true },
+          select: { id: true, username: true, fullName: true, role: true, isActive: true },
         },
       },
     });

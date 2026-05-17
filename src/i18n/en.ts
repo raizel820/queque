@@ -816,6 +816,14 @@ const en: Record<TranslationKeys, string> = {
   usernameTaken: "This username is already taken",
   initialAccountCreated: "Initial account created",
 
+  // ─── Task 7: Enhanced Staff Management ──────
+  editStaffMember: "Edit Staff Member",
+  staffUpdated: "Staff member updated",
+  staffDeactivated: "Staff account deactivated",
+  staffActivated: "Staff account activated",
+  cannotRemoveOwner: "Cannot remove agency owner",
+  removeStaffConfirm: "Are you sure you want to remove this staff member?",
+
   // ─── QR Code Scanner ────────────────
   scanQrCode: "Scan QR Code",
   cameraPermissionDenied: "Camera permission denied. Please enable it in your browser settings.",
@@ -1015,6 +1023,96 @@ const en: Record<TranslationKeys, string> = {
   smsPurchaseAmount: 'Amount',
   smsPurchasePayment: 'Payment Method',
   perCredit: 'per credit',
+
+  // ─── Dashboard Enhancements ─────────
+  viewQrCode: 'View QR Code',
+  scanToJoin: 'Scan to Join Queue',
+  qrCodeAgency: 'Agency QR Code',
+  qrCodeScanHint: 'Customers can scan this code to join your queue',
+  queueProgress: 'Queue Progress',
+  lastRefreshed: 'Last refreshed',
+  autoRefreshActive: 'Auto-refresh active',
+  toggleQueue: 'Toggle Queue',
+  queueActive: 'Queue Active',
+  queuePausedLabel: 'Queue Paused',
+  servedLabel: 'Served',
+  waitingLabel: 'Waiting',
+  totalToday: 'Total Today',
+  customersServed: 'Customers Served',
+  avgWaitShort: 'Avg Wait',
+  queueLengthShort: 'In Queue',
+  noShowShort: 'No-Show',
+
+  // ─── Customer Home Enhancements ─────
+  featuredAgencies: 'Featured Agencies',
+  goodMorning: 'Good morning',
+  goodAfternoon: 'Good afternoon',
+  goodEvening: 'Good evening',
+  goodNight: 'Good night',
+  agenciesNearbyStat: 'agencies nearby',
+  waitingInQueueStat: 'waiting in queue',
+  searchResultsCount: 'results',
+  estWaitBadge: 'min wait',
+
+  // ─── Task 6: Customer History Enhancements ─────
+  historyTotalVisits: 'Total Visits',
+  historyCompletedCount: 'Completed',
+  historyAvgWait: 'Avg Wait',
+  historyCancelledCount: 'Cancelled',
+  historyYesterday: 'Yesterday',
+  historyEarlier: 'Earlier',
+
+  // ─── Task 8: Customer Notifications Enhancements ─────
+  yesterday: 'Yesterday',
+  earlier: 'Earlier',
+  unread: 'Unread',
+  read: 'Read',
+  total: 'Total',
+  unreadNotifications: 'unread notifications',
+  noUnreadNotifications: 'No unread notifications',
+  new: 'New',
+
+  // ─── Task 11: Customer Notifications Redesign ─────
+  markAsRead: 'Mark as read',
+  markedAsRead: 'Marked as read',
+  notificationDeleted: 'Notification deleted',
+  browseAgencies: 'Browse Agencies',
+  allCaughtUp: 'All caught up!',
+  allCaughtUpDesc: 'You have no unread notifications',
+  queueNotifs: 'Queue',
+  generalNotifs: 'General',
+  refreshing: 'Refreshing...',
+  swipeToDismiss: 'Swipe to dismiss',
+  deleteNotification: 'Delete notification',
+  markReadSuccess: 'Notification marked as read',
+
+  // ─── Task 9: Agency Review & Rating ──────
+  rateYourExperience: 'Rate Your Experience',
+  rateAgency: 'Rate this agency',
+  ratingSubmitted: 'Rating submitted',
+  ratingUpdated: 'Rating updated',
+  writeComment: 'Write a comment...',
+  submitRating: 'Submit Rating',
+  reviews: 'reviews',
+  noReviews: 'No reviews',
+  rateNow: 'Rate now',
+
+  // ─── Task 13: Agency Reviews Page ──────
+  reviewsPage: 'Reviews',
+  filterByRating: 'Filter by rating',
+  sortBy: 'Sort by',
+  newest: 'Newest',
+  highestRated: 'Highest rated',
+  lowestRated: 'Lowest rated',
+  replyToReview: 'Reply to review',
+  writeReply: 'Write your reply...',
+  replySubmitted: 'Reply submitted',
+  reportReview: 'Report review',
+  noReviewsYet: 'No reviews yet',
+  beFirstToReview: 'Be the first to review!',
+  allReviews: 'All Reviews',
+  customerReviews: 'Customer Reviews',
+  seeAllReviews: 'See all reviews',
 };
 
 export default en;

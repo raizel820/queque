@@ -326,10 +326,10 @@ export function AdminUsers() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`h-11 w-11 rounded-full flex items-center justify-center ${
+                      <div className={`h-11 w-11 rounded-full flex items-center justify-center shadow-sm ${
                         user.isActive
-                          ? 'bg-emerald-100 dark:bg-emerald-900/30'
-                          : 'bg-red-100 dark:bg-red-900/30'
+                          ? 'bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40'
+                          : 'bg-gradient-to-br from-red-200 to-red-300 dark:from-red-900/40 dark:to-red-800/40'
                       }`}>
                         <UserCircle className={`h-6 w-6 ${
                           user.isActive

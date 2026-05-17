@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -525,6 +526,7 @@ export function CustomerQrScanner({ open, onOpenChange, onAgencyFound }: Custome
               </div>
               <span>{t('scanQrCode')}</span>
             </DialogTitle>
+            <DialogDescription className="sr-only">{t('pointCameraAtQr')}</DialogDescription>
             {scannerState === 'scanning' && (
               <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0 text-[10px] animate-pulse">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 me-1.5 inline-block" />

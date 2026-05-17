@@ -816,6 +816,14 @@ const ar = {
   usernameTaken: 'اسم المستخدم مأخوذ بالفعل',
   initialAccountCreated: 'تم إنشاء الحساب الأولي',
 
+  // ─── Task 7: Enhanced Staff Management ──────
+  editStaffMember: 'تعديل بيانات الموظف',
+  staffUpdated: 'تم تحديث بيانات الموظف',
+  staffDeactivated: 'تم تعطيل الحساب',
+  staffActivated: 'تم تفعيل الحساب',
+  cannotRemoveOwner: 'لا يمكن إزالة مالك المؤسسة',
+  removeStaffConfirm: 'هل أنت متأكد من إزالة هذا الموظف؟',
+
   // ─── QR Code Scanner ────────────────
   scanQrCode: 'مسح رمز QR',
   cameraPermissionDenied: 'تم رفض إذن الكاميرا. يرجى تفعيله من إعدادات المتصفح.',
@@ -988,6 +996,96 @@ const ar = {
   smsPurchaseAmount: 'المبلغ',
   smsPurchasePayment: 'طريقة الدفع',
   perCredit: 'لكل رسالة',
+
+  // ─── Dashboard Enhancements ─────────
+  viewQrCode: 'عرض رمز QR',
+  scanToJoin: 'امسح للانضمام للطابور',
+  qrCodeAgency: 'رمز QR للمؤسسة',
+  qrCodeScanHint: 'يمكن للعملاء مسح هذا الرمز للانضمام للطابور',
+  queueProgress: 'تقدم الطابور',
+  lastRefreshed: 'آخر تحديث',
+  autoRefreshActive: 'تحديث تلقائي نشط',
+  toggleQueue: 'تبديل الطابور',
+  queueActive: 'الطابور نشط',
+  queuePausedLabel: 'الطابور متوقف',
+  servedLabel: 'تم الخدمة',
+  waitingLabel: 'في الانتظار',
+  totalToday: 'إجمالي اليوم',
+  customersServed: 'عملاء تم خدمتهم',
+  avgWaitShort: 'متوسط الانتظار',
+  queueLengthShort: 'في الطابور',
+  noShowShort: 'لم يحضر',
+
+  // ─── Customer Home Enhancements ─────
+  featuredAgencies: 'مؤسسات مميزة',
+  goodMorning: 'صباح الخير',
+  goodAfternoon: 'مساء الخير',
+  goodEvening: 'مساء الخير',
+  goodNight: 'تصبح على خير',
+  agenciesNearbyStat: 'مؤسسة قريبة',
+  waitingInQueueStat: 'في الطابور',
+  searchResultsCount: 'نتيجة',
+  estWaitBadge: 'دقيقة انتظار',
+
+  // ─── Task 6: Customer History Enhancements ─────
+  historyTotalVisits: 'إجمالي الزيارات',
+  historyCompletedCount: 'مكتمل',
+  historyAvgWait: 'متوسط الانتظار',
+  historyCancelledCount: 'ملغى',
+  historyYesterday: 'أمس',
+  historyEarlier: 'سابق',
+
+  // ─── Task 8: Customer Notifications Enhancements ─────
+  yesterday: 'أمس',
+  earlier: 'سابقًا',
+  unread: 'غير مقروءة',
+  read: 'مقروءة',
+  total: 'الإجمالي',
+  unreadNotifications: 'إشعارات غير مقروءة',
+  noUnreadNotifications: 'لا توجد إشعارات غير مقروءة',
+  new: 'جديد',
+
+  // ─── Task 11: Customer Notifications Redesign ─────
+  markAsRead: 'تحديد كمقروء',
+  markedAsRead: 'تم التحديد كمقروء',
+  notificationDeleted: 'تم حذف الإشعار',
+  browseAgencies: 'تصفح المؤسسات',
+  allCaughtUp: 'أنت على اطلاع!',
+  allCaughtUpDesc: 'ليس لديك إشعارات غير مقروءة',
+  queueNotifs: 'طابور',
+  generalNotifs: 'عام',
+  refreshing: 'جاري التحديث...',
+  swipeToDismiss: 'اسحب للإغلاق',
+  deleteNotification: 'حذف الإشعار',
+  markReadSuccess: 'تم تحديد الإشعار كمقروء',
+
+  // ─── Task 9: Agency Review & Rating ──────
+  rateYourExperience: 'قيّم تجربتك',
+  rateAgency: 'قيّم المؤسسة',
+  ratingSubmitted: 'تم إرسال التقييم',
+  ratingUpdated: 'تم تحديث التقييم',
+  writeComment: 'اكتب تعليقك...',
+  submitRating: 'إرسال التقييم',
+  reviews: 'تقييمات',
+  noReviews: 'لا توجد تقييمات',
+  rateNow: 'قيّم الآن',
+
+  // ─── Task 13: Agency Reviews Page ──────
+  reviewsPage: 'صفحة التقييمات',
+  filterByRating: 'تصفية حسب التقييم',
+  sortBy: 'ترتيب حسب',
+  newest: 'الأحدث',
+  highestRated: 'الأعلى تقييماً',
+  lowestRated: 'الأدنى تقييماً',
+  replyToReview: 'الرد على التقييم',
+  writeReply: 'اكتب ردك...',
+  replySubmitted: 'تم إرسال الرد',
+  reportReview: 'الإبلاغ عن التقييم',
+  noReviewsYet: 'لا توجد تقييمات بعد',
+  beFirstToReview: 'كن أول من يقيّم!',
+  allReviews: 'جميع التقييمات',
+  customerReviews: 'تقييمات العملاء',
+  seeAllReviews: 'عرض جميع التقييمات',
 };
 
 export default ar;

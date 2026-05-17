@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,15 @@ import {
   QrCode,
   Star,
   ChevronRight,
+  ChevronLeft,
   Users,
-  Briefcase,
+  Stethoscope,
+  Globe,
   Scale,
   FlaskConical,
   Landmark,
-  MoreHorizontal,
+  Building2,
+  Briefcase,
   Loader2,
   TicketCheck,
   Clock,
@@ -32,8 +35,11 @@ import {
   History,
   UserRound,
   Zap,
+  Sparkles,
+  Circle,
+  MessageCircle,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import type { TranslationKeys } from '@/i18n';
 import {
@@ -41,10 +47,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { CustomerQrScanner } from '@/components/customer/customer-qr-scanner';
+import { AgencyRatingDisplay } from '@/components/shared/agency-rating-display';
 
 interface AgencyListItem {
   id: string;
@@ -62,6 +70,8 @@ interface AgencyListItem {
   workingHoursStart?: string;
   workingHoursEnd?: string;
   avgServiceTime?: number;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 interface AgencyDetail {
@@ -81,16 +91,18 @@ interface AgencyDetail {
   workingHoursEnd?: string;
   avgServiceTime?: number;
   services: { id: string; name: string; nameAr?: string; nameFr?: string; waitingCount: number }[];
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 const categoryKeys: { key: TranslationKeys; value: string; icon: React.ElementType }[] = [
-  { key: 'catAll', value: 'ALL', icon: MoreHorizontal },
-  { key: 'catClinic', value: 'CLINIC', icon: Briefcase },
-  { key: 'catAgency', value: 'AGENCY', icon: Briefcase },
+  { key: 'catAll', value: 'ALL', icon: Navigation },
+  { key: 'catClinic', value: 'CLINIC', icon: Stethoscope },
+  { key: 'catAgency', value: 'AGENCY', icon: Globe },
   { key: 'catLawFirm', value: 'LAW_FIRM', icon: Scale },
   { key: 'catLaboratory', value: 'LABORATORY', icon: FlaskConical },
   { key: 'catGovernment', value: 'GOVERNMENT', icon: Landmark },
-  { key: 'catOther', value: 'OTHER', icon: MoreHorizontal },
+  { key: 'catOther', value: 'OTHER', icon: Building2 },
 ];
 
 export function CustomerHome() {
@@ -117,6 +129,8 @@ export function CustomerHome() {
   const [pendingJoin, setPendingJoin] = useState<{ agencyId: string; serviceId?: string } | null>(null);
   const [joining, setJoining] = useState(false);
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
+  const [activeReservations, setActiveReservations] = useState<{ agencyName: string; position: number; agencyId: string }[]>([]);
+  const featuredScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchAgencies();
@@ -406,6 +420,13 @@ export function CustomerHome() {
 
   // Welcome banner helpers
   const firstName = user?.fullName?.split(' ')[0] || '';
+  const getTimeGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return t('goodMorning');
+    if (hour >= 12 && hour < 17) return t('goodAfternoon');
+    if (hour >= 17 && hour < 21) return t('goodEvening');
+    return t('goodNight');
+  };
   const getGreetingMessage = () => {
     const hour = new Date().getHours();
     const messages: Record<string, Record<string, string>> = {
@@ -422,6 +443,32 @@ export function CustomerHome() {
     return messages[timeOfDay][lang] || messages[timeOfDay].en;
   };
 
+  // Fetch active reservations for welcome banner
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchActiveReservations = async () => {
+      try {
+        const res = await fetch(`/api/reservations?userId=${user.id}&status=WAITING`);
+        if (res.ok) {
+          const data = await res.json();
+          const reservations = (data.reservations ?? []).slice(0, 2);
+          setActiveReservations(reservations.map((r: { agency?: { name: string; id: string }; position?: number; agencyId?: string; queueNumber?: number }) => ({
+            agencyName: r.agency?.name || '',
+            position: r.position || r.queueNumber || 0,
+            agencyId: r.agency?.id || r.agencyId || '',
+          })));
+        }
+      } catch { /* silent */ }
+    };
+    fetchActiveReservations();
+    const interval = setInterval(fetchActiveReservations, 30000);
+    return () => clearInterval(interval);
+  }, [user?.id]);
+
+  // Compute quick stats
+  const openAgencyCount = useMemo(() => agencies.filter(a => a.isQueueOpen && !a.isPaused).length, [agencies]);
+  const totalWaitingCount = useMemo(() => agencies.reduce((sum, a) => sum + (a.waitingCount || 0), 0), [agencies]);
+
   const dateDialogContent = (
     <Dialog open={dateDialogOpen} onOpenChange={(open) => { setDateDialogOpen(open); if (!open) { setPendingJoin(null); setSelectedDate(undefined); } }}>
       <DialogContent className="sm:max-w-md">
@@ -430,6 +477,9 @@ export function CustomerHome() {
             <CalendarDays className="h-5 w-5 text-emerald-600" />
             {t('reserveForDate')}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {t('selectDate')}
+          </DialogDescription>
         </DialogHeader>
         <div className="py-2">
           <p className="text-sm text-muted-foreground mb-4">{t('selectDate')}</p>
@@ -632,6 +682,9 @@ export function CustomerHome() {
                 {selectedAgency.isQueueOpen ? t('joinQueue') : t('closed')}
               </Button>
             )}
+
+            {/* Reviews Section */}
+            <AgencyReviewsPreview agencyId={selectedAgency.id} averageRating={selectedAgency.averageRating} reviewCount={selectedAgency.reviewCount} />
           </CardContent>
         </Card>
       </motion.div>
@@ -659,30 +712,73 @@ export function CustomerHome() {
         <p className="text-sm text-muted-foreground ms-[44px]">{t('welcomeSubtitle')}</p>
       </motion.div>
 
-      {/* Welcome Banner */}
+      {/* Welcome Banner with parallax-style effect */}
       {firstName && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="mb-4"
+          className="mb-4 parallax-container"
         >
           <button
             type="button"
             onClick={() => searchSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-            className="w-full text-start rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 px-5 py-4 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-transform cursor-pointer"
+            className="w-full text-start rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 px-5 py-4 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-transform cursor-pointer relative overflow-hidden"
           >
-            <p className="text-lg font-bold text-white mb-0.5">
-              {lang === 'ar' ? `مرحباً، ${firstName}! 👋` : lang === 'fr' ? `Bienvenue, ${firstName} ! 👋` : `Welcome, ${firstName}! 👋`}
-            </p>
-            <p className="text-sm text-emerald-100">{getGreetingMessage()}</p>
+            {/* Subtle parallax background pattern */}
+            <div className="absolute inset-0 opacity-[0.05]" style={{
+              backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
+              backgroundSize: '20px 20px',
+            }} />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-lg font-bold text-white">
+                  {getTimeGreeting()}, {firstName}! 👋
+                </p>
+                <div className="flex items-center gap-2">
+                  {openAgencyCount > 0 && (
+                    <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full">
+                      {openAgencyCount} {t('agenciesNearbyStat')}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <p className="text-sm text-emerald-100">{getGreetingMessage()}</p>
+              {/* Mini queue status */}
+              {activeReservations.length > 0 && (
+                <div className="mt-3 bg-white/15 backdrop-blur-sm rounded-xl p-2.5 flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <TicketCheck className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-white truncate">
+                      {activeReservations[0].agencyName}
+                    </p>
+                    <p className="text-[10px] text-emerald-100">
+                      #{activeReservations[0].position} · {totalWaitingCount} {t('waitingInQueueStat')}
+                    </p>
+                  </div>
+                  <motion.div
+                    animate={{ scale: [1, 1.15, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    className="h-2 w-2 rounded-full bg-emerald-300 pulse-ring"
+                  />
+                </div>
+              )}
+            </div>
           </button>
         </motion.div>
       )}
 
       {/* Search Bar */}
       <div ref={searchSectionRef} className="relative mb-4">
-        <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <motion.div
+          className="absolute start-4 top-1/2 -translate-y-1/2 z-10"
+          animate={searchQuery === '' && !searchFocused ? { scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] } : { scale: 1, opacity: 1 }}
+          transition={searchQuery === '' && !searchFocused ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
+        >
+          <Search className="h-5 w-5 text-muted-foreground" />
+        </motion.div>
         <Input
           ref={searchInputRef}
           placeholder={t('searchAgency')}
@@ -697,8 +793,25 @@ export function CustomerHome() {
           }}
           onBlur={handleSearchBlur}
           onKeyDown={handleSearchKeyDown}
-          className="ps-11 h-12 text-base rounded-xl bg-white dark:bg-gray-900/80 shadow-sm border-gray-200 dark:border-gray-800 dark:backdrop-blur-sm"
+          className="ps-11 pe-20 h-12 text-base rounded-xl bg-white dark:bg-gray-900/80 shadow-sm border-gray-200 dark:border-gray-800 dark:backdrop-blur-sm"
         />
+        {/* Search result count & clear button */}
+        <div className="absolute end-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          {searchQuery.trim() && !showSuggestions && (
+            <span className="text-[10px] text-muted-foreground font-medium">
+              {filteredAgencies.length} {t('searchResultsCount')}
+            </span>
+          )}
+          {searchQuery && (
+            <button
+              onClick={() => { setSearchQuery(''); setSearchFocused(false); setShowSuggestions(false); }}
+              className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              aria-label={t('clearSearch')}
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          )}
+        </div>
         {/* Search Suggestions Dropdown */}
         {(searchFocused || showSuggestions) && (searchSuggestions.length > 0 || (searchQuery === '' && recentSearches.length > 0)) && (
           <div className="absolute top-full mt-1 start-0 end-0 z-[60] bg-white dark:bg-gray-900 border border-border rounded-xl shadow-lg overflow-hidden">
@@ -789,6 +902,94 @@ export function CustomerHome() {
         </Button>
       </div>
 
+      {/* Featured Agencies (Sponsored) Horizontal Scroll */}
+      {!loading && agencies.filter(a => a.isSponsored).length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-5"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              {t('featuredAgencies')}
+            </h2>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => featuredScrollRef.current?.scrollBy({ left: -240, behavior: 'smooth' })}
+                className="h-6 w-6 rounded-full border border-border flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
+              </button>
+              <button
+                onClick={() => featuredScrollRef.current?.scrollBy({ left: 240, behavior: 'smooth' })}
+                className="h-6 w-6 rounded-full border border-border flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
+              </button>
+            </div>
+          </div>
+          <div
+            ref={featuredScrollRef}
+            className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth"
+          >
+            {agencies
+              .filter(a => a.isSponsored)
+              .map((agency, idx) => {
+                const estWait = agency.waitingCount * (agency.avgServiceTime || 10);
+                return (
+                  <motion.button
+                    key={agency.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1 }}
+                    whileHover={{ y: -3 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => handleSelectAgency(agency)}
+                    className="flex-shrink-0 min-w-[220px] rounded-2xl border border-amber-200 dark:border-amber-800/50 bg-gradient-to-b from-amber-50 to-white dark:from-amber-900/20 dark:to-gray-900/80 shadow-sm hover:shadow-md transition-all duration-200 p-4 text-start relative overflow-hidden"
+                  >
+                    {/* Shimmer gradient top border */}
+                    <div className="absolute top-0 start-0 end-0 h-1 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 animate-pulse" />
+                    {/* Sponsored badge */}
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400 border-amber-200 dark:border-amber-700 text-[10px] px-1.5 shimmer-badge">
+                        <Star className="h-2.5 w-2.5 me-0.5 fill-amber-500 text-amber-500" />
+                        {t('sponsored')}
+                      </Badge>
+                      <span className="flex items-center gap-1 text-[10px] font-medium">
+                        <span className={`h-1.5 w-1.5 rounded-full ${agency.isQueueOpen && !agency.isPaused ? 'bg-emerald-500' : agency.isPaused ? 'bg-yellow-500' : 'bg-red-500'}`} />
+                        <span className={agency.isQueueOpen && !agency.isPaused ? 'text-emerald-600 dark:text-emerald-400' : agency.isPaused ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}>
+                          {agency.isPaused ? t('paused') : agency.isQueueOpen ? t('openNow') : t('closed')}
+                        </span>
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-sm text-foreground mb-1 truncate">{getAgencyName(agency)}</h3>
+                    <Badge variant="secondary" className="text-[10px] mb-1.5">{getCategoryLabel(agency.category)}</Badge>
+                    {agency.reviewCount > 0 && agency.averageRating > 0 && (
+                      <div className="mb-1.5">
+                        <AgencyRatingDisplay averageRating={agency.averageRating} totalCount={agency.reviewCount} compact size="sm" />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        ~{estWait} {t('estWaitBadge')}
+                      </span>
+                      <span
+                        onClick={(e) => { e.stopPropagation(); handleQuickJoin(agency.id); }}
+                        className="px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-medium hover:bg-emerald-600 transition-colors"
+                      >
+                        {t('joinQueue')}
+                      </span>
+                    </div>
+                  </motion.button>
+                );
+              })}
+          </div>
+        </motion.div>
+      )}
+
       {/* Nearby Agencies Section */}
       {!loading && agencies.length > 0 && (
         <motion.div
@@ -845,29 +1046,77 @@ export function CustomerHome() {
       <div className="flex gap-2 overflow-x-auto pb-3 mb-5 no-scrollbar">
         {categoryKeys.map((cat) => {
           const Icon = cat.icon;
+          const isActive = selectedCategory === cat.value;
           return (
-            <button
+            <motion.button
               key={cat.value}
               onClick={() => setSelectedCategory(cat.value)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all min-h-9 active:scale-95 ${
-                selectedCategory === cat.value
+              layout
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium whitespace-nowrap transition-all min-h-9 active:scale-95 relative ${
+                isActive
                   ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/25'
                   : 'bg-white/60 dark:bg-gray-800/60 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50'
               }`}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <motion.span
+                initial={false}
+                animate={{ scale: isActive ? 1.1 : 1, rotate: isActive ? 10 : 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              >
+                <Icon className="h-3.5 w-3.5" />
+              </motion.span>
               {t(cat.key)}
-            </button>
+              {/* Animated selection indicator */}
+              {isActive && (
+                <motion.div
+                  layoutId="categoryIndicator"
+                  className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 -z-10"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+            </motion.button>
           );
         })}
       </div>
+
+      {/* Pull to Refresh Hint */}
+      {!loading && agencies.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-center mb-3"
+        >
+          <motion.div
+            animate={{ y: [0, 4, 0], opacity: [0.4, 0.7, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="flex items-center gap-1.5 text-[10px] text-muted-foreground"
+          >
+            <div className="h-4 w-4 rounded-full border border-muted-foreground/30 flex items-center justify-center">
+              <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+            </div>
+            {t('pullToRefresh') || 'Pull down to refresh'}
+          </motion.div>
+        </motion.div>
+      )}
 
       {/* Agency Cards Grid */}
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-fade-up">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="relative overflow-hidden rounded-2xl">
-              <Skeleton className="h-40 rounded-2xl skeleton-shimmer-enhanced" />
+            <div key={i} className="relative overflow-hidden rounded-2xl shimmer-loading">
+              <div className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <Skeleton className="h-10 w-10 rounded-xl skeleton-shimmer-enhanced" />
+                  <Skeleton className="h-5 w-16 rounded-full skeleton-shimmer-enhanced" />
+                </div>
+                <Skeleton className="h-4 w-3/4 skeleton-shimmer-enhanced" />
+                <Skeleton className="h-3 w-1/2 skeleton-shimmer-enhanced" />
+                <Skeleton className="h-5 w-20 rounded-full skeleton-shimmer-enhanced" />
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800">
+                  <Skeleton className="h-5 w-14 rounded-full skeleton-shimmer-enhanced" />
+                  <Skeleton className="h-5 w-5 rounded-full skeleton-shimmer-enhanced" />
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -878,41 +1127,55 @@ export function CustomerHome() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredAgencies.map((agency, idx) => (
+          {filteredAgencies.map((agency, idx) => {
+            const estWait = agency.waitingCount * (agency.avgServiceTime || 10);
+            const queueStatus = agency.isQueueOpen && !agency.isPaused ? 'open' : agency.isPaused ? 'paused' : 'closed';
+            const distKm = ((idx + 1) * 0.5 + (idx * 0.3)).toFixed(1);
+            return (
             <motion.div
               key={agency.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: idx * 0.07 }}
-              whileHover={{ y: -6, scale: 1.01 }}
-              className="group"
+              whileHover={{ y: -6, scale: 1.02 }}
+              className="group card-hover-scale"
             >
               <Card
-                className="h-full cursor-pointer border-0 shadow-sm hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-200 hover:-translate-y-0.5 group-hover:border-emerald-200 dark:group-hover:border-emerald-800 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50"
+                className={`h-full cursor-pointer border-0 shadow-sm hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-200 hover:-translate-y-0.5 group-hover:border-emerald-200 dark:group-hover:border-emerald-800 bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50 relative overflow-hidden ${agency.isSponsored ? 'ring-1 ring-amber-200 dark:ring-amber-800/50' : ''}`}
                 onClick={() => handleSelectAgency(agency)}
               >
+                {/* Gradient top border for sponsored agencies */}
+                {agency.isSponsored && (
+                  <div className="absolute top-0 start-0 end-0 h-1 bg-gradient-to-r from-amber-400 via-emerald-400 to-amber-400 shimmer-gradient" />
+                )}
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800/50 transition-colors duration-300">
                       <TicketCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
                       {agency.isSponsored && (
-                        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 text-[10px] px-1.5">
-                          <Star className="h-2.5 w-2.5 me-0.5" />
+                        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 text-[10px] px-1.5 shimmer-badge">
+                          <Star className="h-2.5 w-2.5 me-0.5 fill-amber-500 text-amber-500" />
                           {t('sponsored')}
                         </Badge>
                       )}
-                      <Badge
-                        variant="outline"
-                        className={
-                          !agency.isQueueOpen || agency.isPaused
-                            ? 'text-[10px] bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200'
-                            : 'text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
-                        }
-                      >
-                        {agency.isPaused ? t('paused') : agency.isQueueOpen ? t('openNow') : t('closed')}
-                      </Badge>
+                      {/* Queue status indicator with dot */}
+                      <span className="flex items-center gap-1">
+                        <span className={`h-2 w-2 rounded-full ${queueStatus === 'open' ? 'bg-emerald-500' : queueStatus === 'paused' ? 'bg-yellow-500' : 'bg-red-500'}`} />
+                        <Badge
+                          variant="outline"
+                          className={
+                            queueStatus === 'open'
+                              ? 'text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200'
+                              : queueStatus === 'paused'
+                                ? 'text-[10px] bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200'
+                                : 'text-[10px] bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200'
+                          }
+                        >
+                          {agency.isPaused ? t('paused') : agency.isQueueOpen ? t('openNow') : t('closed')}
+                        </Badge>
+                      </span>
                     </div>
                   </div>
 
@@ -923,7 +1186,36 @@ export function CustomerHome() {
                   <p className="text-xs text-muted-foreground mb-2 line-clamp-1 flex items-center gap-1">
                     <MapPin className="h-3 w-3 flex-shrink-0" />
                     {agency.address}
+                    <span className="ms-auto text-emerald-600 dark:text-emerald-400 font-medium">{distKm} km</span>
                   </p>
+
+                  {/* Estimated wait time badge */}
+                  {agency.isQueueOpen && !agency.isPaused && (
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Badge variant="outline" className="text-[10px] bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400 border-teal-200">
+                        <Clock className="h-2.5 w-2.5 me-1" />
+                        ~{estWait} {t('estWaitBadge')}
+                      </Badge>
+                      {agency.serviceCount > 1 && (
+                        <Badge variant="outline" className="text-[10px] bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-200">
+                          <Briefcase className="h-2.5 w-2.5 me-1" />
+                          {agency.serviceCount} {t('services')}
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Rating display */}
+                  {agency.reviewCount > 0 && agency.averageRating > 0 && (
+                    <div className="mb-2">
+                      <AgencyRatingDisplay
+                        averageRating={agency.averageRating}
+                        totalCount={agency.reviewCount}
+                        compact
+                        size="sm"
+                      />
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                     <div className="flex items-center gap-2">
@@ -982,7 +1274,7 @@ export function CustomerHome() {
                 </CardContent>
               </Card>
             </motion.div>
-          ))}
+          );})}
         </div>
       )}
 
@@ -995,6 +1287,157 @@ export function CustomerHome() {
         onOpenChange={setQrScannerOpen}
         onAgencyFound={(code) => fetchAgencyDetail(code)}
       />
+    </div>
+  );
+}
+
+// ─── Agency Reviews Preview (for customer agency detail dialog) ────
+function AgencyReviewsPreview({ agencyId, averageRating, reviewCount }: { agencyId: string; averageRating?: number; reviewCount?: number }) {
+  const { t, lang } = useLanguage();
+  const [reviews, setReviews] = useState<Array<{
+    id: string;
+    rating: number;
+    comment: string | null;
+    createdAt: string;
+    user: { fullName: string; avatarUrl?: string };
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+
+  const fetchReviews = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/reviews?agencyId=${encodeURIComponent(agencyId)}&limit=5`);
+      if (res.ok) {
+        const data = await res.json();
+        setReviews(data.reviews ?? []);
+      }
+    } catch { /* silent */ }
+    finally { setLoading(false); }
+  }, [agencyId]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
+
+  if (loading) {
+    return (
+      <div className="mt-4 pt-4 border-t border-border">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="h-4 w-4 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-16 bg-muted/50 rounded-lg animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (reviews.length === 0) {
+    return (
+      <div className="mt-4 pt-4 border-t border-border">
+        <div className="flex items-center gap-2 mb-3">
+          <MessageCircle className="h-4 w-4 text-amber-500" />
+          <h3 className="font-semibold text-sm text-foreground">{t('customerReviews')}</h3>
+        </div>
+        <div className="text-center py-6">
+          <div className="h-12 w-12 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center mx-auto mb-2">
+            <Star className="h-6 w-6 text-amber-300 dark:text-amber-700" />
+          </div>
+          <p className="text-sm text-muted-foreground">{t('noReviewsYet')}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('beFirstToReview')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const displayReviews = showAll ? reviews : reviews.slice(0, 3);
+
+  return (
+    <div className="mt-4 pt-4 border-t border-border">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="h-4 w-4 text-amber-500" />
+          <h3 className="font-semibold text-sm text-foreground">{t('customerReviews')}</h3>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <AgencyRatingDisplay
+            averageRating={averageRating ?? 0}
+            totalCount={reviewCount ?? reviews.length}
+            compact
+            size="sm"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <AnimatePresence>
+          {displayReviews.map((review, idx) => {
+            const initials = review.user.fullName
+              .split(' ')
+              .map((n: string) => n[0])
+              .filter(Boolean)
+              .slice(0, 2)
+              .join('')
+              .toUpperCase();
+            const colors = ['bg-emerald-500', 'bg-teal-500', 'bg-amber-500', 'bg-rose-500', 'bg-violet-500'];
+            const colorClass = colors[review.user.fullName.length % colors.length];
+
+            return (
+              <motion.div
+                key={review.id}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="flex items-start gap-2.5 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+              >
+                <div className={`h-8 w-8 rounded-full ${colorClass} flex items-center justify-center flex-shrink-0`}>
+                  <span className="text-[10px] font-bold text-white">{initials || '?'}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-foreground">{review.user.fullName}</span>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-2.5 w-2.5 ${
+                            star <= review.rating
+                              ? 'fill-amber-400 text-amber-400'
+                              : 'fill-gray-200 text-gray-200 dark:fill-gray-600 dark:text-gray-600'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {review.comment && (
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{review.comment}</p>
+                  )}
+                  <span className="text-[10px] text-muted-foreground/70">
+                    {new Date(review.createdAt).toLocaleDateString(
+                      lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US',
+                      { month: 'short', day: 'numeric' }
+                    )}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+
+      {reviews.length > 3 && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
+          onClick={() => setShowAll(!showAll)}
+        >
+          {showAll ? t('showLess') || 'Show less' : `${t('seeAllReviews')} (${reviews.length})`}
+        </Button>
+      )}
     </div>
   );
 }

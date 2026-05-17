@@ -816,6 +816,14 @@ const fr: Record<TranslationKeys, string> = {
   usernameTaken: "Ce nom d'utilisateur est déjà pris",
   initialAccountCreated: "Compte initial créé",
 
+  // ─── Task 7: Enhanced Staff Management ──────
+  editStaffMember: "Modifier l'employé",
+  staffUpdated: "Employé mis à jour",
+  staffDeactivated: "Compte employé désactivé",
+  staffActivated: "Compte employé activé",
+  cannotRemoveOwner: "Impossible de retirer le propriétaire",
+  removeStaffConfirm: "Êtes-vous sûr de vouloir retirer cet employé ?",
+
   // ─── QR Code Scanner ────────────────
   scanQrCode: "Scanner le code QR",
   cameraPermissionDenied: "Permission de caméra refusée. Veuillez l'activer dans les paramètres du navigateur.",
@@ -988,6 +996,96 @@ const fr: Record<TranslationKeys, string> = {
   smsPurchaseAmount: 'Montant',
   smsPurchasePayment: 'Mode de paiement',
   perCredit: 'par crédit',
+
+  // ─── Dashboard Enhancements ─────────
+  viewQrCode: 'Voir le QR Code',
+  scanToJoin: 'Scannez pour rejoindre la file',
+  qrCodeAgency: 'QR Code de l\'établissement',
+  qrCodeScanHint: 'Les clients peuvent scanner ce code pour rejoindre la file',
+  queueProgress: 'Progression de la file',
+  lastRefreshed: 'Dernière mise à jour',
+  autoRefreshActive: 'Actualisation auto active',
+  toggleQueue: 'Activer/Désactiver la file',
+  queueActive: 'File active',
+  queuePausedLabel: 'File en pause',
+  servedLabel: 'Servis',
+  waitingLabel: 'En attente',
+  totalToday: 'Total aujourd\'hui',
+  customersServed: 'Clients servis',
+  avgWaitShort: 'Attente moy.',
+  queueLengthShort: 'En file',
+  noShowShort: 'Absents',
+
+  // ─── Customer Home Enhancements ─────
+  featuredAgencies: 'Agences en vedette',
+  goodMorning: 'Bonjour',
+  goodAfternoon: 'Bon après-midi',
+  goodEvening: 'Bonsoir',
+  goodNight: 'Bonne nuit',
+  agenciesNearbyStat: 'agences à proximité',
+  waitingInQueueStat: 'en attente',
+  searchResultsCount: 'résultats',
+  estWaitBadge: 'min attente',
+
+  // ─── Task 6: Customer History Enhancements ─────
+  historyTotalVisits: 'Total visites',
+  historyCompletedCount: 'Terminé',
+  historyAvgWait: 'Att. moy.',
+  historyCancelledCount: 'Annulé',
+  historyYesterday: 'Hier',
+  historyEarlier: 'Précédent',
+
+  // ─── Task 8: Customer Notifications Enhancements ─────
+  yesterday: 'Hier',
+  earlier: 'Plus tôt',
+  unread: 'Non lues',
+  read: 'Lues',
+  total: 'Total',
+  unreadNotifications: 'notifications non lues',
+  noUnreadNotifications: 'Aucune notification non lue',
+  new: 'Nouveau',
+
+  // ─── Task 11: Customer Notifications Redesign ─────
+  markAsRead: 'Marquer comme lu',
+  markedAsRead: 'Marqué comme lu',
+  notificationDeleted: 'Notification supprimée',
+  browseAgencies: 'Parcourir les établissements',
+  allCaughtUp: 'Tout est lu !',
+  allCaughtUpDesc: 'Vous n\'avez aucune notification non lue',
+  queueNotifs: 'File',
+  generalNotifs: 'Général',
+  refreshing: 'Actualisation...',
+  swipeToDismiss: 'Glissez pour fermer',
+  deleteNotification: 'Supprimer la notification',
+  markReadSuccess: 'Notification marquée comme lue',
+
+  // ─── Task 9: Agency Review & Rating ──────
+  rateYourExperience: 'Évaluez votre expérience',
+  rateAgency: 'Évaluez cette agence',
+  ratingSubmitted: 'Évaluation soumise',
+  ratingUpdated: 'Évaluation mise à jour',
+  writeComment: 'Écrivez un commentaire...',
+  submitRating: "Soumettre l'évaluation",
+  reviews: 'avis',
+  noReviews: 'Aucun avis',
+  rateNow: 'Évaluer',
+
+  // ─── Task 13: Agency Reviews Page ──────
+  reviewsPage: 'Avis',
+  filterByRating: 'Filtrer par note',
+  sortBy: 'Trier par',
+  newest: 'Plus récent',
+  highestRated: 'Mieux noté',
+  lowestRated: 'Moins bien noté',
+  replyToReview: "Répondre à l'avis",
+  writeReply: 'Écrivez votre réponse...',
+  replySubmitted: 'Réponse soumise',
+  reportReview: "Signaler l'avis",
+  noReviewsYet: 'Aucun avis pour l\'instant',
+  beFirstToReview: 'Soyez le premier à donner votre avis !',
+  allReviews: 'Tous les avis',
+  customerReviews: 'Avis des clients',
+  seeAllReviews: 'Voir tous les avis',
 };
 
 export default fr;
