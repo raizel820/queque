@@ -138,7 +138,7 @@ export function QueueStatusWidget({ agencyId }: QueueStatusWidgetProps) {
           </div>
           <div className="text-center p-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20">
             <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 mx-auto mb-1" />
-            <p className="text-lg font-bold text-amber-700 dark:text-amber-400">{data.avgWaitTime}</p>
+            <p className="text-lg font-bold text-amber-700 dark:text-amber-400">{data.avgWaitTime ?? 0}</p>
             <p className="text-[9px] text-muted-foreground">{t('min')}</p>
           </div>
         </div>

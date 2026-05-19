@@ -562,7 +562,7 @@ export function CustomerProfile() {
                     animate={{ opacity: 1 }}
                     className="text-xl font-bold text-foreground"
                   >
-                    ~{queueStats.avgWaitTime} {t('min')}
+                    ~{queueStats.avgWaitTime ?? 0} {t('min')}
                   </motion.p>
                 </motion.div>
                 <motion.div

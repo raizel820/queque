@@ -578,6 +578,7 @@ export function AgencyDashboard() {
   const cancelled = stats?.cancelledCount ?? 0;
   const totalProcessed = served + noShows + cancelled;
   const completionRate = totalProcessed > 0 ? (served / totalProcessed) * 100 : 0;
+  const safeCompletionRate = isNaN(completionRate) ? 0 : completionRate;
 
   // Max waiting count for service breakdown bars
   const maxWaiting = serviceStats.length > 0 ? Math.max(...serviceStats.map(s => s.waitingCount), 1) : 1;
@@ -1320,7 +1321,7 @@ export function AgencyDashboard() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="flex flex-col items-center justify-center py-2">
-                <CircularProgress value={completionRate} size={90} strokeWidth={7} />
+                <CircularProgress value={safeCompletionRate} size={90} strokeWidth={7} />
                 <p className="text-sm font-semibold text-foreground mt-3">{t('completionRate')}</p>
                 <p className="text-xs text-muted-foreground">
                   {t('servedToday')}: {served} · {t('noShowRate')}: {noShows} · {t('cancelled')}: {cancelled}
@@ -1392,11 +1393,11 @@ export function AgencyDashboard() {
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-200" />
                   <span className="text-[10px] text-emerald-200">{t('completionRateStat')}</span>
                 </div>
-                <p className="text-2xl font-bold">{completionRate.toFixed(0)}%</p>
+                <p className="text-2xl font-bold">{safeCompletionRate.toFixed(0)}%</p>
                 <div className="h-1.5 w-full rounded-full bg-white/20 mt-1.5 overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(completionRate, 100)}%` }}
+                    animate={{ width: `${Math.min(safeCompletionRate, 100)}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
                     className="h-full rounded-full bg-gradient-to-r from-emerald-300 to-cyan-300"
                   />
@@ -1466,19 +1467,19 @@ export function AgencyDashboard() {
                           <td className="py-2.5 px-3 text-center">
                             <span className="inline-flex items-center gap-1">
                               <Clock className="h-3 w-3 text-amber-500" />
-                              <span className="font-semibold text-amber-700 dark:text-amber-400">{s.avgWaitTime} {t('min')}</span>
+                              <span className="font-semibold text-amber-700 dark:text-amber-400">{s.avgWaitTime ?? 0} {t('min')}</span>
                             </span>
                           </td>
                           <td className="py-2.5 px-3 text-center">
                             <span className="inline-flex items-center gap-1">
                               <Users className="h-3 w-3 text-emerald-500" />
-                              <span className="font-semibold">{s.totalServed}</span>
+                              <span className="font-semibold">{s.totalServed ?? 0}</span>
                             </span>
                           </td>
                           <td className="py-2.5 px-3 text-center">
                             <span className="inline-flex items-center gap-1">
                               <Star className="h-3 w-3 text-amber-500" />
-                              <span className="font-semibold">{s.avgRating > 0 ? s.avgRating.toFixed(1) : '—'}</span>
+                              <span className="font-semibold">{(s.avgRating ?? 0) > 0 ? (s.avgRating ?? 0).toFixed(1) : '—'}</span>
                             </span>
                           </td>
                         </tr>

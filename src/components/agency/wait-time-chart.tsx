@@ -20,11 +20,24 @@ export function WaitTimeChart({ data, currentHour }: WaitTimeChartProps) {
   const { t } = useLanguage();
 
   // Generate 24h data if not provided (synthetic fallback)
-  const chartData: HourlyData[] = data.length > 0 ? data : Array.from({ length: 12 }, (_, i) => ({
+  // Use deterministic values to avoid hydration mismatch (no Math.random)
+  const fallbackData = Array.from({ length: 12 }, (_, i) => ({
     hour: (i + 7), // 7 AM to 6 PM
-    avgWaitTime: Math.floor(Math.sin(i * 0.5) * 15 + 20 + Math.random() * 10),
-    servedCount: Math.floor(Math.cos(i * 0.3) * 5 + 8 + Math.random() * 5),
+    avgWaitTime: Math.floor(Math.sin(i * 0.5) * 15 + 20 + Math.sin(i * 1.7 + 3) * 5),
+    servedCount: Math.floor(Math.cos(i * 0.3) * 5 + 8 + Math.cos(i * 2.3 + 1) * 2.5),
   }));
+
+  // Sanitize API data: coerce null/undefined/NaN/Infinity to 0 to prevent NaN in calculations
+  // Note: `?? 0` does NOT catch NaN — must use Number.isFinite()
+  const safeNum = (v: unknown): number => Number.isFinite(v as number) ? (v as number) : 0;
+
+  const chartData: HourlyData[] = data.length > 0
+    ? data.map((d) => ({
+        hour: safeNum(d.hour),
+        avgWaitTime: safeNum(d.avgWaitTime),
+        servedCount: safeNum(d.servedCount),
+      }))
+    : fallbackData;
 
   const maxWait = Math.max(...chartData.map(d => d.avgWaitTime), 1);
   const maxServed = Math.max(...chartData.map(d => d.servedCount), 1);
@@ -83,7 +96,7 @@ export function WaitTimeChart({ data, currentHour }: WaitTimeChartProps) {
             const isNow = currentHour !== undefined && d.hour === currentHour;
 
             return (
-              <div key={d.hour} className="flex-1 flex flex-col items-center gap-0.5 relative group">
+              <div key={`wait-${idx}-${d.hour}`} className="flex-1 flex flex-col items-center gap-0.5 relative group">
                 {/* Tooltip on hover */}
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
                   {formatHour(d.hour)}: {d.avgWaitTime}{t('min')}
@@ -124,7 +137,7 @@ export function WaitTimeChart({ data, currentHour }: WaitTimeChartProps) {
               const servedHeight = (d.servedCount / maxServed) * 100;
               return (
                 <motion.div
-                  key={`throughput-${d.hour}`}
+                  key={`throughput-${idx}-${d.hour}`}
                   initial={{ height: 0 }}
                   animate={{ height: `${Math.max(servedHeight, 8)}%` }}
                   transition={{ duration: 0.5, delay: idx * 0.04 + 0.3, ease: 'easeOut' }}
@@ -140,7 +153,7 @@ export function WaitTimeChart({ data, currentHour }: WaitTimeChartProps) {
         <div className="grid grid-cols-3 gap-2 mt-2">
           <div className="text-center p-1.5 rounded-lg bg-blue-50/50 dark:bg-blue-900/10">
             <p className="text-base font-bold text-blue-600 dark:text-blue-400">
-              {Math.round(chartData.reduce((s, d) => s + d.avgWaitTime, 0) / chartData.length)}
+              {Math.round(chartData.reduce((s, d) => s + d.avgWaitTime, 0) / (chartData.length || 1))}
               <span className="text-xs font-normal ml-0.5">{t('min')}</span>
             </p>
             <p className="text-[10px] text-muted-foreground">{t('avgWaitTime')}</p>
@@ -153,7 +166,7 @@ export function WaitTimeChart({ data, currentHour }: WaitTimeChartProps) {
           </div>
           <div className="text-center p-1.5 rounded-lg bg-purple-50/50 dark:bg-purple-900/10">
             <p className="text-base font-bold text-purple-600 dark:text-purple-400">
-              {Math.round(chartData.reduce((s, d) => s + d.servedCount, 0) / chartData.length * 60 / 30)}
+              {Math.round(chartData.reduce((s, d) => s + d.servedCount, 0) / (chartData.length || 1) * 60 / 30)}
             </p>
             <p className="text-[10px] text-muted-foreground">{t('customersPerHour')}</p>
           </div>

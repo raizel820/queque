@@ -3,6 +3,11 @@
  *
  * When deployed to Vercel (BLOB_READ_WRITE_TOKEN is set), all uploads go to Vercel Blob.
  * In local development, files are saved to `public/uploads/` and served statically.
+ *
+ * IMPORTANT: Vercel's serverless filesystem is READ-ONLY. Local filesystem fallback
+ * is ONLY available in non-Vercel environments (local dev, Docker, etc.).
+ * On Vercel, BLOB_READ_WRITE_TOKEN MUST be configured, otherwise uploads will fail
+ * with a clear error message.
  */
 
 import { put, del, head, list } from '@vercel/blob';
@@ -41,6 +46,14 @@ export function isVercelDeployment(): boolean {
 /** True when Vercel Blob should be used as primary storage */
 export function shouldUseVercelBlob(): boolean {
   return isVercelBlobConfigured();
+}
+
+/**
+ * True when local filesystem storage is available.
+ * On Vercel's read-only serverless filesystem, local storage is NOT available.
+ */
+export function isLocalStorageAvailable(): boolean {
+  return !isVercelDeployment();
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -129,12 +142,29 @@ export async function uploadFile(
         size: file.size,
       };
     } catch (blobError) {
-      console.error('[UPLOAD] Vercel Blob failed, falling back to local:', blobError);
-      // Fall through to local storage
+      console.error('[UPLOAD] Vercel Blob upload failed:', blobError);
+
+      // On Vercel, local filesystem is read-only — cannot fall back
+      if (!isLocalStorageAvailable()) {
+        throw new Error(
+          'File upload failed on Vercel Blob storage. Please check your BLOB_READ_WRITE_TOKEN environment variable and Vercel Blob store configuration. ' +
+          `Original error: ${blobError instanceof Error ? blobError.message : String(blobError)}`
+        );
+      }
+
+      // In local dev, fall through to local filesystem
+      console.warn('[UPLOAD] Falling back to local filesystem storage');
     }
+  } else if (!isLocalStorageAvailable()) {
+    // Blob not configured AND we're on Vercel — cannot store anywhere
+    throw new Error(
+      'File upload requires Vercel Blob storage when deployed on Vercel. ' +
+      'Please add a Vercel Blob store to your project and set the BLOB_READ_WRITE_TOKEN environment variable. ' +
+      'See: https://vercel.com/docs/storage/vercel-blob'
+    );
   }
 
-  // ── Local Filesystem ──
+  // ── Local Filesystem (only available in non-Vercel environments) ──
   const localFilename = `${uuid}.${ext}`;
   const uploadDir = path.join(process.cwd(), 'public', 'uploads', safeType);
   await ensureDir(uploadDir);
@@ -177,7 +207,11 @@ export async function deleteFile(url: string): Promise<{ success: boolean; provi
     throw new Error('Cannot delete blob URL without BLOB_READ_WRITE_TOKEN');
   }
 
-  // ── Local File ──
+  // ── Local File (only available in non-Vercel environments) ──
+  if (!isLocalStorageAvailable()) {
+    throw new Error('Local file deletion is not available on Vercel deployment');
+  }
+
   if (!url.startsWith('/uploads/') || url.includes('..')) {
     throw new Error('Invalid local URL');
   }
@@ -229,7 +263,11 @@ export async function getFileMetadata(url: string): Promise<FileMetadata | null>
     }
   }
 
-  // ── Local File ──
+  // ── Local File (only available in non-Vercel environments) ──
+  if (!isLocalStorageAvailable()) {
+    return null;
+  }
+
   if (url.startsWith('/uploads/') && !url.includes('..')) {
     const filePath = path.join(process.cwd(), 'public', url);
     const resolved = path.resolve(filePath);
@@ -297,11 +335,29 @@ export async function listFiles(options?: {
         provider: 'vercel-blob',
       };
     } catch (err) {
-      console.error('[UPLOAD LIST] Vercel Blob list failed, falling back to local:', err);
+      console.error('[UPLOAD LIST] Vercel Blob list failed:', err);
+
+      // On Vercel, local filesystem is read-only — cannot fall back
+      if (!isLocalStorageAvailable()) {
+        throw new Error(
+          'Failed to list files from Vercel Blob. Please check your BLOB_READ_WRITE_TOKEN environment variable. ' +
+          `Original error: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+
+      // In local dev, fall through to local filesystem
+      console.warn('[UPLOAD LIST] Falling back to local filesystem listing');
     }
+  } else if (!isLocalStorageAvailable()) {
+    // Blob not configured AND we're on Vercel
+    return {
+      files: [],
+      hasMore: false,
+      provider: 'vercel-blob',
+    };
   }
 
-  // ── Local Filesystem ──
+  // ── Local Filesystem (only available in non-Vercel environments) ──
   const uploadRoot = path.join(process.cwd(), 'public', 'uploads');
   const scanDir = prefix ? path.join(uploadRoot, prefix) : uploadRoot;
 

@@ -28,8 +28,8 @@ export function RatingDistribution({ ratings, averageRating, totalRatings }: Rat
     { rating: 1, count: 3 },
   ];
 
-  const avg = averageRating ?? (ratingData.reduce((s, r) => s + r.rating * r.count, 0) / (ratingData.reduce((s, r) => s + r.count, 0) || 1));
-  const total = totalRatings ?? ratingData.reduce((s, r) => s + r.count, 0);
+  const avg = averageRating ?? (ratingData.reduce((s, r) => s + (r.rating ?? 0) * (r.count ?? 0), 0) / (ratingData.reduce((s, r) => s + (r.count ?? 0), 0) || 1));
+  const total = totalRatings ?? ratingData.reduce((s, r) => s + (r.count ?? 0), 0);
   const maxCount = Math.max(...ratingData.map(r => r.count), 1);
 
   const starColors = {

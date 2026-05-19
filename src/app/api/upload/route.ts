@@ -7,11 +7,24 @@ import {
   isValidType,
   DEFAULT_TYPE,
   isVercelBlobConfigured,
+  isVercelDeployment,
+  isLocalStorageAvailable,
 } from '@/lib/upload';
 
 // ─── POST: Upload file ──────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
+    // Pre-flight check: ensure upload is possible in this environment
+    if (isVercelDeployment() && !isVercelBlobConfigured()) {
+      return NextResponse.json(
+        {
+          error: 'File upload requires Vercel Blob storage. Please add a Vercel Blob store to your project and set the BLOB_READ_WRITE_TOKEN environment variable. See: https://vercel.com/docs/storage/vercel-blob',
+          code: 'BLOB_NOT_CONFIGURED',
+        },
+        { status: 503 },
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const type = isValidType(searchParams.get('type') || '')
       ? searchParams.get('type')!
@@ -53,6 +66,7 @@ export async function POST(request: NextRequest) {
     const message = error instanceof Error ? error.message : 'Internal server error';
     const status = message.includes('too large') ? 413
       : message.includes('Invalid') ? 400
+      : message.includes('BLOB_READ_WRITE_TOKEN') || message.includes('Vercel Blob') ? 503
       : 500;
     return NextResponse.json({ error: message }, { status });
   }
@@ -76,7 +90,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error: unknown) {
     console.error('[UPLOAD DELETE] Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
-    const status = message.includes('Invalid') || message.includes('Cannot') ? 400 : 500;
+    const status = message.includes('Invalid') || message.includes('Cannot') || message.includes('not available') ? 400 : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }
@@ -114,8 +128,15 @@ export async function GET(request: NextRequest) {
 
 // ─── HEAD: Check storage status ─────────────────────────────────────────────
 export async function HEAD() {
+  const isVercel = isVercelDeployment();
+  const isBlobConfigured = isVercelBlobConfigured();
+  const isLocal = isLocalStorageAvailable();
+
   return NextResponse.json({
-    storage: isVercelBlobConfigured() ? 'vercel-blob' : 'local',
-    configured: isVercelBlobConfigured(),
+    storage: isBlobConfigured ? 'vercel-blob' : isLocal ? 'local' : 'none',
+    configured: isBlobConfigured,
+    isVercel,
+    isLocalAvailable: isLocal,
+    canUpload: isBlobConfigured || isLocal,
   });
 }
