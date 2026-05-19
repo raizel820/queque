@@ -13,15 +13,42 @@ export async function POST(
     const transaction = await db.transaction.findUnique({ where: { id } });
     if (!transaction) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
 
+    if (transaction.status !== 'PENDING') {
+      return NextResponse.json(
+        { error: `Transaction already ${transaction.status.toLowerCase()}` },
+        { status: 400 }
+      );
+    }
+
     const newStatus = action === 'approve' ? 'APPROVED' : 'REJECTED';
+
+    // Validate reviewedBy is a real user ID if provided
+    let validReviewedBy: string | null = null;
+    if (reviewedBy) {
+      const reviewer = await db.user.findUnique({ where: { id: reviewedBy } });
+      if (reviewer) {
+        validReviewedBy = reviewedBy;
+      }
+    }
 
     const updated = await db.transaction.update({
       where: { id },
       data: {
         status: newStatus,
-        reviewedBy: reviewedBy || 'admin',
+        reviewedBy: validReviewedBy,
         reviewedAt: new Date(),
         rejectionReason: action === 'reject' ? reason : null,
+      },
+      include: {
+        agency: {
+          select: {
+            id: true,
+            name: true,
+            customCode: true,
+            subscriptionTier: true,
+            subscriptionStatus: true,
+          },
+        },
       },
     });
 
@@ -33,11 +60,19 @@ export async function POST(
           subscriptionTier: transaction.plan,
         },
       });
+    } else {
+      // Rejected - reset agency subscription status
+      await db.agency.update({
+        where: { id: transaction.agencyId },
+        data: {
+          subscriptionStatus: 'INACTIVE',
+        },
+      });
     }
 
     await db.auditLog.create({
       data: {
-        userId: reviewedBy || null,
+        userId: validReviewedBy,
         action: action === 'approve' ? 'PAYMENT_APPROVE' : 'PAYMENT_REJECT',
         entityType: 'TRANSACTION',
         entityId: id,

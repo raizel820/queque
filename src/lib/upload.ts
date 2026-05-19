@@ -8,6 +8,11 @@
  * is ONLY available in non-Vercel environments (local dev, Docker, etc.).
  * On Vercel, BLOB_READ_WRITE_TOKEN MUST be configured, otherwise uploads will fail
  * with a clear error message.
+ *
+ * Following Vercel Blob best practices:
+ * - Explicit token passing to put/del/head/list
+ * - addRandomSuffix: true by default
+ * - access: 'public' for images/logos/avatars, 'private' for receipts
  */
 
 import { put, del, head, list } from '@vercel/blob';
@@ -31,11 +36,19 @@ export const ALLOWED_MIME_PREFIXES = [
 export const VALID_TYPES = new Set(['general', 'receipt', 'logo', 'avatar']);
 export const DEFAULT_TYPE = 'general';
 
+/** Types that should use private access (require token to view) */
+const PRIVATE_TYPES = new Set(['receipt']);
+
 // ─── Environment Detection ──────────────────────────────────────────────────
+
+/** The Blob read-write token from Vercel environment */
+function getBlobToken(): string | undefined {
+  return process.env.BLOB_READ_WRITE_TOKEN;
+}
 
 /** True when running on Vercel with Blob storage configured */
 export function isVercelBlobConfigured(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
+  return !!getBlobToken();
 }
 
 /** True when running on Vercel platform */
@@ -78,6 +91,11 @@ export function isBlobUrl(url: string): boolean {
   return url.includes('.blob.vercel-storage.com');
 }
 
+/** Determine access level based on upload type */
+function getAccessForType(type: string): 'public' | 'private' {
+  return PRIVATE_TYPES.has(type) ? 'private' : 'public';
+}
+
 async function ensureDir(dir: string) {
   await fs.mkdir(dir, { recursive: true });
 }
@@ -93,6 +111,8 @@ export interface UploadResult {
   provider: 'vercel-blob' | 'local';
   /** File size in bytes */
   size: number;
+  /** Access level (only relevant for Vercel Blob) */
+  access?: 'public' | 'private';
 }
 
 // ─── Upload (POST) ──────────────────────────────────────────────────────────
@@ -102,7 +122,12 @@ export interface UploadResult {
  *
  * Automatically detects the environment and chooses the appropriate storage.
  * When `BLOB_READ_WRITE_TOKEN` is set, Vercel Blob is used.
- * Otherwise, files are saved to `public/uploads/<type>/`.
+ * Otherwise, files are saved to `public/uploads/<type>/` (local dev only).
+ *
+ * Following Vercel best practices:
+ * - Explicit `token` parameter passed to `put()`
+ * - `addRandomSuffix: true` by default to avoid collisions
+ * - `access: 'public'` for images/avatars/logos, `'private'` for receipts
  */
 export async function uploadFile(
   file: File,
@@ -111,6 +136,7 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   const safeType = VALID_TYPES.has(type) ? type : DEFAULT_TYPE;
   const ext = getExtension(file.name);
+  const access = getAccessForType(safeType);
 
   // ── Validate ──
   if (!file) throw new Error('No file provided');
@@ -129,10 +155,12 @@ export async function uploadFile(
 
   // ── Vercel Blob ──
   if (shouldUseVercelBlob()) {
+    const token = getBlobToken()!;
     try {
       const blob = await put(filename, file, {
-        access: 'public',
-        addRandomSuffix: options?.addRandomSuffix ?? false,
+        access,
+        token,
+        addRandomSuffix: options?.addRandomSuffix ?? true,
         ...(options?.metadata ? { metadata: options.metadata } : {}),
       });
       return {
@@ -140,6 +168,7 @@ export async function uploadFile(
         filename: blob.pathname.split('/').pop() || filename,
         provider: 'vercel-blob',
         size: file.size,
+        access,
       };
     } catch (blobError) {
       console.error('[UPLOAD] Vercel Blob upload failed:', blobError);
@@ -195,9 +224,10 @@ export async function deleteFile(url: string): Promise<{ success: boolean; provi
 
   // ── Vercel Blob URL ──
   if (isBlobUrl(url) || url.startsWith('https://')) {
-    if (shouldUseVercelBlob()) {
+    const token = getBlobToken();
+    if (token) {
       try {
-        await del(url);
+        await del(url, { token });
         return { success: true, provider: 'vercel-blob' };
       } catch (err) {
         console.error('[UPLOAD DELETE] Vercel Blob delete failed:', err);
@@ -247,19 +277,22 @@ export interface FileMetadata {
  */
 export async function getFileMetadata(url: string): Promise<FileMetadata | null> {
   // ── Vercel Blob URL ──
-  if (isBlobUrl(url) && shouldUseVercelBlob()) {
-    try {
-      const blob = await head(url);
-      if (!blob) return null;
-      return {
-        url: blob.url,
-        size: blob.size,
-        uploadedAt: blob.uploadedAt,
-        contentType: blob.contentType,
-        provider: 'vercel-blob',
-      };
-    } catch {
-      return null;
+  if (isBlobUrl(url)) {
+    const token = getBlobToken();
+    if (token) {
+      try {
+        const blob = await head(url, { token });
+        if (!blob) return null;
+        return {
+          url: blob.url,
+          size: blob.size,
+          uploadedAt: blob.uploadedAt,
+          contentType: blob.contentType,
+          provider: 'vercel-blob',
+        };
+      } catch {
+        return null;
+      }
     }
   }
 
@@ -314,14 +347,16 @@ export async function listFiles(options?: {
 }): Promise<ListResult> {
   const limit = options?.limit ?? 100;
   const prefix = options?.prefix ?? '';
+  const token = getBlobToken();
 
   // ── Vercel Blob ──
-  if (shouldUseVercelBlob()) {
+  if (token) {
     try {
       const result = await list({
         prefix: prefix || undefined,
         limit,
         cursor: options?.cursor || undefined,
+        token,
       });
       return {
         files: result.blobs.map((b) => ({
@@ -405,7 +440,8 @@ export async function listFiles(options?: {
  * Useful when moving from development to production.
  */
 export async function migrateToBlob(localUrl: string): Promise<UploadResult | null> {
-  if (!shouldUseVercelBlob()) {
+  const token = getBlobToken();
+  if (!token) {
     console.warn('[MIGRATE] BLOB_READ_WRITE_TOKEN not set, skipping migration');
     return null;
   }
@@ -424,7 +460,8 @@ export async function migrateToBlob(localUrl: string): Promise<UploadResult | nu
     const filename = localUrl.replace('/uploads/', '');
     const blob = await put(filename, buffer, {
       access: 'public',
-      addRandomSuffix: false,
+      token,
+      addRandomSuffix: true,
     });
     return {
       url: blob.url,

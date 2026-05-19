@@ -19,11 +19,13 @@ export async function PUT(
       )
     }
 
-    if (!reviewedBy) {
-      return NextResponse.json(
-        { success: false, error: 'reviewedBy (userId) is required' },
-        { status: 400 }
-      )
+    // Validate reviewedBy is a real user ID if provided
+    let validReviewedBy: string | null = null
+    if (reviewedBy) {
+      const reviewer = await db.user.findUnique({ where: { id: reviewedBy } })
+      if (reviewer) {
+        validReviewedBy = reviewedBy
+      }
     }
 
     // Find transaction
@@ -50,7 +52,7 @@ export async function PUT(
       where: { id },
       data: {
         status,
-        reviewedBy,
+        reviewedBy: validReviewedBy,
         reviewedAt: new Date(),
         rejectionReason: status === 'REJECTED' ? rejectionReason : null,
       },
@@ -91,7 +93,7 @@ export async function PUT(
     // Create audit log
     await db.auditLog.create({
       data: {
-        userId: reviewedBy,
+        userId: validReviewedBy,
         action: status === 'APPROVED' ? 'PAYMENT_APPROVE' : 'PAYMENT_REJECT',
         entityType: 'TRANSACTION',
         entityId: id,

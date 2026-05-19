@@ -1114,6 +1114,22 @@ const en: Record<TranslationKeys, string> = {
   allReviews: 'All Reviews',
   customerReviews: 'Customer Reviews',
   seeAllReviews: 'See all reviews',
+  writeReview: 'Write a review',
+  editReview: 'Edit review',
+  deleteReview: 'Delete review',
+  reviewSubmitted: 'Review submitted',
+  reviewUpdated: 'Review updated',
+  reviewDeleted: 'Review deleted',
+  ratingRequired: 'Please select a rating',
+  reviewCommentPlaceholder: 'Share your experience...',
+  averageRating: 'Average rating',
+  outOf5: 'out of 5',
+  totalReviewsCount: 'reviews',
+  alreadyReviewed: 'You already reviewed this agency',
+  submitReview: 'Submit review',
+  updateReview: 'Update review',
+  confirmDeleteReview: 'Are you sure you want to delete your review?',
+  reviewReply: 'Agency reply',
 };
 
 export default en;

@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -20,10 +20,12 @@ import {
   CreditCard,
   Check,
   X,
-  Eye,
   Loader2,
   Image as ImageIcon,
   Building2,
+  Download,
+  ExternalLink,
+  FileText,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -39,7 +41,23 @@ interface PendingPayment {
   createdAt: string;
 }
 
+/**
+ * Get a proxied URL for accessing private blob files.
+ * Private blob URLs cannot be accessed directly from the browser;
+ * they must be fetched server-side with the BLOB_READ_WRITE_TOKEN.
+ */
+function getProxiedUrl(url: string): string {
+  if (!url) return url;
+  // Blob URLs need to go through the proxy
+  if (url.includes('.blob.vercel-storage.com')) {
+    return `/api/upload/proxy?url=${encodeURIComponent(url)}`;
+  }
+  // Local URLs and other URLs can be used directly
+  return url;
+}
+
 export function AdminTransactions() {
+  const { user } = useAppStore();
   const { t, lang } = useLanguage();
   const [payments, setPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,6 +72,8 @@ export function AdminTransactions() {
   // Receipt preview
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
 
   useEffect(() => {
     fetchPayments();
@@ -94,7 +114,10 @@ export function AdminTransactions() {
       const res = await fetch(`/api/admin/transactions/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'approve' }),
+        body: JSON.stringify({
+          action: 'approve',
+          reviewedBy: user?.id || undefined,
+        }),
       });
       if (res.ok) {
         toast.success(t('approveTransaction'));
@@ -120,7 +143,11 @@ export function AdminTransactions() {
       const res = await fetch(`/api/admin/transactions/${rejectId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reject', reason: rejectReason }),
+        body: JSON.stringify({
+          action: 'reject',
+          reason: rejectReason,
+          reviewedBy: user?.id || undefined,
+        }),
       });
       if (res.ok) {
         toast.success(t('rejectTransaction'));
@@ -146,8 +173,28 @@ export function AdminTransactions() {
   };
 
   const openPreview = (url: string) => {
-    setPreviewUrl(url);
+    // Use proxy URL for blob URLs, direct URL for local files
+    const proxiedUrl = getProxiedUrl(url);
+    setPreviewUrl(proxiedUrl);
+    setPreviewLoading(true);
+    setPreviewError(false);
     setPreviewOpen(true);
+  };
+
+  const handlePreviewLoad = () => {
+    setPreviewLoading(false);
+    setPreviewError(false);
+  };
+
+  const handlePreviewError = () => {
+    setPreviewLoading(false);
+    setPreviewError(true);
+  };
+
+  // Determine if a receipt URL is a PDF
+  const isPdfUrl = (url?: string) => {
+    if (!url) return false;
+    return url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('pdf');
   };
 
   if (loading) {
@@ -254,29 +301,33 @@ export function AdminTransactions() {
                         </Button>
                       )}
 
-                      <Button
-                        size="sm"
-                        className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white"
-                        onClick={() => handleApprove(payment.id)}
-                        disabled={!!actionLoading}
-                      >
-                        {actionLoading === payment.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Check className="h-4 w-4 me-1.5" />
-                        )}
-                        {t('approveTransaction')}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-9 px-3 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
-                        onClick={() => openRejectDialog(payment.id)}
-                        disabled={!!actionLoading}
-                      >
-                        <X className="h-4 w-4 me-1.5" />
-                        {t('rejectTransaction')}
-                      </Button>
+                      {payment.status === 'PENDING' && (
+                        <>
+                          <Button
+                            size="sm"
+                            className="h-9 px-3 bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => handleApprove(payment.id)}
+                            disabled={!!actionLoading}
+                          >
+                            {actionLoading === payment.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Check className="h-4 w-4 me-1.5" />
+                            )}
+                            {t('approveTransaction')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-9 px-3 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
+                            onClick={() => openRejectDialog(payment.id)}
+                            disabled={!!actionLoading}
+                          >
+                            <X className="h-4 w-4 me-1.5" />
+                            {t('rejectTransaction')}
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -331,13 +382,62 @@ export function AdminTransactions() {
             <DialogTitle>{t('paymentProof')}</DialogTitle>
             <DialogDescription className="sr-only">Dialog for viewing payment proof receipt</DialogDescription>
           </DialogHeader>
-          <div className="py-4 flex items-center justify-center">
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="Receipt"
-                className="max-h-[60vh] max-w-full object-contain rounded-lg"
-              />
+          <div className="py-4 flex items-center justify-center min-h-[200px]">
+            {previewUrl && !previewError ? (
+              <>
+                {previewLoading && (
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                    <p className="text-sm text-muted-foreground">Loading receipt...</p>
+                  </div>
+                )}
+                {isPdfUrl(previewUrl) ? (
+                  <div className="w-full">
+                    <iframe
+                      src={previewUrl}
+                      className="w-full h-[60vh] rounded-lg border"
+                      title="Receipt PDF"
+                      onLoad={handlePreviewLoad}
+                      onError={handlePreviewError}
+                    />
+                    <div className="flex justify-center mt-3">
+                      <a
+                        href={previewUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 hover:underline"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        Open in new tab
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <img
+                    src={previewUrl}
+                    alt="Receipt"
+                    className={`max-h-[60vh] max-w-full object-contain rounded-lg ${previewLoading ? 'hidden' : ''}`}
+                    onLoad={handlePreviewLoad}
+                    onError={handlePreviewError}
+                  />
+                )}
+              </>
+            ) : previewError ? (
+              <div className="flex flex-col items-center gap-3 text-center">
+                <FileText className="h-12 w-12 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Could not load receipt preview</p>
+                {previewUrl && (
+                  <a
+                    href={previewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 hover:underline"
+                  >
+                    <Download className="h-4 w-4" />
+                    Try downloading directly
+                  </a>
+                )}
+              </div>
             ) : (
               <p className="text-muted-foreground">{t('noData')}</p>
             )}
