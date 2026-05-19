@@ -11,8 +11,9 @@ export async function GET() {
 
     return NextResponse.json({ announcements });
   } catch (error) {
-    console.error('Global announcements list error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[admin/announcements GET] Error:', message);
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }
 
@@ -37,8 +38,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ announcement }, { status: 201 });
   } catch (error) {
-    console.error('Global announcement create error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[admin/announcements POST] Error:', message);
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }
 
@@ -56,7 +58,8 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Global announcement delete error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[admin/announcements DELETE] Error:', message);
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }

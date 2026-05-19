@@ -15,8 +15,9 @@ export async function GET() {
 
     return NextResponse.json({ services });
   } catch (error) {
-    console.error('Agency services GET error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[agency/services GET] Error:', message);
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }
 
@@ -45,10 +46,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ service, success: true });
   } catch (error: unknown) {
-    console.error('Agency services POST error:', error);
+    console.error('[agency/services POST] Error:', error);
     if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002') {
       return NextResponse.json({ error: 'Service name already exists' }, { status: 409 });
     }
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }

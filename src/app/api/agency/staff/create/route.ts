@@ -90,7 +90,8 @@ export async function POST(req: NextRequest) {
       initialPassword: password,
     }, { status: 201 });
   } catch (error) {
-    console.error('Create staff account error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[agency/staff/create] Error:', message);
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }

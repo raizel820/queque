@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, transaction });
   } catch (error) {
-    console.error('Payment submit error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[agency/subscription/pay] Error:', message);
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }

@@ -342,7 +342,9 @@ export function AgencyDashboard() {
         fetchData();
       } else {
         const data = await res.json();
-        toast.error(data.error || t('noQueue'));
+        // Show details if available for debugging, otherwise show error or default
+        const errorMsg = data.details || data.error || t('noQueue');
+        toast.error(errorMsg);
       }
     } catch {
       toast.error(t('error'));

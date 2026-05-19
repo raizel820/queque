@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
         include: {
           service: true,
           user: {
-            select: { fullName: true },
+            select: { id: true, fullName: true },
           },
         },
         orderBy: { queueNumber: 'asc' },
@@ -77,9 +77,11 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // Validate userId exists before creating audit log with it
+      const auditUser = await tx.user.findUnique({ where: { id: candidate.userId } });
       await tx.auditLog.create({
         data: {
-          userId: candidate.userId,
+          userId: auditUser ? candidate.userId : null,
           action: 'QUEUE_CALL',
           entityType: 'RESERVATION',
           entityId: candidate.id,
@@ -106,7 +108,12 @@ export async function POST(req: NextRequest) {
         customerName: (nextReservation as { user?: { fullName: string } }).user?.fullName ?? '',
       },
     });
-  } catch (_error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('[CALL-NEXT] Error calling next customer:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    return NextResponse.json(
+      { error: 'Failed to call next customer', details: message },
+      { status: 500 }
+    );
   }
 }

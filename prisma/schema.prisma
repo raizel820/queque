@@ -283,6 +283,7 @@ model Review {
   replyText     String?
   repliedAt     DateTime?
   createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
   userId        String
   user          User         @relation(fields: [userId], references: [id])
   agencyId      String
@@ -290,8 +291,10 @@ model Review {
   reservationId String?     @unique
   reservation   Reservation? @relation(fields: [reservationId], references: [id])
 
+  @@unique([userId, agencyId])
   @@index([agencyId])
   @@index([userId])
   @@index([createdAt])
+  @@map("reviews")
 }
 

@@ -37,8 +37,9 @@ export async function GET() {
       })),
     });
   } catch (error) {
-    console.error('SMS settings GET error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[admin/sms-settings GET] Error:', message);
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }
 
@@ -132,8 +133,9 @@ export async function PUT(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('SMS settings PUT error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[admin/sms-settings PUT] Error:', message);
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }
 
@@ -166,7 +168,8 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    console.error('SMS settings POST error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[admin/sms-settings POST] Error:', message);
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }

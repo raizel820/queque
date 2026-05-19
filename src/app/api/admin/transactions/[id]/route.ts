@@ -82,7 +82,8 @@ export async function POST(
 
     return NextResponse.json({ success: true, transaction: updated });
   } catch (error) {
-    console.error('Transaction review error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    console.error('[admin/transactions/[id]] Error:', message);
+    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
   }
 }

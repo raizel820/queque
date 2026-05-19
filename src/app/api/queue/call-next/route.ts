@@ -85,10 +85,18 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create audit log
+    // Create audit log - validate calledBy is a real user ID
+    let auditUserId: string | null = null;
+    if (calledBy) {
+      const caller = await db.user.findUnique({ where: { id: calledBy } });
+      if (caller) {
+        auditUserId = calledBy;
+      }
+    }
+
     await db.auditLog.create({
       data: {
-        userId: calledBy,
+        userId: auditUserId,
         action: 'QUEUE_CALL',
         entityType: 'RESERVATION',
         entityId: nextReservation.id,
@@ -106,9 +114,10 @@ export async function POST(request: NextRequest) {
       reservation: updatedReservation,
     })
   } catch (error: unknown) {
+    console.error('[QUEUE CALL-NEXT] Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: 'Failed to call next customer', details: message },
       { status: 500 }
     )
   }
