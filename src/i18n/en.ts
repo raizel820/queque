@@ -539,6 +539,7 @@ const en: Record<TranslationKeys, string> = {
 
   // ─── Auth Role Errors ──────────────────
   wrongRoleError: "This account does not match the selected role",
+  wrongRoleHint: "Make sure you select the correct account type above (Customer, Agency, or Admin)",
 
   // ─── Feature 1: Queue Auto-Refresh ──────
   refreshInterval: "Refresh Interval",

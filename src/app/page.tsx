@@ -60,6 +60,7 @@ import {
   BarChart3,
   MoreHorizontal,
   AlertTriangle,
+  Star,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -660,6 +661,29 @@ export default function Home() {
 
   // Auth pages render full-screen with their own layouts
   const isAuthPage = currentView === 'landing' || currentView === 'login' || currentView === 'register';
+
+  // Safety: if not authenticated but on a protected view, redirect to landing
+  // This handles stale Zustand persisted state after page reload
+  if (!isAuthenticated && !isAuthPage) {
+    // Use setTimeout to avoid setState during render
+    setTimeout(() => setView('landing'), 0);
+    return (
+      <>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key="landing"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <LandingPage />
+          </motion.div>
+        </AnimatePresence>
+        <Toaster richColors position="top-center" />
+      </>
+    );
+  }
 
   if (isAuthPage || !isAuthenticated) {
     return (

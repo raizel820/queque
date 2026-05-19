@@ -57,12 +57,16 @@ export function LoginForm() {
         }, 600);
       } else {
         triggerShake();
-        toast.error(data.error === 'wrongRoleError' ? t('wrongRoleError') : data.error || t('invalidCredentials'));
+        if (data.error === 'wrongRoleError') {
+          toast.error(t('wrongRoleError'), { description: t('wrongRoleHint') || t('selectRole') || '' });
+        } else {
+          toast.error(data.error || t('invalidCredentials'));
+        }
       }
     } catch {
       toast.error(t('error'));
     } finally {
-      if (!loginSuccess) setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -171,7 +175,10 @@ export function LoginForm() {
               <CardContent className="space-y-5 pt-4">
                 {/* Role Tabs with animated indicator */}
                 <Tabs value={roleTab} onValueChange={setRoleTab} className="w-full">
-                  <TabsList className="w-full grid grid-cols-3 h-11 relative bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+                  <div className="text-center mb-2">
+                    <p className="text-xs text-muted-foreground">{t('selectRole')}</p>
+                  </div>
+                  <TabsList className="w-full grid grid-cols-3 h-12 relative bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
                     {[
                       { value: 'customer', label: t('loginAsCustomer') },
                       { value: 'agency', label: t('loginAsAgency') },

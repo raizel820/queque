@@ -1,13 +1,13 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 import {
   Clock,
   Wifi,
@@ -27,27 +27,208 @@ import {
   Landmark,
   Star,
   Quote,
+  ArrowUp,
+  ChevronUp,
+  Heart,
+  Share2,
+  Shield,
+  Globe,
 } from 'lucide-react';
 
+/* ─── Animated Counter with dramatic bounce ──────────── */
 function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
+  const [display, setDisplay] = useState(0);
 
-  const displaySuffix = suffix;
+  useEffect(() => {
+    if (!isInView) return;
+    let start = 0;
+    const duration = 1500;
+    const startTime = performance.now();
+
+    const ease = (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    const step = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = ease(progress);
+      const current = Math.round(eased * target);
+      setDisplay(current);
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [isInView, target]);
 
   return (
     <motion.span
       ref={ref}
       className="tabular-nums"
+      initial={{ scale: 0.5, opacity: 0 }}
+      animate={isInView ? { scale: [0.5, 1.15, 0.95, 1], opacity: 1 } : { scale: 0.5, opacity: 0 }}
+      transition={{ duration: 0.7, ease: 'easeOut' }}
     >
-      <motion.span
-        initial={{ opacity: 0, y: 10 }}
-        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-        transition={{ duration: 0.5 }}
-      >
-        {target.toLocaleString()}{displaySuffix}
-      </motion.span>
+      {display.toLocaleString()}{suffix}
     </motion.span>
+  );
+}
+
+/* ─── Phone Mockup SVG Illustration ──────────── */
+function PhoneMockup() {
+  return (
+    <motion.div
+      className="hidden lg:flex items-center justify-center relative"
+      initial={{ opacity: 0, x: 60 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.8, delay: 0.4 }}
+    >
+      <motion.div
+        animate={{ y: [0, -12, -6, -16, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        className="relative"
+        style={{ perspective: '800px' }}
+      >
+        {/* Glow behind phone */}
+        <div className="absolute -inset-8 bg-gradient-to-br from-emerald-400/20 to-teal-400/10 dark:from-emerald-500/10 dark:to-teal-500/5 rounded-[3rem] blur-2xl" />
+        
+        {/* Phone body */}
+        <div className="relative w-56 h-[420px] rounded-[2.5rem] bg-gradient-to-b from-gray-800 to-gray-900 dark:from-gray-700 dark:to-gray-800 p-2 shadow-2xl shadow-emerald-500/10">
+          {/* Screen */}
+          <div className="w-full h-full rounded-[2rem] bg-gradient-to-b from-emerald-50 to-white dark:from-gray-900 dark:to-gray-950 overflow-hidden relative">
+            {/* Notch */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-gray-800 dark:bg-gray-700 rounded-b-2xl z-10" />
+            
+            {/* Status bar */}
+            <div className="h-10 flex items-end justify-center pb-1">
+              <span className="text-[8px] text-gray-400 font-medium">9:41</span>
+            </div>
+
+            {/* App UI inside phone */}
+            <div className="px-3 pt-1">
+              {/* Header */}
+              <div className="flex items-center gap-1.5 mb-3">
+                <div className="w-5 h-5 rounded-md bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                  <TicketCheck className="w-3 h-3 text-white" />
+                </div>
+                <span className="text-[8px] font-bold text-emerald-700 dark:text-emerald-400">QueueWise</span>
+              </div>
+
+              {/* Queue ticket card */}
+              <div className="rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 p-2.5 mb-2.5 shadow-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <p className="text-[7px] text-emerald-100 mb-0.5">رقمك في الطابور</p>
+                <p className="text-2xl font-black text-white">A-042</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex items-center gap-0.5">
+                    <Users className="w-2.5 h-2.5 text-emerald-200" />
+                    <span className="text-[7px] text-emerald-100">3 أمامك</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <Clock className="w-2.5 h-2.5 text-emerald-200" />
+                    <span className="text-[7px] text-emerald-100">~15 دقيقة</span>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                <div className="mt-2 h-1 bg-white/20 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-white/80 rounded-full"
+                    initial={{ width: '0%' }}
+                    animate={{ width: '70%' }}
+                    transition={{ duration: 2, delay: 1.5 }}
+                  />
+                </div>
+              </div>
+
+              {/* Mini list items */}
+              <div className="space-y-1.5">
+                {[
+                  { label: 'عيادة النور', num: 'A-039', status: 'يُخدم الآن' },
+                  { label: 'عيادة النور', num: 'A-040', status: 'التالي' },
+                  { label: 'عيادة النور', num: 'A-041', status: 'في الانتظار' },
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    className="flex items-center justify-between rounded-lg bg-white/80 dark:bg-gray-800/80 p-1.5 border border-gray-100 dark:border-gray-700/50"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 2 + i * 0.2 }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[6px] font-bold text-white ${i === 0 ? 'bg-emerald-500' : i === 1 ? 'bg-teal-500' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                        {item.num}
+                      </div>
+                      <span className="text-[7px] text-gray-600 dark:text-gray-400">{item.status}</span>
+                    </div>
+                    <div className={`w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-emerald-400 animate-pulse' : i === 1 ? 'bg-teal-400' : 'bg-gray-300 dark:bg-gray-600'}`} />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom nav bar */}
+            <div className="absolute bottom-0 left-0 right-0 h-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-t border-gray-100 dark:border-gray-800 flex items-center justify-around px-4">
+              {[
+                { icon: <Building2 className="w-3 h-3" />, active: false },
+                { icon: <TicketCheck className="w-3 h-3" />, active: true },
+                { icon: <Bell className="w-3 h-3" />, active: false },
+                { icon: <Users className="w-3 h-3" />, active: false },
+              ].map((nav, i) => (
+                <div key={i} className={`flex items-center justify-center w-6 h-6 rounded-lg ${nav.active ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`}>
+                  {nav.icon}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ─── Hero Particles ──────────── */
+// Deterministic pseudo-random based on seed to avoid hydration mismatch
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function HeroParticles() {
+  // Use deterministic values derived from index to prevent SSR/client hydration mismatch
+  const particles = Array.from({ length: 20 }, (_, i) => ({
+    id: i,
+    x: seededRandom(i * 2) * 100,
+    y: seededRandom(i * 2 + 1) * 100,
+    size: seededRandom(i * 3 + 5) * 3 + 1,
+    duration: seededRandom(i * 3 + 10) * 8 + 6,
+    delay: seededRandom(i * 3 + 15) * 5,
+  }));
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full bg-emerald-400/25 dark:bg-emerald-500/15"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+          }}
+          animate={{
+            y: [0, -30, -10, -25, 0],
+            x: [0, 10, -5, 8, 0],
+            opacity: [0.2, 0.5, 0.3, 0.6, 0.2],
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: p.delay,
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -57,6 +238,9 @@ export function LandingPage() {
   const statsRef = useRef<HTMLDivElement>(null);
   const testimonialsRef = useRef<HTMLDivElement>(null);
   const trustedRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   const features = [
     { icon: Clock, titleKey: 'feature1Title' as const, descKey: 'feature1Desc' as const },
@@ -108,8 +292,29 @@ export function LandingPage() {
     { icon: Landmark, labelKey: 'trustedGov' as const },
   ];
 
+  // Back to top button visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Testimonial auto-rotate
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [testimonials.length]);
+
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden">
+    <div ref={containerRef} className="min-h-screen flex flex-col relative overflow-hidden">
       {/* Animated gradient mesh background */}
       <div className="absolute inset-0 -z-10">
         <motion.div
@@ -129,7 +334,6 @@ export function LandingPage() {
           animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
           transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute top-0 start-1/4 w-96 h-96 bg-emerald-200/40 dark:bg-emerald-800/15 rounded-full blur-3xl"
-          style={{ animation: 'mesh-drift-1 20s ease-in-out infinite' }}
         />
         <motion.div
           animate={{ x: [0, -20, 0], y: [0, 30, 0] }}
@@ -145,7 +349,6 @@ export function LandingPage() {
 
       {/* Floating glass orbs with glass-morphism */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Large glass orbs with slow drift */}
         <motion.div
           animate={{ y: [0, -25, 0], x: [0, 15, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
@@ -190,7 +393,7 @@ export function LandingPage() {
         />
       </div>
 
-      {/* Top Bar */}
+      {/* ─── Top Bar ──────────────────────────────── */}
       <header className="w-full px-4 py-3 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-2">
           <motion.div
@@ -211,240 +414,350 @@ export function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="flex-1 flex flex-col items-center justify-center px-4 py-12 md:py-20 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center max-w-2xl mx-auto"
-        >
-          {/* Floating Hero Icon */}
+      {/* ─── Hero Section ──────────────────────────── */}
+      <section className="flex-1 flex flex-col items-center justify-center px-4 py-6 md:py-12 relative z-10">
+        <HeroParticles />
+
+        <div className="text-center max-w-2xl mx-auto lg:flex lg:items-center lg:gap-12 lg:max-w-5xl lg:text-start">
           <motion.div
-            animate={{ y: [0, -14, 0], rotate: [0, 3, -3, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            className="inline-flex mb-8"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex-1"
           >
-            <div className="relative">
-              <motion.div
-                animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute inset-0 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 blur-xl"
-              />
-              <div className="relative h-24 w-24 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-2xl shadow-emerald-500/40">
-                <Zap className="h-12 w-12 text-white" />
+            {/* Floating Hero Icon */}
+            <motion.div
+              animate={{ y: [0, -14, 0], rotate: [0, 3, -3, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="inline-flex mb-4 lg:mb-6"
+            >
+              <div className="relative">
+                <motion.div
+                  animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute inset-0 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-500 blur-xl"
+                />
+                <div className="relative h-18 w-18 md:h-24 md:w-24 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-2xl shadow-emerald-500/40">
+                  <Zap className="h-9 w-9 md:h-12 md:w-12 text-white" />
+                </div>
               </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-sm font-medium mb-6 border border-emerald-200/50 dark:border-emerald-800/50"
+            >
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
+              >
+                <TicketCheck className="h-4 w-4" />
+              </motion.div>
+              {t('appTagline')}
+            </motion.div>
+
+            {/* Animated gradient title with shimmer */}
+            <h1 className="text-3xl md:text-5xl lg:text-7xl font-black tracking-tight mb-4 md:mb-6 leading-[1.1]">
+              <span className="shimmer-text">
+                {t('heroTitle')}
+              </span>
+            </h1>
+
+            <p className="text-base md:text-lg lg:text-xl text-muted-foreground mb-6 md:mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
+              {t('heroSubtitle')}
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center lg:justify-start">
+              {/* Primary CTA with pulsing glow */}
+              <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
+                <div className="relative rounded-2xl p-[2px] bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 cta-pulse-glow">
+                  <Button
+                    size="lg"
+                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-8 md:px-10 py-6 md:py-7 text-base md:text-lg rounded-2xl shadow-xl shadow-emerald-500/30 min-h-12 md:min-h-14 hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 w-full sm:w-auto"
+                    onClick={() => setView('register')}
+                  >
+                    {t('getStarted')}
+                    <motion.div
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                      <ArrowRight className="ms-2 h-5 w-5 rtl:rotate-180" />
+                    </motion.div>
+                  </Button>
+                </div>
+              </motion.div>
+              {/* Secondary CTA with pulsing glow */}
+              <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="cta-pulse-glow font-bold px-8 md:px-10 py-6 md:py-7 text-base md:text-lg rounded-2xl min-h-12 md:min-h-14 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all duration-300 border-2 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg hover:shadow-emerald-500/10 w-full sm:w-auto"
+                  onClick={() => setView('login')}
+                >
+                  {t('login')}
+                </Button>
+              </motion.div>
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-sm font-medium mb-6 border border-emerald-200/50 dark:border-emerald-800/50"
-          >
-            <motion.div
-              animate={{ rotate: [0, 15, -15, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
-            >
-              <TicketCheck className="h-4 w-4" />
-            </motion.div>
-            {t('appTagline')}
-          </motion.div>
+          {/* Phone Mockup - visible on desktop */}
+          <PhoneMockup />
+        </div>
+      </section>
 
-          {/* Animated gradient title */}
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight mb-6 leading-[1.1]">
-            <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-400 bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient-shift_4s_ease-in-out_infinite] drop-shadow-sm">
-              {t('heroTitle')}
-            </span>
-          </h1>
-
-          <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-            {t('heroSubtitle')}
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
-              <div className="relative rounded-2xl p-[2px] bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500">
-              <Button
-                size="lg"
-                className="cta-glow bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold px-10 py-7 text-lg rounded-2xl shadow-xl shadow-emerald-500/30 min-h-14 hover:shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300"
-                onClick={() => setView('register')}
-              >
-                {t('getStarted')}
-                <motion.div
-                  animate={{ x: [0, 4, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                  <ArrowRight className="ms-2 h-5 w-5 rtl:rotate-180" />
-                </motion.div>
-              </Button>
-              </div>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}>
-              <Button
-                size="lg"
-                variant="outline"
-                className="cta-glow font-bold px-10 py-7 text-lg rounded-2xl min-h-14 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-all duration-300 border-2 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-lg hover:shadow-emerald-500/10"
-                onClick={() => setView('login')}
-              >
-                {t('login')}
-              </Button>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        {/* Features Grid */}
+      {/* ─── Features Grid ─────────────────────────── */}
+      <section className="w-full px-4 py-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-16 w-full max-w-3xl"
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6 }}
+          className="max-w-3xl mx-auto"
         >
-          {features.map((feature, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 + idx * 0.1 }}
-              whileHover={{ scale: 1.03, y: -6 }}
-              className="cursor-default"
-            >
-              <div className="relative rounded-2xl p-[1.5px] bg-gradient-to-br from-emerald-200/50 via-transparent to-teal-200/50 dark:from-emerald-700/30 dark:via-transparent dark:to-teal-700/30 group-hover:from-emerald-300/80 dark:group-hover:from-emerald-600/50 group-hover:to-teal-300/80 dark:group-hover:to-teal-600/50 transition-all duration-300">
-                <Card className="h-full border-0 shadow-sm group-hover:shadow-2xl group-hover:shadow-emerald-500/10 transition-all duration-300 bg-gradient-to-br from-white to-gray-50/80 dark:from-gray-900 dark:to-gray-950 overflow-hidden rounded-[13px]">
-                  <div className="absolute top-0 start-0 w-full h-[2px] bg-gradient-to-r from-transparent via-emerald-400/0 to-transparent group-hover:via-emerald-400/60 transition-all duration-500" />
-                  <CardContent className="p-5 flex items-start gap-4">
-                    <div className="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center group-hover:from-emerald-200 group-hover:to-teal-200 dark:group-hover:from-emerald-800/50 dark:group-hover:to-teal-800/50 group-hover:shadow-lg group-hover:shadow-emerald-500/10 transition-all duration-300">
-                      <feature.icon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-2xl md:text-3xl font-bold text-center mb-3 shimmer-text"
+          >
+            {t('learnMore')}
+          </motion.h2>
+          <div className="h-1 w-16 mx-auto rounded-full gradient-flow-bar mb-10" />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {features.map((feature, idx) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{ duration: 0.5, delay: idx * 0.12 }}
+                  whileHover={{ y: -8, scale: 1.03 }}
+                  className="cursor-default"
+                >
+                  <div className="glass-feature-card rounded-2xl p-5 h-full relative overflow-hidden group">
+                    {/* Glow effect on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-teal-500/0 to-emerald-500/0 group-hover:from-emerald-500/5 group-hover:via-teal-500/5 group-hover:to-emerald-500/5 transition-all duration-500 rounded-2xl" />
+                    {/* Top accent line */}
+                    <div className="absolute top-0 start-0 w-full h-[2px] bg-gradient-to-r from-transparent via-emerald-400/0 to-transparent group-hover:via-emerald-400/60 transition-all duration-500" />
+                    
+                    <div className="flex items-start gap-4 relative z-10">
+                      <motion.div
+                        className="flex-shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/40 dark:to-teal-900/40 flex items-center justify-center group-hover:from-emerald-200 group-hover:to-teal-200 dark:group-hover:from-emerald-800/50 dark:group-hover:to-teal-800/50 group-hover:shadow-lg group-hover:shadow-emerald-500/10 transition-all duration-300"
+                        whileInView={{ scale: [0.8, 1.1, 1] }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.4, delay: 0.2 + idx * 0.1 }}
+                      >
+                        <Icon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      </motion.div>
+                      <div>
+                        <h3 className="font-semibold text-sm text-foreground mb-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                          {t(feature.titleKey)}
+                        </h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {t(feature.descKey)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-sm text-foreground mb-1">
-                        {t(feature.titleKey)}
-                      </h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        {t(feature.descKey)}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </motion.div>
-          ))}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </motion.div>
       </section>
 
-      {/* Statistics Banner with Animated Counters */}
+      {/* ─── Statistics Banner ──────────────────────── */}
       <motion.section
         ref={statsRef}
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-50px' }}
         transition={{ duration: 0.5 }}
-        className="w-full px-4 py-8 relative z-10"
+        className="w-full px-4 py-10 relative z-10"
       >
         <div className="max-w-3xl mx-auto">
-          <div className="relative rounded-2xl p-[1px] overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-500 opacity-60" />
+          <div className="relative rounded-3xl overflow-hidden landing-stats-bg p-1">
+            {/* Animated shine overlay */}
             <motion.div
               animate={{ backgroundPosition: ['0% 0%', '200% 0%'] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-              className="absolute inset-0 bg-[length:200%_100%] bg-gradient-to-r from-emerald-300 via-teal-300 to-amber-300 opacity-30"
+              className="absolute inset-0 bg-[length:200%_100%] bg-gradient-to-r from-emerald-300 via-teal-300 to-amber-300 opacity-20 rounded-3xl"
             />
-          <div className="relative bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 md:p-8 shadow-xl shadow-emerald-500/25 backdrop-blur-sm">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              {stats.map((stat, idx) => {
-                const Icon = stat.icon;
-                return (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: idx * 0.1 }}
-                    className="flex flex-col items-center gap-2"
-                  >
-                    <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
-                      <Icon className="h-5 w-5 text-white" />
-                    </div>
-                    <p className="text-2xl md:text-3xl font-extrabold text-white">
-                      {stat.displayValue ? (
-                        stat.displayValue
-                      ) : (
-                        <AnimatedCounter target={stat.value} suffix={stat.suffix} />
-                      )}
-                    </p>
-                    <p className="text-xs text-emerald-100 font-medium">{t(stat.labelKey)}</p>
-                  </motion.div>
-                );
-              })}
+            <div className="relative rounded-[22px] bg-gradient-to-r from-emerald-600/90 to-teal-600/90 backdrop-blur-sm p-8 md:p-10">
+              <div className="grid grid-cols-3 gap-6 text-center">
+                {stats.map((stat, idx) => {
+                  const Icon = stat.icon;
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                      whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.6, delay: idx * 0.15, type: 'spring', stiffness: 200 }}
+                      className="flex flex-col items-center gap-3"
+                    >
+                      <div className="h-12 w-12 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/10">
+                        <Icon className="h-6 w-6 text-white" />
+                      </div>
+                      <p className="text-3xl md:text-4xl font-black text-white">
+                        {stat.displayValue ? (
+                          stat.displayValue
+                        ) : (
+                          <AnimatedCounter target={stat.value} suffix={stat.suffix} />
+                        )}
+                      </p>
+                      <p className="text-xs text-emerald-100 font-medium uppercase tracking-wider">{t(stat.labelKey)}</p>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
           </div>
         </div>
       </motion.section>
 
-      {/* How It Works */}
+      {/* ─── How It Works ──────────────────────────── */}
       <section className="w-full px-4 py-16 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-50px' }}
+          transition={{ duration: 0.6 }}
           className="max-w-3xl mx-auto"
         >
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-3 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 dark:from-emerald-400 dark:via-teal-300 dark:to-emerald-400 bg-clip-text text-transparent">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-3 shimmer-text">
             {t('howItWorks')}
           </h2>
-          <p className="text-sm text-muted-foreground text-center mb-12 max-w-md mx-auto">{t('howItWorksDesc') || ''}</p>
+          <p className="text-sm text-muted-foreground text-center mb-14 max-w-md mx-auto">{t('howItWorksDesc') || ''}</p>
 
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-0">
-            {steps.map((step, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.5 + idx * 0.15 }}
-                className="flex-1 flex flex-col items-center text-center relative group cursor-default"
-              >
-                {/* Gradient step connector line (desktop) */}
-                {idx < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 start-[calc(50%+2rem)] end-[calc(-50%+2rem)]">
-                    <div className="w-full h-[2px] step-connector rounded-full" />
-                    <div className="absolute -top-[3px] end-[-6px] h-2 w-2 rounded-full bg-teal-400 dark:bg-teal-500 shadow-sm shadow-teal-400/50" />
-                  </div>
-                )}
-                {/* Gradient step connector line (mobile) */}
-                {idx < steps.length - 1 && (
-                  <div className="md:hidden flex flex-col items-center mt-4 mb-2">
-                    <div className="w-[2px] h-8 bg-gradient-to-b from-emerald-400/50 to-teal-400/20 dark:from-emerald-600/30 dark:to-teal-600/10 rounded-full" />
-                    <div className="h-2 w-2 rounded-full bg-teal-400 dark:bg-teal-500 -mt-1 shadow-sm shadow-teal-400/50" />
-                  </div>
-                )}
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-10 md:gap-0">
+            {steps.map((step, idx) => {
+              const Icon = step.icon;
+              const stepInView = useInView;
+              return (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{ duration: 0.5, delay: idx * 0.2 }}
+                  className="flex-1 flex flex-col items-center text-center relative group cursor-default"
+                >
+                  {/* SVG animated dashed connector (desktop) */}
+                  {idx < steps.length - 1 && (
+                    <div className="hidden md:block absolute top-10 start-[calc(50%+3rem)] end-[calc(-50%+3rem)] z-0">
+                      <svg className="w-full h-4 overflow-visible" preserveAspectRatio="none">
+                        <motion.line
+                          x1="0" y1="8" x2="100%" y2="8"
+                          stroke="url(#stepGradient)"
+                          strokeWidth="2"
+                          strokeDasharray="6 4"
+                          initial={{ pathLength: 0, opacity: 0.3 }}
+                          whileInView={{ pathLength: 1, opacity: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 1.5, delay: 0.5 + idx * 0.3 }}
+                        />
+                        <defs>
+                          <linearGradient id="stepGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
+                            <stop offset="50%" stopColor="#14b8a6" stopOpacity="0.4" />
+                            <stop offset="100%" stopColor="#10b981" stopOpacity="0.8" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                      {/* Arrow dot at end */}
+                      <motion.div
+                        className="absolute end-0 top-1/2 -translate-y-1/2"
+                        initial={{ scale: 0 }}
+                        whileInView={{ scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.3, delay: 1.5 + idx * 0.3 }}
+                      >
+                        <div className="h-2.5 w-2.5 rounded-full bg-teal-400 dark:bg-teal-500 shadow-sm shadow-teal-400/50 rtl:rotate-180" />
+                      </motion.div>
+                    </div>
+                  )}
+                  {/* Vertical connector (mobile) */}
+                  {idx < steps.length - 1 && (
+                    <div className="md:hidden flex flex-col items-center mt-4 mb-2">
+                      <svg width="2" height="32" className="overflow-visible">
+                        <motion.line
+                          x1="1" y1="0" x2="1" y2="32"
+                          stroke="#10b981"
+                          strokeWidth="2"
+                          strokeDasharray="4 3"
+                          initial={{ pathLength: 0 }}
+                          whileInView={{ pathLength: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.8, delay: 0.5 + idx * 0.2 }}
+                        />
+                      </svg>
+                      <motion.div
+                        className="h-2 w-2 rounded-full bg-teal-400 dark:bg-teal-500 -mt-1 shadow-sm shadow-teal-400/50"
+                        initial={{ scale: 0 }}
+                        whileInView={{ scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 1 + idx * 0.2 }}
+                      />
+                    </div>
+                  )}
 
-                {/* Glassmorphism card wrapper around step icon + text */}
-                <div className="relative group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-emerald-500/25 transition-all duration-300">
-                  <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                    <step.icon className="h-7 w-7 text-white" />
-                  </div>
-                  <div className="absolute -top-2 -end-2 h-7 w-7 rounded-full bg-amber-400 text-amber-900 flex items-center justify-center text-xs font-bold shadow-md">
-                    {idx + 1}
-                  </div>
-                </div>
-                {/* Glassmorphism card for step text */}
-                <div className="mt-4 p-4 rounded-2xl bg-white/40 dark:bg-gray-800/30 backdrop-blur-md border border-white/60 dark:border-gray-700/30 shadow-sm group-hover:shadow-lg group-hover:shadow-emerald-500/5 group-hover:bg-white/60 dark:group-hover:bg-gray-800/50 group-hover:border-emerald-200/50 dark:group-hover:border-emerald-700/30 transition-all duration-300 max-w-[220px]">
-                  <h3 className="font-semibold text-sm text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">
-                    {t(step.titleKey)}
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                    {t(step.descKey)}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
+                  {/* Step icon with gradient circle + bounce */}
+                  <motion.div
+                    className="relative group-hover:scale-110 transition-all duration-300"
+                    whileInView={{ scale: [0.5, 1.2, 0.9, 1] }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.3 + idx * 0.2 }}
+                  >
+                    {/* Outer pulse ring */}
+                    <motion.div
+                      className="absolute inset-0 rounded-2xl bg-emerald-400/20 dark:bg-emerald-500/10"
+                      animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
+                      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: idx * 0.5 }}
+                    />
+                    <div className="relative h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                      <Icon className="h-7 w-7 text-white" />
+                    </div>
+                    {/* Step number with gradient circle */}
+                    <motion.div
+                      className="absolute -top-2 -end-2 h-7 w-7 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center text-xs font-bold shadow-md shadow-amber-400/30"
+                      initial={{ scale: 0 }}
+                      whileInView={{ scale: [0, 1.3, 1] }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4, delay: 0.5 + idx * 0.2 }}
+                    >
+                      {idx + 1}
+                    </motion.div>
+                  </motion.div>
+
+                  {/* Step text card with glassmorphism */}
+                  <motion.div
+                    className="mt-5 p-4 rounded-2xl glass-feature-card max-w-[220px]"
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: 0.6 + idx * 0.2 }}
+                  >
+                    <h3 className="font-semibold text-sm text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">
+                      {t(step.titleKey)}
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                      {t(step.descKey)}
+                    </p>
+                  </motion.div>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
       </section>
 
-      {/* Testimonials Section with gradient overlay */}
+      {/* ─── Testimonials Section ──────────────────── */}
       <section className="w-full px-4 py-16 relative z-10">
         {/* Subtle gradient overlay */}
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-emerald-50/30 to-emerald-50/50 dark:from-transparent dark:via-emerald-950/10 dark:to-emerald-950/20" />
@@ -454,54 +767,129 @@ export function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-50px' }}
             transition={{ duration: 0.5 }}
+            className="text-center"
           >
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-10 text-foreground">
+            {/* Decorative floating quote */}
+            <motion.div
+              animate={{ y: [0, -8, 0], rotate: [-6, -3, -6] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="inline-block mb-4"
+            >
+              <Quote className="h-12 w-12 text-emerald-300 dark:text-emerald-700 rotate-180" />
+            </motion.div>
+            <h2 className="text-2xl md:text-3xl font-bold mb-10 shimmer-text">
               {t('testimonialsTitle')}
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Desktop: Grid of testimonial cards */}
+          <div className="hidden md:grid grid-cols-3 gap-5">
             {testimonials.map((testimonial, idx) => (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-30px' }}
-                transition={{ duration: 0.4, delay: idx * 0.12 }}
+                transition={{ duration: 0.5, delay: idx * 0.12 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+                className="cursor-default"
               >
-                <Card className="h-full border-0 shadow-sm hover:shadow-xl hover:shadow-emerald-500/15 transition-all duration-300 hover:-translate-y-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm group">
-                  <CardContent className="p-5 flex flex-col h-full">
-                    <Quote className="h-10 w-10 text-emerald-200 dark:text-emerald-800 mb-3 flex-shrink-0 group-hover:text-emerald-400 dark:group-hover:text-emerald-600 transition-colors duration-300" />
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-4 flex-1">
-                      &ldquo;{t(testimonial.textKey)}&rdquo;
-                    </p>
-                    <div className="flex items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-md group-hover:shadow-lg group-hover:shadow-emerald-500/20 transition-shadow duration-300">
-                        {t(testimonial.nameKey).charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">
-                          {t(testimonial.nameKey)}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {t(testimonial.roleKey)}
-                        </p>
-                      </div>
-                      <div className="ms-auto flex gap-0.5 flex-shrink-0">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="h-3 w-3 text-amber-400 fill-amber-400" />
-                        ))}
-                      </div>
+                <div className="glass-feature-card rounded-2xl p-6 h-full flex flex-col relative overflow-hidden group">
+                  {/* Decorative quote mark */}
+                  <div className="absolute top-3 end-3 opacity-10 dark:opacity-5 group-hover:opacity-20 transition-opacity">
+                    <Quote className="h-16 w-16 text-emerald-500" />
+                  </div>
+                  {/* Star rating */}
+                  <div className="flex gap-0.5 mb-3">
+                    {[...Array(5)].map((_, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.3, delay: 0.3 + idx * 0.1 + i * 0.05 }}
+                      >
+                        <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+                      </motion.div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-5 flex-1 relative z-10">
+                    &ldquo;{t(testimonial.textKey)}&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 pt-4 border-t border-gray-100/50 dark:border-gray-800/50">
+                    {/* Avatar with gradient */}
+                    <div className="h-11 w-11 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg group-hover:shadow-xl group-hover:shadow-emerald-500/20 transition-shadow duration-300 ring-2 ring-white/20">
+                      {t(testimonial.nameKey).charAt(0)}
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {t(testimonial.nameKey)}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {t(testimonial.roleKey)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             ))}
+          </div>
+
+          {/* Mobile: Single testimonial with auto-rotate */}
+          <div className="md:hidden">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTestimonial}
+                initial={{ opacity: 0, x: 50, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -50, scale: 0.95 }}
+                transition={{ duration: 0.4 }}
+                className="glass-feature-card rounded-2xl p-6 relative overflow-hidden"
+              >
+                {/* Decorative quote mark */}
+                <div className="absolute top-3 end-3 opacity-10 dark:opacity-5">
+                  <Quote className="h-16 w-16 text-emerald-500" />
+                </div>
+                {/* Star rating */}
+                <div className="flex gap-0.5 mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-5 relative z-10">
+                  &ldquo;{t(testimonials[activeTestimonial].textKey)}&rdquo;
+                </p>
+                <div className="flex items-center gap-3 pt-4 border-t border-gray-100/50 dark:border-gray-800/50">
+                  <div className="h-11 w-11 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-lg ring-2 ring-white/20">
+                    {t(testimonials[activeTestimonial].nameKey).charAt(0)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {t(testimonials[activeTestimonial].nameKey)}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {t(testimonials[activeTestimonial].roleKey)}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+            {/* Dots indicator */}
+            <div className="flex justify-center gap-2 mt-5">
+              {testimonials.map((_, i) => (
+                <button
+                  key={`dot-${i}`}
+                  onClick={() => setActiveTestimonial(i)}
+                  className={`h-2 rounded-full transition-all duration-300 ${i === activeTestimonial ? 'w-8 bg-emerald-500' : 'w-2 bg-emerald-300/40 dark:bg-emerald-700/40'}`}
+                  aria-label={`Testimonial ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Floating Testimonials Carousel */}
+      {/* ─── Floating Testimonials Carousel ─────────── */}
       <section className="w-full py-12 relative z-10">
         <div className="max-w-4xl mx-auto px-4">
           <motion.h3
@@ -521,7 +909,10 @@ export function LandingPage() {
               <div
                 className="flex gap-4 w-max"
                 style={{
-                  animation: `${typeof document !== 'undefined' && document.documentElement.dir === 'rtl' ? 'carousel-scroll-rtl' : 'carousel-scroll'} 25s linear infinite`,
+                  animationName: 'carousel-scroll',
+                  animationDuration: '25s',
+                  animationTimingFunction: 'linear',
+                  animationIterationCount: 'infinite',
                 }}
               >
                 {[...testimonials, ...testimonials, ...testimonials, ...testimonials].map((testimonial, idx) => (
@@ -529,9 +920,9 @@ export function LandingPage() {
                     key={`carousel-${idx}`}
                     className="w-80 flex-shrink-0"
                   >
-                    <div className="rounded-2xl p-5 bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 shadow-lg">
+                    <div className="rounded-2xl p-5 glass-feature-card">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ring-2 ring-white/20">
                           {t(testimonial.nameKey).charAt(0)}
                         </div>
                         <div>
@@ -586,7 +977,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Trusted By Section */}
+      {/* ─── Trusted By Section ──────────────────────── */}
       <section ref={trustedRef} className="w-full px-4 py-12 relative z-10">
         <div className="max-w-3xl mx-auto">
           <motion.div
@@ -609,9 +1000,10 @@ export function LandingPage() {
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.3, delay: idx * 0.08 }}
-                    className="flex flex-col items-center gap-2"
+                    whileHover={{ scale: 1.1, y: -4 }}
+                    className="flex flex-col items-center gap-2 cursor-default"
                   >
-                    <div className="h-14 w-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center border border-emerald-100 dark:border-emerald-800/30">
+                    <div className="h-14 w-14 rounded-2xl glass-feature-card flex items-center justify-center">
                       <Icon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <span className="text-xs font-medium text-muted-foreground">
@@ -625,7 +1017,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Wave decoration + Footer */}
+      {/* ─── Wave decoration + Footer ──────────────── */}
       <div className="relative z-10 mt-auto">
         <div className="w-full overflow-hidden">
           <div className="h-16 md:h-24 bg-gradient-to-b from-transparent to-emerald-50 dark:to-emerald-950/20 relative">
@@ -647,24 +1039,100 @@ export function LandingPage() {
             </svg>
           </div>
         </div>
-        <footer className="w-full px-4 py-8 text-center bg-emerald-50 dark:bg-emerald-950/30">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
-              <TicketCheck className="h-4 w-4 text-white" />
+        <footer className="w-full px-4 pt-8 pb-6 bg-emerald-50 dark:bg-emerald-950/30">
+          <div className="max-w-4xl mx-auto">
+            {/* Footer top: Logo + social */}
+            <div className="flex flex-col items-center gap-6 mb-8">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+                  <TicketCheck className="h-4 w-4 text-white" />
+                </div>
+                <span className="font-bold text-lg bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
+                  QueueWise
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground text-center max-w-md">
+                {t('appTagline')}
+              </p>
+              {/* Social icons */}
+              <div className="flex items-center gap-3">
+                {[
+                  { icon: Globe, label: 'Website' },
+                  { icon: Share2, label: 'Share' },
+                  { icon: Heart, label: 'Community' },
+                  { icon: Shield, label: 'Security' },
+                ].map((social, i) => (
+                  <motion.button
+                    key={i}
+                    whileHover={{ scale: 1.15, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="h-9 w-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition-colors"
+                    aria-label={social.label}
+                  >
+                    <social.icon className="h-4 w-4" />
+                  </motion.button>
+                ))}
+              </div>
             </div>
-            <span className="font-bold text-sm bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
-              QueueWise
-            </span>
+
+            {/* Footer middle: Links */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8 text-center">
+              <div>
+                <h4 className="text-xs font-semibold text-foreground mb-3 uppercase tracking-wider">{t('home')}</h4>
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer transition-colors">{t('getStarted')}</p>
+                  <p className="text-xs text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer transition-colors">{t('howItWorks')}</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="text-xs font-semibold text-foreground mb-3 uppercase tracking-wider">{t('agencies')}</h4>
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer transition-colors">{t('trustedClinic')}</p>
+                  <p className="text-xs text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer transition-colors">{t('trustedLab')}</p>
+                </div>
+              </div>
+              <div className="col-span-2 md:col-span-1">
+                <h4 className="text-xs font-semibold text-foreground mb-3 uppercase tracking-wider">{t('settings')}</h4>
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer transition-colors">{t('appearance')}</p>
+                  <p className="text-xs text-muted-foreground hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer transition-colors">{t('language')}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="gradient-divider mb-5" />
+
+            {/* Footer bottom */}
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm text-muted-foreground">
+                {t('poweredBy')} Z.ai Technology
+              </p>
+              <p className="text-xs text-muted-foreground/60">
+                QueueWise © {new Date().getFullYear()} · {t('rightsReserved')}
+              </p>
+              <p className="text-[10px] text-muted-foreground/40 mt-1">{t('version')}</p>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mb-1">
-            {t('poweredBy')} Z.ai Technology
-          </p>
-          <p className="text-xs text-muted-foreground/60">
-            QueueWise © {new Date().getFullYear()} · {t('rightsReserved')}
-          </p>
-          <p className="text-[10px] text-muted-foreground/40 mt-2">{t('version')}</p>
         </footer>
       </div>
+
+      {/* ─── Floating Back-to-Top Button ─────────── */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            transition={{ duration: 0.25 }}
+            onClick={scrollToTop}
+            className="fixed bottom-6 end-6 z-50 h-11 w-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:shadow-xl hover:shadow-emerald-500/40 hover:scale-110 active:scale-95 transition-all duration-200"
+            aria-label="Back to top"
+          >
+            <ChevronUp className="h-5 w-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
     </div>
   );

@@ -141,7 +141,8 @@ export const useAppStore = create<AppState>()(
       name: 'queuewise-app',
       partialize: (state) => ({
         user: state.user,
-        currentView: state.currentView,
+        isAuthenticated: state.isAuthenticated,
+        currentView: state.user ? state.currentView : 'landing',
         pendingAgencyCode: state.pendingAgencyCode,
         onboarded: state.onboarded,
       }),

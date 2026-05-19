@@ -534,6 +534,7 @@ const ar = {
 
   // ─── Auth Role Errors ──────────────────
   wrongRoleError: 'هذا الحساب لا يناسب الدور المحدد',
+  wrongRoleHint: 'تأكد من اختيار نوع الحساب الصحيح أعلاه (زبون، مؤسسة، أو مدير)',
 
   // ─── Feature 1: Queue Auto-Refresh ──────
   refreshInterval: 'فاصل التحديث',
