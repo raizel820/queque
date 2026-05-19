@@ -934,7 +934,122 @@ export function AdminDashboard() {
           </span>
           <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{t('systemUptime')}</span>
           <Badge variant="outline" className="ms-auto text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">99.9%</Badge>
+          <div className="flex items-center gap-1 ms-2">
+            <Wifi className="h-3.5 w-3.5 text-emerald-500" />
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400">{t('systemStatusOnline')}</span>
+          </div>
         </div>
+      </motion.div>
+
+      {/* Latest Registered Users */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.17 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-emerald-600" />
+                {t('latestUsers')}
+              </CardTitle>
+              <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+                {t('recent')}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2">
+              {activities.filter(a => a.action.toUpperCase().includes('REGISTER') || a.action.toUpperCase().includes('CREATE')).slice(0, 5).map((activity, idx) => {
+                const colorInfo = getActivityColor(activity.action);
+                return (
+                  <motion.div
+                    key={activity.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                  >
+                    <div className={`h-9 w-9 rounded-xl ${colorInfo.bg} flex items-center justify-center flex-shrink-0`}>
+                      <span className={`text-xs font-bold ${colorInfo.text}`}>{getInitials(activity.details)}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{activity.details}</p>
+                      <p className="text-[10px] text-muted-foreground">{formatRelativeTime(activity.createdAt, lang)}</p>
+                    </div>
+                    <Badge className={`text-[8px] h-5 ${colorInfo.bg} ${colorInfo.text} border-0`}>
+                      {activity.entity}
+                    </Badge>
+                  </motion.div>
+                );
+              })}
+              {activities.filter(a => a.action.toUpperCase().includes('REGISTER') || a.action.toUpperCase().includes('CREATE')).length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">{t('noData')}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Subscription Status Breakdown */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.19 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-emerald-600" />
+              {t('subscriptionBreakdown')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: t('active'), count: stats?.activeQueues ?? 0, color: 'bg-emerald-500', bgLight: 'bg-emerald-50 dark:bg-emerald-900/20' },
+                { label: t('pending'), count: stats?.pendingTransactions ?? 0, color: 'bg-amber-500', bgLight: 'bg-amber-50 dark:bg-amber-900/20' },
+                { label: t('inactive'), count: Math.max((stats?.totalAgencies ?? 0) - (stats?.activeQueues ?? 0) - (stats?.pendingTransactions ?? 0), 0), color: 'bg-gray-400', bgLight: 'bg-gray-50 dark:bg-gray-800/30' },
+              ].map((item, idx) => (
+                <div key={idx} className={`p-3 rounded-xl ${item.bgLight} text-center`}>
+                  <div className="flex justify-center mb-2">
+                    <div className={`h-3 w-3 rounded-full ${item.color}`} />
+                  </div>
+                  <p className="text-xl font-bold text-foreground">{item.count}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{item.label}</p>
+                </div>
+              ))}
+            </div>
+            {/* Visual bar */}
+            <div className="mt-3 h-3 w-full rounded-full overflow-hidden flex bg-gray-100 dark:bg-gray-800">
+              {(() => {
+                const total = Math.max(stats?.totalAgencies ?? 1, 1);
+                const active = ((stats?.activeQueues ?? 0) / total) * 100;
+                const pending = ((stats?.pendingTransactions ?? 0) / total) * 100;
+                const inactive = Math.max(100 - active - pending, 0);
+                return (
+                  <>
+                    <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${active}%` }} />
+                    <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${pending}%` }} />
+                    <div className="h-full bg-gray-300 dark:bg-gray-600 transition-all duration-500" style={{ width: `${inactive}%` }} />
+                  </>
+                );
+              })()}
+            </div>
+            <div className="flex items-center justify-center gap-4 mt-2">
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" /> {t('active')}
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-amber-500" /> {t('pending')}
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600" /> {t('inactive')}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Quick Actions */}

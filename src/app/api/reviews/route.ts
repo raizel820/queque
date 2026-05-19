@@ -97,23 +97,22 @@ export async function POST(request: NextRequest) {
     });
 
     // Also update the reservation's rating/feedback fields if reservationId provided
-    if (reservationId && comment?.trim()) {
+    if (reservationId) {
       await db.reservation.update({
         where: { id: reservationId },
         data: {
           rating,
-          feedback: comment.trim(),
-          ratedAt: new Date(),
         },
       });
-    } else if (reservationId) {
-      await db.reservation.update({
-        where: { id: reservationId },
-        data: {
-          rating,
-          ratedAt: new Date(),
-        },
-      });
+      // Use raw SQL for feedback/ratedAt fields that may not exist in Prisma Client
+      try {
+        await db.$executeRaw`UPDATE Reservation SET ratedAt = datetime('now') WHERE id = ${reservationId}`;
+        if (comment?.trim()) {
+          await db.$executeRaw`UPDATE Reservation SET feedback = ${comment.trim()} WHERE id = ${reservationId}`;
+        }
+      } catch {
+        console.warn('[REVIEWS POST] Could not set feedback/ratedAt, columns may not exist');
+      }
     }
 
     return NextResponse.json({ success: true, review }, { status: 201 });

@@ -56,17 +56,32 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user's role matches the expected role from login tab
-    // Agency tab allows both AGENCY_OWNER and AGENCY_STAFF
+    // Customer tab: accepts CUSTOMER and SUPER_ADMIN roles
+    // Agency tab: accepts AGENCY_OWNER, AGENCY_STAFF, and SUPER_ADMIN roles
+    // SUPER_ADMIN can login from either tab
     const agencyRoles = ['AGENCY_OWNER', 'AGENCY_STAFF'];
-    if (
-      expectedRole &&
-      user.role !== expectedRole &&
-      !(agencyRoles.includes(expectedRole) && agencyRoles.includes(user.role))
-    ) {
-      return NextResponse.json(
-        { success: false, error: 'wrongRoleError' },
-        { status: 403 }
-      )
+    const isAgencyTab = agencyRoles.includes(expectedRole);
+    const isCustomerTab = expectedRole === 'CUSTOMER';
+
+    if (expectedRole) {
+      // SUPER_ADMIN can login from any tab
+      if (user.role === 'SUPER_ADMIN') {
+        // allowed
+      }
+      // Agency tab: AGENCY_OWNER and AGENCY_STAFF are allowed
+      else if (isAgencyTab && agencyRoles.includes(user.role)) {
+        // allowed
+      }
+      // Customer tab: only CUSTOMER role is allowed
+      else if (isCustomerTab && user.role === 'CUSTOMER') {
+        // allowed
+      }
+      else {
+        return NextResponse.json(
+          { success: false, error: 'wrongRoleError' },
+          { status: 403 }
+        )
+      }
     }
 
     // Create audit log
@@ -82,9 +97,15 @@ export async function POST(request: NextRequest) {
     // Return user data (exclude passwordHash)
     const { passwordHash: _, ...userData } = user
 
-    // Look up agencyId for agency owners and staff
+    // Look up agencyId for agency owners, staff, and super admin
     let agencyId: string | undefined;
-    if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_STAFF') {
+    if (user.role === 'SUPER_ADMIN') {
+      // SUPER_ADMIN gets agencyId from first available agency
+      const firstAgency = await db.agency.findFirst({
+        select: { id: true },
+      });
+      agencyId = firstAgency?.id;
+    } else if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_STAFF') {
       if (user.role === 'AGENCY_OWNER') {
         const ownedAgency = await db.agency.findFirst({
           where: { ownerId: user.id },

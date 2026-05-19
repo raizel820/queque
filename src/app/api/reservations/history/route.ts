@@ -50,7 +50,14 @@ export async function GET(request: NextRequest) {
         orderBy: { joinedAt: 'desc' },
         take: limit,
         skip: offset,
-      }).then(reservations => reservations.map(r => ({
+      }),
+      db.reservation.count({ where }),
+    ])
+
+    // Map with safe access for fields that may not exist in Prisma Client
+    const mappedReservations = reservations.map(r => {
+      const rAny = r as Record<string, unknown>;
+      return {
         id: r.id,
         userId: r.userId,
         agencyId: r.agencyId,
@@ -65,17 +72,16 @@ export async function GET(request: NextRequest) {
         completedAt: r.completedAt,
         cancelledAt: r.cancelledAt,
         rating: r.rating,
-        feedback: r.feedback,
-        ratedAt: r.ratedAt,
+        feedback: (rAny.feedback as string) ?? null,
+        ratedAt: (rAny.ratedAt as Date) ?? null,
         agency: r.agency,
         service: r.service,
-      }))),
-      db.reservation.count({ where }),
-    ])
+      }
+    })
 
     return NextResponse.json({
       success: true,
-      reservations,
+      reservations: mappedReservations,
       total,
       limit,
       offset,

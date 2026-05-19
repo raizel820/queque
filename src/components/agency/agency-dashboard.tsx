@@ -44,6 +44,8 @@ import {
   QrCode,
   Zap,
   Eye,
+  Lock,
+  AlertCircle,
 } from 'lucide-react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -80,6 +82,7 @@ interface DashboardStats {
   noShowRate?: number;
   hourlyWaitTime?: number[];
   ratingDistribution?: number[];
+  subscriptionStatus?: string;
 }
 
 interface ServiceStat {
@@ -227,7 +230,7 @@ function UserAvatar({ name, colorClass }: { name: string; colorClass: string }) 
 
 // ─── Main Dashboard Component ───────────────────
 export function AgencyDashboard() {
-  const { user } = useAppStore();
+  const { user, setView } = useAppStore();
   const { t, lang } = useLanguage();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [waitingList, setWaitingList] = useState<QueueEntry[]>([]);
@@ -647,21 +650,55 @@ export function AgencyDashboard() {
       {/* Gradient top border */}
       <div className="absolute top-0 start-0 end-0 h-[3px] bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 rounded-full" />
 
-      {/* Title + Actions Row */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
-            {t('agencyDashboard')}
-            <motion.span
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400"
+      {/* Subscription Inactive Banner */}
+      {stats?.subscriptionStatus && stats.subscriptionStatus !== 'ACTIVE' && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl bg-gradient-to-r from-amber-500 via-red-500 to-amber-500 p-[2px]"
+        >
+          <div className="rounded-[14px] bg-gradient-to-r from-amber-50 to-red-50 dark:from-amber-950/50 dark:to-red-950/50 p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-red-500 flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-amber-800 dark:text-amber-200 text-sm">{t('subscriptionInactive')}</p>
+              <p className="text-xs text-amber-700/70 dark:text-amber-300/70 mt-0.5">{t('subscriptionRequired')}</p>
+            </div>
+            <Button
+              onClick={() => setView('agency-subscription')}
+              className="bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-600 hover:to-red-600 text-white rounded-xl h-9 px-4 text-sm font-semibold flex-shrink-0"
             >
-              <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block live-pulse" />
-              {t('live')}
-            </motion.span>
-          </h1>
-        </div>
+              {t('activatePlan')}
+            </Button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Welcome Back + Title Row */}
+      <div className="space-y-1">
+        <motion.p
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.02 }}
+          className="text-sm text-muted-foreground"
+        >
+          {t('welcomeBack')}, <span className="font-semibold text-foreground">{user?.fullName?.split(' ')[0] || ''}</span> 👋
+        </motion.p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
+              {t('agencyDashboard')}
+              <motion.span
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400"
+              >
+                <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block live-pulse" />
+                {t('live')}
+              </motion.span>
+            </h1>
+          </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <Button
             variant="outline"
@@ -682,6 +719,7 @@ export function AgencyDashboard() {
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
+        </div>
       </div>
 
       {/* ═══════════════════════════════════════════
@@ -697,11 +735,13 @@ export function AgencyDashboard() {
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
             <Button
               onClick={handleCallNext}
-              disabled={actionLoading === 'call' || stats?.isPaused}
+              disabled={actionLoading === 'call' || stats?.isPaused || (stats?.subscriptionStatus !== undefined && stats.subscriptionStatus !== 'ACTIVE')}
               className="w-full h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white font-semibold shadow-lg shadow-emerald-500/20 gap-2 disabled:opacity-50 transition-all duration-200"
             >
               {actionLoading === 'call' ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
+              ) : stats?.subscriptionStatus !== undefined && stats.subscriptionStatus !== 'ACTIVE' ? (
+                <Lock className="h-5 w-5" />
               ) : (
                 <PhoneCall className="h-5 w-5" />
               )}
@@ -814,7 +854,7 @@ export function AgencyDashboard() {
                 initial={{ y: -15, opacity: 0, scale: 0.9 }}
                 animate={{ y: 0, opacity: 1, scale: 1 }}
                 transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-none ticket-glow"
+                className="text-6xl sm:text-7xl lg:text-8xl font-black text-white tracking-tight leading-none ticket-glow"
               >
                 {stats?.currentQueueNumber || '—'}
               </motion.p>
@@ -1494,6 +1534,65 @@ export function AgencyDashboard() {
           </CollapsibleContent>
         </Card>
       </Collapsible>
+
+      {/* Activity Timeline */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ delay: 0.32 }}
+      >
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Rss className="h-4 w-4 text-emerald-600" />
+                {t('recentActivity')}
+              </CardTitle>
+              <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
+                {t('todayLabel')}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {activityEvents.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">{t('noRecentActivity')}</p>
+            ) : (
+              <div className="relative space-y-0 max-h-64 overflow-y-auto custom-scrollbar">
+                {/* Timeline line */}
+                <div className="absolute start-[15px] top-2 bottom-2 w-0.5 bg-gradient-to-b from-emerald-300 via-teal-300 to-gray-200 dark:from-emerald-700 dark:via-teal-700 dark:to-gray-700" />
+                {activityEvents.slice(0, 5).map((event, idx) => {
+                  const config = getEventConfig(event.eventType);
+                  const Icon = config.icon;
+                  return (
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="relative flex items-center gap-3 py-2"
+                    >
+                      <div className={`h-[30px] w-[30px] rounded-full ${config.dotColor} flex items-center justify-center flex-shrink-0 z-10 ring-2 ring-white dark:ring-gray-900`}>
+                        <Icon className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-medium text-foreground truncate">{event.customerName}</p>
+                          <Badge className={`text-[8px] px-1.5 py-0 h-4 ${config.badgeClass}`}>{config.label}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                          <span>#{event.queueNumber}</span>
+                          {event.serviceName && <span>· {event.serviceName}</span>}
+                          <span>· {formatTime(event.timestamp)}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Wait Time Chart + Rating Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

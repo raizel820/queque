@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SlideToConfirm } from '@/components/shared/slide-to-confirm';
-import { startNotificationSound, stopNotificationSound, playConfirmSound } from '@/lib/sounds';
+import { startNotificationSound, stopNotificationSound, playConfirmSound, markReservationConfirmed, isReservationConfirmed } from '@/lib/sounds';
 import {
   Users,
   Clock,
@@ -177,12 +177,13 @@ export function CustomerQueue() {
         });
 
         // Detect status changes to CALLED - trigger sound
+        // Only trigger for reservations not already confirmed by the user
         list.forEach((r: Reservation) => {
           if (prevStatusRef.current[r.id] && prevStatusRef.current[r.id] !== r.status && r.status === 'CALLED') {
-            if (!soundStartedRef.current) {
+            if (!soundStartedRef.current && !isReservationConfirmed(r.id)) {
               soundStartedRef.current = true;
               if (!soundMuted) {
-                startNotificationSound();
+                startNotificationSound(r.id);
               }
               setShowTurnAlert(true);
               setConfettiKey((k) => k + 1);
@@ -213,12 +214,12 @@ export function CustomerQueue() {
         setLastUpdated(new Date());
         setPulseKey((k) => k + 1);
 
-        // Check if any is CALLED
-        const hasCalled = list.some((r: Reservation) => r.status === 'CALLED');
-        if (hasCalled && !soundStartedRef.current) {
+        // Check if any is CALLED (only trigger sound for unconfirmed reservations)
+        const unconfirmedCalled = list.find((r: Reservation) => r.status === 'CALLED' && !isReservationConfirmed(r.id));
+        if (unconfirmedCalled && !soundStartedRef.current) {
           soundStartedRef.current = true;
           if (!soundMuted) {
-            startNotificationSound();
+            startNotificationSound(unconfirmedCalled.id);
           }
           setShowTurnAlert(true);
           setConfettiKey((k) => k + 1);
@@ -329,6 +330,11 @@ export function CustomerQueue() {
   }, [lastUpdated, lang]);
 
   const handleConfirmTurn = () => {
+    // Mark the active CALLED reservation as confirmed so sound doesn't re-trigger
+    const calledRes = reservations.find(r => r.status === 'CALLED');
+    if (calledRes) {
+      markReservationConfirmed(calledRes.id);
+    }
     stopNotificationSound();
     playConfirmSound();
     setShowTurnAlert(false);
@@ -344,9 +350,10 @@ export function CustomerQueue() {
 
   const handleUnmuteSound = () => {
     setSoundMuted(false);
-    const hasCalled = reservations.some((r) => r.status === 'CALLED');
-    if (hasCalled) {
-      startNotificationSound();
+    const hasUnconfirmedCalled = reservations.some((r) => r.status === 'CALLED' && !isReservationConfirmed(r.id));
+    if (hasUnconfirmedCalled) {
+      const calledRes = reservations.find((r) => r.status === 'CALLED' && !isReservationConfirmed(r.id));
+      startNotificationSound(calledRes?.id);
     }
     toast.success(t('notificationSoundOn'));
   };

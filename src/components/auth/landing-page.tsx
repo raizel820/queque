@@ -19,7 +19,6 @@ import {
   BellRing,
   Building2,
   Users,
-  MapPin,
   Zap,
   Briefcase,
   FlaskConical,
@@ -255,16 +254,20 @@ export function LandingPage() {
     { icon: BellRing, titleKey: 'step3' as const, descKey: 'step3Desc' as const },
   ];
 
-  const [landingStats, setLandingStats] = useState<{ agencies: number; users: number } | null>(null);
+  const [landingStats, setLandingStats] = useState<{ totalAgencies: number; totalCustomers: number; totalReservations: number; activeQueues: number } | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/agencies');
+        const res = await fetch('/api/stats');
         if (res.ok) {
           const data = await res.json();
-          const agencyCount = data.total ?? data.agencies?.length ?? 0;
-          setLandingStats({ agencies: agencyCount, users: agencyCount * 25 });
+          setLandingStats({
+            totalAgencies: data.totalAgencies ?? 0,
+            totalCustomers: data.totalCustomers ?? 0,
+            totalReservations: data.totalReservations ?? 0,
+            activeQueues: data.activeQueues ?? 0,
+          });
         }
       } catch {
         // keep fallback values
@@ -274,9 +277,9 @@ export function LandingPage() {
   }, []);
 
   const stats = [
-    { icon: Building2, value: landingStats?.agencies ?? 10, suffix: '+', labelKey: 'landingStatAgencies' as const },
-    { icon: Users, value: landingStats?.users ?? 1000, suffix: '+', labelKey: 'landingStatUsers' as const },
-    { icon: MapPin, value: 1, suffix: '', displayValue: t('landingLocation'), labelKey: 'landingStatLocation' as const },
+    { icon: Building2, value: landingStats?.totalAgencies ?? 10, suffix: '+', labelKey: 'landingStatAgencies' as const },
+    { icon: Users, value: landingStats?.totalCustomers ?? 1000, suffix: '+', labelKey: 'landingStatUsers' as const },
+    { icon: TicketCheck, value: landingStats?.totalReservations ?? 0, suffix: '+', labelKey: 'landingStatReservations' as const },
   ];
 
   const testimonials = [
@@ -605,11 +608,7 @@ export function LandingPage() {
                         <Icon className="h-6 w-6 text-white" />
                       </div>
                       <p className="text-3xl md:text-4xl font-black text-white">
-                        {stat.displayValue ? (
-                          stat.displayValue
-                        ) : (
-                          <AnimatedCounter target={stat.value} suffix={stat.suffix} />
-                        )}
+                        <AnimatedCounter target={stat.value} suffix={stat.suffix} />
                       </p>
                       <p className="text-xs text-emerald-100 font-medium uppercase tracking-wider">{t(stat.labelKey)}</p>
                     </motion.div>

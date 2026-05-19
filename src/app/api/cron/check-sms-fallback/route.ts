@@ -9,14 +9,11 @@ export async function GET() {
   try {
     const cutoffTime = new Date(Date.now() - SMS_FALLBACK_MINUTES * 60 * 1000);
 
-    // Find reservations where in-app reminder was sent 10+ minutes ago but SMS not yet sent
-    // Note: skippedForNoShow filter done in code to avoid Prisma Client compatibility issues
+    // Find reservations where in-app reminder may have been sent but SMS not yet sent
+    // Use basic fields in Prisma query, filter advanced fields in code
     const allCandidates = await db.reservation.findMany({
       where: {
         status: { in: ['WAITING', 'CALLED'] },
-        reminderSent: true,
-        reminderSentAt: { not: null, lte: cutoffTime },
-        smsReminderSent: false,
         user: {
           smsNotificationsEnabled: true,
           phoneNumber: { not: null },
@@ -49,10 +46,19 @@ export async function GET() {
       },
     });
 
-    // Filter out skipped-for-no-show in code
+    // Filter in code for fields that may not exist in Prisma Client on Vercel
     const candidates = allCandidates.filter(r => {
       const rAny = r as Record<string, unknown>;
-      return rAny.skippedForNoShow !== true;
+      // Must have reminderSent = true
+      if (rAny.reminderSent !== true) return false;
+      // Must have reminderSentAt not null and <= cutoff
+      const reminderSentAt = rAny.reminderSentAt as Date | null;
+      if (!reminderSentAt || reminderSentAt > cutoffTime) return false;
+      // Must NOT have smsReminderSent = true
+      if (rAny.smsReminderSent === true) return false;
+      // Must NOT be skipped for no-show
+      if (rAny.skippedForNoShow === true) return false;
+      return true;
     });
 
     let smsSent = 0;
@@ -73,7 +79,6 @@ export async function GET() {
       // Normalize phone number for Algerian format
       const normalizedPhone = normalizeDzPhone(user.phoneNumber!);
       if (!normalizedPhone) {
-        // Log failure for invalid phone
         await db.smsLog.create({
           data: {
             userId: user.id,
@@ -95,8 +100,7 @@ export async function GET() {
           ? reservation.agency.nameFr || reservation.agency.name
           : reservation.agency.name;
 
-      // Calculate estimated wait
-      const position = reservation.queueNumber; // simplified; in production, query actual position
+      const position = reservation.queueNumber;
       const estimatedMinutes = Math.max(1, Math.round(reservation.agency.averageServiceTime || 10));
 
       const smsMessage = getSmsTemplate('turnApproaching', lang, {
@@ -106,18 +110,15 @@ export async function GET() {
         estimatedMinutes,
       });
 
-      // Attempt to send SMS via configured provider
       const result = await sendSms(normalizedPhone, smsMessage, user.id);
 
       if (result.success) {
-        // Mark SMS reminder as sent on the reservation
-        await db.reservation.update({
-          where: { id: reservation.id },
-          data: {
-            smsReminderSent: true,
-            smsReminderSentAt: new Date(),
-          },
-        });
+        // Mark SMS reminder as sent using raw SQL (field may not exist in Prisma Client)
+        try {
+          await db.$executeRaw`UPDATE Reservation SET smsReminderSent = 1, smsReminderSentAt = datetime('now') WHERE id = ${reservation.id}`;
+        } catch {
+          console.warn('[cron/check-sms-fallback] Could not set smsReminderSent, column may not exist');
+        }
         smsSent++;
       } else {
         console.error(`[cron/check-sms-fallback] Failed to send SMS to ${normalizedPhone}: ${result.error}`);

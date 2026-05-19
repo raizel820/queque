@@ -77,7 +77,7 @@ export function LoginForm() {
   const getRoleFromTab = (tab: string): UserRole => {
     switch (tab) {
       case 'agency': return 'AGENCY_OWNER';
-      case 'admin': return 'SUPER_ADMIN';
+      // SUPER_ADMIN can login from either tab - handled by backend role matching
       default: return 'CUSTOMER';
     }
   };
@@ -178,11 +178,10 @@ export function LoginForm() {
                   <div className="text-center mb-2">
                     <p className="text-xs text-muted-foreground">{t('selectRole')}</p>
                   </div>
-                  <TabsList className="w-full grid grid-cols-3 h-12 relative bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+                  <TabsList className="w-full grid grid-cols-2 h-12 relative bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
                     {[
                       { value: 'customer', label: t('loginAsCustomer') },
                       { value: 'agency', label: t('loginAsAgency') },
-                      { value: 'admin', label: t('loginAsAdmin') },
                     ].map((tab) => (
                       <TabsTrigger
                         key={tab.value}

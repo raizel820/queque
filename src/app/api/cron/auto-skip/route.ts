@@ -7,8 +7,7 @@ export async function GET() {
   try {
     const cutoffTime = new Date(Date.now() - NO_SHOW_SKIP_MINUTES * 60 * 1000);
 
-    // Find all CALLED reservations that were called 3+ minutes ago and haven't been skipped yet
-    // We use a raw approach to avoid relying on skippedForNoShow which may not exist in all deployments
+    // Find all CALLED reservations that were called 3+ minutes ago
     const candidates = await db.reservation.findMany({
       where: {
         status: 'CALLED',
@@ -34,6 +33,7 @@ export async function GET() {
     });
 
     // Filter out already-skipped and reclaim-requested in code
+    // (these fields may not exist in Prisma Client on Vercel)
     const unskippedCandidates = candidates.filter(r => {
       const rAny = r as Record<string, unknown>;
       return rAny.skippedForNoShow !== true && !rAny.reclaimRequestedAt;
@@ -50,12 +50,10 @@ export async function GET() {
             : reservation.agency.name;
 
       await db.$transaction(async (tx) => {
-        // Mark as skipped (do NOT change status - customer retains right to reclaim)
-        // Use $executeRaw to handle skippedForNoShow which may not be in the Prisma Client
+        // Mark as skipped using raw SQL (field may not exist in Prisma Client)
         try {
           await tx.$executeRaw`UPDATE Reservation SET skippedForNoShow = 1, skippedAt = datetime('now') WHERE id = ${reservation.id}`;
         } catch {
-          // If the column doesn't exist, just update the status note
           console.warn('[cron/auto-skip] Could not set skippedForNoShow, column may not exist');
         }
 

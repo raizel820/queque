@@ -44,9 +44,6 @@ export async function GET(request: NextRequest) {
             select: { id: true },
             where: { status: { in: ['WAITING', 'CALLED'] } },
           },
-          reviews: {
-            select: { rating: true },
-          },
         },
         orderBy: [
           { isSponsored: 'desc' },
@@ -58,32 +55,50 @@ export async function GET(request: NextRequest) {
       db.agency.count({ where }),
     ])
 
-    const formattedAgencies = agencies.map((agency) => ({
-      id: agency.id,
-      name: agency.name,
-      nameFr: agency.nameFr,
-      nameAr: agency.nameAr,
-      customCode: agency.customCode,
-      category: agency.category,
-      address: agency.address,
-      city: agency.city,
-      phone: agency.phone,
-      email: agency.email,
-      logoUrl: agency.logoUrl,
-      isSponsored: agency.isSponsored,
-      isQueueOpen: agency.isQueueOpen,
-      serviceCount: agency._count.services,
-      waitingCount: agency.reservations.length,
-      workingHoursStart: agency.workingHoursStart,
-      workingHoursEnd: agency.workingHoursEnd,
-      isPaused: agency.queueSettings.length > 0 ? agency.queueSettings[0].isPaused : false,
-      avgServiceTime: agency.averageServiceTime,
-      averageRating: agency.reviews.length > 0
-        ? Math.round((agency.reviews.reduce((sum, r) => sum + r.rating, 0) / agency.reviews.length) * 10) / 10
-        : 0,
-      reviewCount: agency.reviews.length,
-      createdAt: agency.createdAt,
-    }))
+    // Fetch average ratings separately using raw SQL to avoid dependency on
+    // the `reviews` relation which may not exist in the Vercel Prisma Client
+    const agencyIds = agencies.map(a => a.id)
+    const ratingResults = agencyIds.length > 0
+      ? await db.$queryRaw<Array<{ agencyId: string; avgRating: number | null; reviewCount: number }>>`
+          SELECT agencyId, 
+                 ROUND(AVG(CAST(rating AS REAL)) * 10) / 10 as avgRating,
+                 COUNT(*) as reviewCount
+          FROM reviews 
+          WHERE agencyId IN (${agencyIds.join(',')})
+          GROUP BY agencyId
+        `
+      : []
+
+    const ratingMap = new Map(ratingResults.map(r => [r.agencyId, { avgRating: r.avgRating ?? 0, reviewCount: Number(r.reviewCount) }]))
+
+    const formattedAgencies = agencies.map((agency) => {
+      const ratingInfo = ratingMap.get(agency.id) || { avgRating: 0, reviewCount: 0 }
+      return {
+        id: agency.id,
+        name: agency.name,
+        nameFr: agency.nameFr,
+        nameAr: agency.nameAr,
+        customCode: agency.customCode,
+        category: agency.category,
+        address: agency.address,
+        city: agency.city,
+        phone: agency.phone,
+        email: agency.email,
+        logoUrl: agency.logoUrl,
+        isSponsored: agency.isSponsored,
+        isQueueOpen: agency.isQueueOpen,
+        serviceCount: agency._count.services,
+        waitingCount: agency.reservations.length,
+        workingHoursStart: agency.workingHoursStart,
+        workingHoursEnd: agency.workingHoursEnd,
+        isPaused: agency.queueSettings.length > 0 ? agency.queueSettings[0].isPaused : false,
+        avgServiceTime: agency.averageServiceTime,
+        averageRating: ratingInfo.avgRating,
+        reviewCount: ratingInfo.reviewCount,
+        subscriptionStatus: agency.subscriptionStatus,
+        createdAt: agency.createdAt,
+      }
+    })
 
     return NextResponse.json({
       success: true,
@@ -93,6 +108,7 @@ export async function GET(request: NextRequest) {
       offset,
     })
   } catch (error: unknown) {
+    console.error('[AGENCIES] Error fetching agencies:', error);
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
       { success: false, error: message },

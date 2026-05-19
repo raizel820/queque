@@ -182,10 +182,7 @@ export function RegisterForm() {
       return;
     }
 
-    if (role === 'SUPER_ADMIN' && !adminCode.trim()) {
-      toast.error(t('adminSecretCode'));
-      return;
-    }
+
 
     setLoading(true);
     try {
@@ -199,11 +196,8 @@ export function RegisterForm() {
       if (phoneNumber.trim()) {
         body.phoneNumber = phoneNumber.trim();
       }
-      if (agencyCode.trim() && (role === 'AGENCY_STAFF' || role === 'AGENCY_OWNER')) {
+      if (agencyCode.trim() && role === 'AGENCY_OWNER') {
         body.agencyCode = agencyCode.trim().toUpperCase();
-      }
-      if (role === 'SUPER_ADMIN') {
-        body.adminCode = adminCode.trim();
       }
       if (avatarUpload.url) { body.avatarUrl = avatarUpload.url; }
 
@@ -464,14 +458,7 @@ export function RegisterForm() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="CUSTOMER">{t('loginAsCustomer')}</SelectItem>
-                              <SelectItem value="AGENCY_STAFF">{t('loginAsAgency')} ({t('staffRole')})</SelectItem>
                               <SelectItem value="AGENCY_OWNER">{t('loginAsAgency')} ({t('ownerRole')})</SelectItem>
-                              <SelectItem value="SUPER_ADMIN">
-                                <span className="flex items-center gap-2">
-                                  <Shield className="h-3.5 w-3.5" />
-                                  {t('loginAsAdmin')}
-                                </span>
-                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -608,8 +595,8 @@ export function RegisterForm() {
                           </div>
                         </div>
 
-                        {/* Agency code (for staff/owner) */}
-                        {(role === 'AGENCY_STAFF' || role === 'AGENCY_OWNER') && (
+                        {/* Agency code (for owner only) */}
+                        {role === 'AGENCY_OWNER' && (
                           <FloatingInput
                             id="reg-agency-code"
                             label={t('agencyCodeField')}
@@ -623,24 +610,7 @@ export function RegisterForm() {
                           />
                         )}
 
-                        {/* Admin secret code */}
-                        {role === 'SUPER_ADMIN' && (
-                          <>
-                            <FloatingInput
-                              id="reg-admin-code"
-                              label={t('adminSecretCode')}
-                              type="password"
-                              value={adminCode}
-                              onChange={(e) => setAdminCode(e.target.value)}
-                              onFocus={() => setFocusedField('admin-code')}
-                              onBlur={() => setFocusedField(null)}
-                              placeholder="••••••••"
-                              dir="ltr"
-                              focusedField={focusedField}
-                            />
-                            <p className="text-xs text-muted-foreground">{t('adminCodeDesc')}</p>
-                          </>
-                        )}
+
                       </>
                     )}
 
@@ -687,7 +657,7 @@ export function RegisterForm() {
                             <div className="flex items-center justify-between text-sm">
                               <span className="text-muted-foreground">{t('selectRole')}</span>
                               <span className="font-semibold text-foreground">
-                                {role === 'CUSTOMER' ? t('loginAsCustomer') : role === 'AGENCY_STAFF' ? t('loginAsAgency') : role === 'AGENCY_OWNER' ? t('loginAsAgency') : t('loginAsAdmin')}
+                                {role === 'CUSTOMER' ? t('loginAsCustomer') : t('loginAsAgency')}
                               </span>
                             </div>
                             <div className="flex items-center justify-between text-sm">

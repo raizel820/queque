@@ -9,6 +9,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'agencyId required' }, { status: 400 });
     }
 
+    // Check agency has an active subscription
+    const agencyCheck = await db.agency.findUnique({ where: { id: agencyId } });
+    if (!agencyCheck) {
+      return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
+    }
+    if (agencyCheck.subscriptionStatus !== 'ACTIVE') {
+      return NextResponse.json(
+        { error: 'An active subscription is required to use queue features' },
+        { status: 403 }
+      );
+    }
+
     const queueSettings = await db.queueSettings.findFirst({ where: { agencyId } });
     if (!queueSettings) {
       return NextResponse.json({ error: 'Queue settings not found' }, { status: 404 });

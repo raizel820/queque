@@ -44,6 +44,7 @@ import {
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import type { TranslationKeys } from '@/i18n';
+import { getProxiedUrl } from '@/lib/utils';
 
 interface AgencyInfo {
   id: string;
@@ -322,7 +323,7 @@ export function AgencyProfile() {
               >
                 {profile?.logoUrl ? (
                   <img
-                    src={profile.logoUrl}
+                    src={getProxiedUrl(profile.logoUrl)}
                     alt="Logo"
                     className="h-full w-full object-cover rounded-xl"
                   />

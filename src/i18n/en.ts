@@ -1100,6 +1100,14 @@ const en: Record<TranslationKeys, string> = {
 
   // ─── Task 13: Agency Reviews Page ──────
   reviewsPage: 'Reviews',
+
+  // ─── Task 3-6: Login/Register/Staff/Password Enhancements ─────
+  generatePassword: 'Generate Password',
+  staffAccountCreated: 'Staff Account Created',
+  credentialsShareHint: 'Share these credentials with the staff member so they can log in',
+  copyCredentials: 'Copy Credentials',
+  credentialsCopied: 'Credentials copied',
+  credentialsWarning: 'Keep these credentials safe, they will not be shown again',
   filterByRating: 'Filter by rating',
   sortBy: 'Sort by',
   newest: 'Newest',
@@ -1130,6 +1138,16 @@ const en: Record<TranslationKeys, string> = {
   updateReview: 'Update review',
   confirmDeleteReview: 'Are you sure you want to delete your review?',
   reviewReply: 'Agency reply',
+
+  // ─── Task 7-8: Landing Stats & Subscription Enforcement ──────
+  landingStatReservations: 'Reservations',
+  employeeManagement: 'Employee Management',
+  welcomeBack: 'Welcome back',
+  subscriptionInactive: 'Subscription Inactive',
+  queueUnavailable: 'Queue is currently unavailable',
+  activatePlan: 'Activate Plan',
+  subscriptionRequired: 'Please activate your subscription to use queue features',
+  inactiveAgency: 'Inactive',
 };
 
 export default en;

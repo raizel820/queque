@@ -36,8 +36,16 @@ export const ALLOWED_MIME_PREFIXES = [
 export const VALID_TYPES = new Set(['general', 'receipt', 'logo', 'avatar']);
 export const DEFAULT_TYPE = 'general';
 
-/** Types that should use private access (require token to view) */
-const PRIVATE_TYPES = new Set(['receipt']);
+/** 
+ * When the Vercel Blob store is configured as private, ALL uploads must use access: 'private'.
+ * Files are then served through the /api/upload/proxy endpoint server-side.
+ * If the store is public, we can use 'public' for non-sensitive types.
+ * We detect this by checking BLOB_STORE_ACCESS env var or defaulting to 'private' for safety.
+ */
+const BLOB_STORE_ACCESS = process.env.BLOB_STORE_ACCESS || 'private';
+
+/** Types that should always use private access regardless of store config */
+const ALWAYS_PRIVATE_TYPES = new Set(['receipt']);
 
 // ─── Environment Detection ──────────────────────────────────────────────────
 
@@ -91,9 +99,14 @@ export function isBlobUrl(url: string): boolean {
   return url.includes('.blob.vercel-storage.com');
 }
 
-/** Determine access level based on upload type */
+/** Determine access level based on upload type and store configuration */
 function getAccessForType(type: string): 'public' | 'private' {
-  return PRIVATE_TYPES.has(type) ? 'private' : 'public';
+  // Some types are always private (receipts, etc.)
+  if (ALWAYS_PRIVATE_TYPES.has(type)) return 'private';
+  // If the blob store is private, all uploads must be private
+  if (BLOB_STORE_ACCESS === 'private') return 'private';
+  // Otherwise, use public access for images/logos/avatars
+  return 'public';
 }
 
 async function ensureDir(dir: string) {

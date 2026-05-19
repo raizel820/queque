@@ -140,6 +140,8 @@ export async function GET(req: NextRequest) {
       // Chart data
       hourlyWaitTime: avgHourlyWait,
       ratingDistribution: ratingDist,
+      // Subscription info
+      subscriptionStatus: agency.subscriptionStatus,
     });
   } catch (error) {
     console.error('Agency stats error:', error);

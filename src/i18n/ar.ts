@@ -1073,6 +1073,14 @@ const ar = {
 
   // ─── Task 13: Agency Reviews Page ──────
   reviewsPage: 'صفحة التقييمات',
+
+  // ─── Task 3-6: Login/Register/Staff/Password Enhancements ─────
+  generatePassword: 'توليد كلمة مرور',
+  staffAccountCreated: 'تم إنشاء حساب الموظف',
+  credentialsShareHint: 'شارك بيانات الدخول مع الموظف حتى يتمكن من تسجيل الدخول',
+  copyCredentials: 'نسخ بيانات الدخول',
+  credentialsCopied: 'تم نسخ بيانات الدخول',
+  credentialsWarning: 'احتفظ ببيانات الدخول في مكان آمن ولن تظهر مرة أخرى',
   filterByRating: 'تصفية حسب التقييم',
   sortBy: 'ترتيب حسب',
   newest: 'الأحدث',
@@ -1087,6 +1095,16 @@ const ar = {
   allReviews: 'جميع التقييمات',
   customerReviews: 'تقييمات العملاء',
   seeAllReviews: 'عرض جميع التقييمات',
+
+  // ─── Task 7-8: Landing Stats & Subscription Enforcement ──────
+  landingStatReservations: 'الحجوزات',
+  employeeManagement: 'إدارة الموظفين',
+  welcomeBack: 'مرحباً بعودتك',
+  subscriptionInactive: 'الاشتراك غير نشط',
+  queueUnavailable: 'الطابور غير متاح حالياً',
+  activatePlan: 'تفعيل الخطة',
+  subscriptionRequired: 'يرجى تفعيل الاشتراك لاستخدام ميزات الطابور',
+  inactiveAgency: 'غير نشط',
 };
 
 export default ar;

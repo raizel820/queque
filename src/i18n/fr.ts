@@ -1073,6 +1073,14 @@ const fr: Record<TranslationKeys, string> = {
 
   // ─── Task 13: Agency Reviews Page ──────
   reviewsPage: 'Avis',
+
+  // ─── Task 3-6: Login/Register/Staff/Password Enhancements ─────
+  generatePassword: 'Générer un mot de passe',
+  staffAccountCreated: 'Compte employé créé',
+  credentialsShareHint: 'Partagez ces identifiants avec l\'employé pour qu\'il puisse se connecter',
+  copyCredentials: 'Copier les identifiants',
+  credentialsCopied: 'Identifiants copiés',
+  credentialsWarning: 'Gardez ces identifiants en sécurité, ils ne seront plus affichés',
   filterByRating: 'Filtrer par note',
   sortBy: 'Trier par',
   newest: 'Plus récent',
@@ -1087,6 +1095,16 @@ const fr: Record<TranslationKeys, string> = {
   allReviews: 'Tous les avis',
   customerReviews: 'Avis des clients',
   seeAllReviews: 'Voir tous les avis',
+
+  // ─── Task 7-8: Landing Stats & Subscription Enforcement ──────
+  landingStatReservations: 'Réservations',
+  employeeManagement: 'Gestion des employés',
+  welcomeBack: 'Bon retour',
+  subscriptionInactive: 'Abonnement inactif',
+  queueUnavailable: "La file d'attente est actuellement indisponible",
+  activatePlan: 'Activer le plan',
+  subscriptionRequired: "Veuillez activer votre abonnement pour utiliser les fonctionnalités de file d'attente",
+  inactiveAgency: 'Inactif',
 };
 
 export default fr;

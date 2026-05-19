@@ -53,14 +53,19 @@ export async function PATCH(
 
     // Also update the reservation's rating/feedback if linked
     if (review.reservationId) {
-      const resUpdateData: Record<string, unknown> = {};
-      if (rating !== undefined) resUpdateData.rating = rating;
-      if (comment !== undefined) resUpdateData.feedback = comment?.trim() || null;
-      if (Object.keys(resUpdateData).length > 0) {
+      if (rating !== undefined) {
         await db.reservation.update({
           where: { id: review.reservationId },
-          data: resUpdateData,
+          data: { rating },
         });
+      }
+      // Use raw SQL for feedback field that may not exist in Prisma Client
+      if (comment !== undefined) {
+        try {
+          await db.$executeRaw`UPDATE Reservation SET feedback = ${comment?.trim() || null} WHERE id = ${review.reservationId}`;
+        } catch {
+          console.warn('[REVIEWS PATCH] Could not set feedback, column may not exist');
+        }
       }
     }
 

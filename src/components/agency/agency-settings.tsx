@@ -42,6 +42,10 @@ import {
   Gauge,
   Info,
   Briefcase,
+  Copy,
+  RefreshCw,
+  CheckCircle2,
+  Key,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -122,6 +126,11 @@ export function AgencySettings() {
   const [newStaffFullName, setNewStaffFullName] = useState('');
   const [newStaffPassword, setNewStaffPassword] = useState('');
   const [newStaffRole, setNewStaffRole] = useState<'STAFF' | 'MANAGER'>('STAFF');
+
+  // Staff credentials dialog state
+  const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<{ username: string; password: string } | null>(null);
+  const [credentialsCopied, setCredentialsCopied] = useState(false);
 
   // Edit staff state
   const [editStaffOpen, setEditStaffOpen] = useState(false);
@@ -240,9 +249,14 @@ export function AgencySettings() {
       });
       if (res.ok) {
         const data = await res.json();
-        toast.success(t('staffCreatedWithCreds').replace('{username}', data.staff.user.username).replace('{password}', data.initialPassword), {
-          duration: 8000,
+        // Show credentials dialog instead of just toast
+        setCreatedCredentials({
+          username: data.staff.user.username,
+          password: data.initialPassword,
         });
+        setCredentialsCopied(false);
+        setCredentialsDialogOpen(true);
+        toast.success(t('success'));
         resetStaffForm();
         setAddStaffOpen(false);
         fetchStaff();
@@ -737,9 +751,28 @@ export function AgencySettings() {
                                     />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label>{t('staffInitialPassword')}</Label>
+                                    <div className="flex items-center justify-between">
+                                      <Label>{t('staffInitialPassword')}</Label>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
+                                        onClick={() => {
+                                          const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+                                          let pwd = '';
+                                          for (let i = 0; i < 8; i++) {
+                                            pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+                                          }
+                                          setNewStaffPassword(pwd);
+                                        }}
+                                      >
+                                        <RefreshCw className="h-3 w-3 me-1" />
+                                        {t('generatePassword')}
+                                      </Button>
+                                    </div>
                                     <Input
-                                      type="password"
+                                      type="text"
                                       value={newStaffPassword}
                                       onChange={(e) => setNewStaffPassword(e.target.value)}
                                       placeholder={t('passwordMinLength')}
@@ -889,6 +922,71 @@ export function AgencySettings() {
                               })}
                             </div>
                           )}
+
+                          {/* Staff Credentials Success Dialog */}
+                          <Dialog open={credentialsDialogOpen} onOpenChange={(open) => { setCredentialsDialogOpen(open); if (!open) setCreatedCredentials(null); }}>
+                            <DialogContent className="sm:max-w-md">
+                              <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2">
+                                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                  {t('staffAccountCreated')}
+                                </DialogTitle>
+                                <DialogDescription>{t('credentialsShareHint')}</DialogDescription>
+                              </DialogHeader>
+                              {createdCredentials && (
+                                <div className="space-y-4 py-2">
+                                  <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800/30">
+                                    <div className="space-y-3">
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <p className="text-xs text-muted-foreground">{t('username')}</p>
+                                          <p className="text-sm font-semibold text-foreground" dir="ltr">{createdCredentials.username}</p>
+                                        </div>
+                                      </div>
+                                      <div className="h-px bg-emerald-200 dark:bg-emerald-800/30" />
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <p className="text-xs text-muted-foreground">{t('password')}</p>
+                                          <p className="text-sm font-semibold text-foreground" dir="ltr">{createdCredentials.password}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                      onClick={async () => {
+                                        const text = `${t('username')}: ${createdCredentials.username}\n${t('password')}: ${createdCredentials.password}`;
+                                        try {
+                                          await navigator.clipboard.writeText(text);
+                                          setCredentialsCopied(true);
+                                          toast.success(t('credentialsCopied'));
+                                          setTimeout(() => setCredentialsCopied(false), 2000);
+                                        } catch {
+                                          toast.error(t('error'));
+                                        }
+                                      }}
+                                    >
+                                      {credentialsCopied ? (
+                                        <>
+                                          <CheckCircle2 className="h-4 w-4 me-1" />
+                                          {t('copied')}
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="h-4 w-4 me-1" />
+                                          {t('copyCredentials')}
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+                                    {t('credentialsWarning')}
+                                  </p>
+                                </div>
+                              )}
+                            </DialogContent>
+                          </Dialog>
 
                           {/* Edit Staff Dialog */}
                           <Dialog open={editStaffOpen} onOpenChange={(open) => { setEditStaffOpen(open); if (!open) setEditingStaffId(null); }}>

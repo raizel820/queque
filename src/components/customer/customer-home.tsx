@@ -72,6 +72,7 @@ interface AgencyListItem {
   avgServiceTime?: number;
   averageRating?: number;
   reviewCount?: number;
+  subscriptionStatus?: string;
 }
 
 interface AgencyDetail {
@@ -93,6 +94,7 @@ interface AgencyDetail {
   services: { id: string; name: string; nameAr?: string; nameFr?: string; waitingCount: number }[];
   averageRating?: number;
   reviewCount?: number;
+  subscriptionStatus?: string;
 }
 
 const categoryKeys: { key: TranslationKeys; value: string; icon: React.ElementType }[] = [
@@ -586,6 +588,11 @@ export function CustomerHome() {
               <Badge variant="outline" className="text-xs">
                 {getCategoryLabel(selectedAgency.category)}
               </Badge>
+              {selectedAgency.subscriptionStatus !== 'ACTIVE' && (
+                <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200">
+                  {t('inactiveAgency')}
+                </Badge>
+              )}
               <Badge
                 variant="outline"
                 className={
@@ -641,6 +648,13 @@ export function CustomerHome() {
               </div>
             </div>
 
+            {/* Queue Unavailable Message for Inactive Subscriptions */}
+            {selectedAgency.subscriptionStatus !== 'ACTIVE' && (
+              <div className="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">{t('queueUnavailable')}</p>
+              </div>
+            )}
+
             {/* Services */}
             {selectedAgency.services.length > 0 && (
               <div className="mb-4">
@@ -652,7 +666,7 @@ export function CustomerHome() {
                       whileHover={{ x: 4 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleJoinQueue(selectedAgency.id, svc.id)}
-                      disabled={selectedAgency.isPaused || !selectedAgency.isQueueOpen}
+                      disabled={selectedAgency.isPaused || !selectedAgency.isQueueOpen || selectedAgency.subscriptionStatus !== 'ACTIVE'}
                       className="w-full flex items-center justify-between p-3 rounded-xl border border-border hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-colors disabled:opacity-50"
                     >
                       <div className="flex items-center gap-3">
@@ -677,9 +691,9 @@ export function CustomerHome() {
               <Button
                 className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl"
                 onClick={() => handleJoinQueue(selectedAgency.id)}
-                disabled={selectedAgency.isPaused || !selectedAgency.isQueueOpen}
+                disabled={selectedAgency.isPaused || !selectedAgency.isQueueOpen || selectedAgency.subscriptionStatus !== 'ACTIVE'}
               >
-                {selectedAgency.isQueueOpen ? t('joinQueue') : t('closed')}
+                {selectedAgency.subscriptionStatus !== 'ACTIVE' ? t('queueUnavailable') : selectedAgency.isQueueOpen ? t('joinQueue') : t('closed')}
               </Button>
             )}
 
@@ -977,10 +991,10 @@ export function CustomerHome() {
                         ~{estWait} {t('estWaitBadge')}
                       </span>
                       <span
-                        onClick={(e) => { e.stopPropagation(); handleQuickJoin(agency.id); }}
-                        className="px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-medium hover:bg-emerald-600 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); if (agency.subscriptionStatus === 'ACTIVE') handleQuickJoin(agency.id); }}
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-colors ${agency.subscriptionStatus !== 'ACTIVE' ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
                       >
-                        {t('joinQueue')}
+                        {agency.subscriptionStatus !== 'ACTIVE' ? t('inactiveAgency') : t('joinQueue')}
                       </span>
                     </div>
                   </motion.button>
@@ -1160,6 +1174,12 @@ export function CustomerHome() {
                           {t('sponsored')}
                         </Badge>
                       )}
+                      {/* Inactive subscription badge */}
+                      {agency.subscriptionStatus !== 'ACTIVE' && (
+                        <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200">
+                          {t('inactiveAgency')}
+                        </Badge>
+                      )}
                       {/* Queue status indicator with dot */}
                       <span className="flex items-center gap-1">
                         <span className={`h-2 w-2 rounded-full ${queueStatus === 'open' ? 'bg-emerald-500' : queueStatus === 'paused' ? 'bg-yellow-500' : 'bg-red-500'}`} />
@@ -1245,11 +1265,12 @@ export function CustomerHome() {
                       {/* Quick Join button for single-service agencies */}
                       {agency.isQueueOpen && !agency.isPaused && agency.serviceCount === 1 && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleQuickJoin(agency.id); }}
-                          className="h-7 px-2.5 rounded-full flex items-center gap-1 bg-emerald-500 text-white text-[10px] font-medium hover:bg-emerald-600 transition-colors"
+                          onClick={(e) => { e.stopPropagation(); if (agency.subscriptionStatus === 'ACTIVE') handleQuickJoin(agency.id); }}
+                          disabled={agency.subscriptionStatus !== 'ACTIVE'}
+                          className={`h-7 px-2.5 rounded-full flex items-center gap-1 text-[10px] font-medium transition-colors ${agency.subscriptionStatus !== 'ACTIVE' ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-600'}`}
                         >
                           <Zap className="h-3 w-3" />
-                          {t('joinQueue')}
+                          {agency.subscriptionStatus !== 'ACTIVE' ? t('inactiveAgency') : t('joinQueue')}
                         </button>
                       )}
                       {/* Mini waiting count badge */}

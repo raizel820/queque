@@ -17,6 +17,7 @@ import { CustomerHistory } from '@/components/customer/customer-history';
 import { CustomerProfile } from '@/components/customer/customer-profile';
 import { CustomerNotifications } from '@/components/customer/customer-notifications';
 import { CustomerFavorites } from '@/components/customer/customer-favorites';
+import { CustomerSettings } from '@/components/customer/customer-settings';
 
 // Agency Views
 import { AgencyDashboard } from '@/components/agency/agency-dashboard';
@@ -24,6 +25,7 @@ import { AgencySettings } from '@/components/agency/agency-settings';
 import { AgencyProfile } from '@/components/agency/agency-profile';
 import { AgencySubscription } from '@/components/agency/agency-subscription';
 import { AgencyReviews } from '@/components/agency/agency-reviews';
+import { AgencyEmployees } from '@/components/agency/agency-employees';
 
 // Admin Views
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
@@ -61,6 +63,10 @@ import {
   MoreHorizontal,
   AlertTriangle,
   Star,
+  KeyRound,
+  Loader2,
+  UserCog,
+  Settings2,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -72,6 +78,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 function ViewRouter() {
   const { currentView } = useAppStore();
@@ -95,6 +110,8 @@ function ViewRouter() {
       return <CustomerNotifications />;
     case 'customer-favorites':
       return <CustomerFavorites />;
+    case 'customer-settings':
+      return <CustomerSettings />;
     case 'agency-dashboard':
       return <AgencyDashboard />;
     case 'agency-settings':
@@ -105,6 +122,8 @@ function ViewRouter() {
       return <AgencySubscription />;
     case 'agency-reviews':
       return <AgencyReviews />;
+    case 'agency-employees':
+      return <AgencyEmployees />;
     case 'admin-dashboard':
       return <AdminDashboard />;
     case 'admin-transactions':
@@ -167,7 +186,7 @@ function CustomerBottomNav() {
     { view: 'customer-profile' as const, icon: User, label: t('profile') },
   ];
 
-  const handleMoreNav = (view: 'customer-favorites' | 'customer-notifications' | 'customer-profile') => {
+  const handleMoreNav = (view: 'customer-favorites' | 'customer-notifications' | 'customer-settings') => {
     setMoreOpen(false);
     setView(view);
   };
@@ -270,10 +289,10 @@ function CustomerBottomNav() {
                   )}
                 </button>
                 <button
-                  onClick={() => handleMoreNav('customer-profile')}
+                  onClick={() => handleMoreNav('customer-settings')}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted dark:hover:bg-gray-800 transition-colors"
                 >
-                  <Settings className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  <Settings2 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                   <span className="text-sm font-medium text-foreground">{t('settings')}</span>
                 </button>
                 <div className="h-px bg-border mx-3 my-1" />
@@ -297,9 +316,56 @@ function CustomerBottomNav() {
 function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { currentView, setView, logout, user } = useAppStore();
   const { t } = useLanguage();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [cpCurrentPwd, setCpCurrentPwd] = useState('');
+  const [cpNewPwd, setCpNewPwd] = useState('');
+  const [cpConfirmPwd, setCpConfirmPwd] = useState('');
+  const [cpLoading, setCpLoading] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (!cpCurrentPwd || !cpNewPwd || !cpConfirmPwd) {
+      toast.error(t('requiredField'));
+      return;
+    }
+    if (cpNewPwd.length < 6) {
+      toast.error(t('passwordMinLength'));
+      return;
+    }
+    if (cpNewPwd !== cpConfirmPwd) {
+      toast.error(t('passwordMismatch'));
+      return;
+    }
+    setCpLoading(true);
+    try {
+      const res = await fetch('/api/user/change-password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          currentPassword: cpCurrentPwd,
+          newPassword: cpNewPwd,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(t('passwordChanged'));
+        setChangePasswordOpen(false);
+        setCpCurrentPwd('');
+        setCpNewPwd('');
+        setCpConfirmPwd('');
+      } else {
+        toast.error(data.error === 'Current password is incorrect' ? t('wrongCurrentPassword') : (data.error || t('error')));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setCpLoading(false);
+    }
+  };
 
   const navItems = [
     { view: 'agency-dashboard' as const, icon: LayoutDashboard, label: t('dashboard') },
+    { view: 'agency-employees' as const, icon: UserCog, label: t('employeeManagement') },
     { view: 'agency-reviews' as const, icon: Star, label: t('reviewsPage') },
     { view: 'agency-settings' as const, icon: Settings, label: t('settings') },
     { view: 'agency-profile' as const, icon: Building2, label: t('agencyProfile') },
@@ -369,6 +435,14 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
             <p className="text-xs text-muted-foreground truncate">{user?.role === 'AGENCY_OWNER' ? t('agencyOwner') : t('agencyStaff')}</p>
           </div>
         </div>
+        {/* Change Password - shown for all agency users */}
+        <button
+          onClick={() => setChangePasswordOpen(true)}
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          <KeyRound className="h-5 w-5" />
+          {t('changePassword')}
+        </button>
         <button
           onClick={() => {
             logout();
@@ -380,6 +454,65 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
           {t('logout')}
         </button>
       </div>
+
+      {/* Change Password Dialog */}
+      <Dialog open={changePasswordOpen} onOpenChange={(open) => { setChangePasswordOpen(open); if (!open) { setCpCurrentPwd(''); setCpNewPwd(''); setCpConfirmPwd(''); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-emerald-500" />
+              {t('changePassword')}
+            </DialogTitle>
+            <DialogDescription>{t('changePassword')}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>{t('currentPassword')}</Label>
+              <Input
+                type="password"
+                value={cpCurrentPwd}
+                onChange={(e) => setCpCurrentPwd(e.target.value)}
+                placeholder={t('currentPassword')}
+                className="h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('newPassword')}</Label>
+              <Input
+                type="password"
+                value={cpNewPwd}
+                onChange={(e) => setCpNewPwd(e.target.value)}
+                placeholder={t('newPassword')}
+                className="h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('confirmNewPassword')}</Label>
+              <Input
+                type="password"
+                value={cpConfirmPwd}
+                onChange={(e) => setCpConfirmPwd(e.target.value)}
+                placeholder={t('confirmNewPassword')}
+                className="h-11"
+                onKeyDown={(e) => { if (e.key === 'Enter') handleChangePassword(); }}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setChangePasswordOpen(false)}>
+              {t('cancel')}
+            </Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={handleChangePassword}
+              disabled={cpLoading || !cpCurrentPwd || !cpNewPwd || !cpConfirmPwd}
+            >
+              {cpLoading ? <Loader2 className="h-4 w-4 animate-spin me-1" /> : <KeyRound className="h-4 w-4 me-1" />}
+              {t('changePassword')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 

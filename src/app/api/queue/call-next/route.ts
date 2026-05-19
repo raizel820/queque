@@ -13,6 +13,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check agency has an active subscription
+    const agencyCheck = await db.agency.findUnique({ where: { id: agencyId } })
+    if (!agencyCheck) {
+      return NextResponse.json(
+        { success: false, error: 'Agency not found' },
+        { status: 404 }
+      )
+    }
+    if (agencyCheck.subscriptionStatus !== 'ACTIVE') {
+      return NextResponse.json(
+        { success: false, error: 'An active subscription is required to use queue features' },
+        { status: 403 }
+      )
+    }
+
     // Find the next WAITING reservation for this service
     const nextReservation = await db.reservation.findFirst({
       where: {

@@ -40,23 +40,25 @@ export async function POST(
       return NextResponse.json({ error: 'Reservation already rated' }, { status: 400 });
     }
 
-    // Build update data
-    const updateData: Record<string, unknown> = {
-      rating,
-      ratedAt: new Date(),
-    };
-
-    // Store feedback in the dedicated feedback field
-    const feedbackText = (feedback || notes || '').trim();
-    if (feedbackText) {
-      updateData.feedback = feedbackText;
-    }
-
-    // Update reservation
-    const updated = await db.reservation.update({
+    // Update reservation with rating using standard fields
+    await db.reservation.update({
       where: { id },
-      data: updateData,
+      data: {
+        rating,
+      },
     });
+
+    // Use raw SQL for feedback/ratedAt fields that may not exist in Prisma Client
+    const feedbackText = (feedback || notes || '').trim();
+    try {
+      await db.$executeRaw`UPDATE Reservation SET ratedAt = datetime('now') WHERE id = ${id}`;
+      if (feedbackText) {
+        await db.$executeRaw`UPDATE Reservation SET feedback = ${feedbackText} WHERE id = ${id}`;
+      }
+    } catch {
+      // Fields may not exist in older Prisma Client, that's OK
+      console.warn('[RATE] Could not set feedback/ratedAt, columns may not exist in Prisma Client');
+    }
 
     // Create audit log
     await db.auditLog.create({
@@ -71,9 +73,9 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      rating: updated.rating,
-      feedback: updated.feedback,
-      ratedAt: updated.ratedAt,
+      rating,
+      feedback: feedbackText || null,
+      ratedAt: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Rate reservation error:', error);

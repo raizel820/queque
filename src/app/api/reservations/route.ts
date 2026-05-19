@@ -64,6 +64,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check agency has an active subscription
+    if (agency.subscriptionStatus !== 'ACTIVE') {
+      return NextResponse.json(
+        { success: false, error: "This agency's queue is currently unavailable. The agency needs an active subscription." },
+        { status: 403 }
+      )
+    }
+
     if (!agency.isQueueOpen) {
       return NextResponse.json(
         { success: false, error: 'Queue is currently closed' },

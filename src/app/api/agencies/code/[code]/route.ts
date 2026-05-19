@@ -85,6 +85,7 @@ export async function GET(
         workingHoursStart: agency.workingHoursStart,
         workingHoursEnd: agency.workingHoursEnd,
         avgServiceTime: agency.averageServiceTime,
+        subscriptionStatus: agency.subscriptionStatus,
         services: servicesWithCount,
       },
     })
