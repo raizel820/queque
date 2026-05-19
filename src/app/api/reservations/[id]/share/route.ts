@@ -12,7 +12,7 @@ export async function GET(
       where: { id },
       include: {
         user: { select: { fullName: true } },
-        agency: { select: { name: true, nameAr: true, nameFr: true, agencyCode: true } },
+        agency: { select: { name: true, nameAr: true, nameFr: true, customCode: true } },
         service: { select: { name: true, nameAr: true, nameFr: true } },
       },
     });
@@ -35,11 +35,11 @@ export async function GET(
     const position = peopleAhead + 1;
 
     // Estimate wait time
-    const avgServiceTime = await db.queueSettings.findUnique({
+    const queueSettings = await db.queueSettings.findFirst({
       where: { agencyId: reservation.agencyId },
-      select: { avgServiceTime: true },
     });
-    const estimatedWait = Math.round(peopleAhead * (avgServiceTime?.avgServiceTime ?? 10));
+    const agency = await db.agency.findUnique({ where: { id: reservation.agencyId }, select: { averageServiceTime: true } });
+    const estimatedWait = Math.round(peopleAhead * (agency?.averageServiceTime ?? 10));
 
     const displayNumber =
       `${reservation.service?.name?.substring(0, 1).toUpperCase() || ''}-${String(reservation.queueNumber).padStart(3, '0')}`;

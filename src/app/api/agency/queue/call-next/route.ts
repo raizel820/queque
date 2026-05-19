@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Build the where clause: WAITING, NOT skipped for no-show
-    const where: Record<string, unknown> = {
+    const where: Prisma.ReservationWhereInput = {
       agencyId,
       status: 'WAITING',
       skippedForNoShow: false,
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
 
       // If this reservation was previously reclaimed, clear the reclaim flag
       // and reset the skip-related fields
-      const updateData: Record<string, unknown> = {
+      const updateData: Prisma.ReservationUpdateInput = {
         status: 'CALLED',
         calledAt: new Date(),
       };
