@@ -172,7 +172,7 @@ export function CustomerQueue() {
             joinedAt: r.joinedAt,
             reservedDate: (r.reservedDate as string) || undefined,
             rating: (r.rating as number) ?? null,
-            skippedForNoShow: (r.skippedForNoShow as boolean) || false,
+            skippedForNoShow: (r as Record<string, unknown>).skippedForNoShow === true,
           };
         });
 

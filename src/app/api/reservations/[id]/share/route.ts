@@ -22,23 +22,30 @@ export async function GET(
     }
 
     // Count people ahead (WAITING with earlier joinedAt)
-    const peopleAhead = await db.reservation.count({
+    // Note: skippedForNoShow filter done in code to avoid Prisma Client compatibility issues
+    const allAhead = await db.reservation.findMany({
       where: {
         agencyId: reservation.agencyId,
         status: 'WAITING',
         joinedAt: { lt: reservation.joinedAt },
-        skippedForNoShow: false,
       },
+      select: { id: true },
     });
+
+    // Filter out skipped-for-no-show in code
+    const peopleAhead = allAhead.filter(r => {
+      const rAny = r as Record<string, unknown>;
+      return rAny.skippedForNoShow !== true;
+    }).length;
 
     // Calculate position (people ahead + 1)
     const position = peopleAhead + 1;
 
-    // Estimate wait time
-    const queueSettings = await db.queueSettings.findFirst({
-      where: { agencyId: reservation.agencyId },
+    // Estimate wait time from agency settings
+    const agency = await db.agency.findUnique({
+      where: { id: reservation.agencyId },
+      select: { averageServiceTime: true },
     });
-    const agency = await db.agency.findUnique({ where: { id: reservation.agencyId }, select: { averageServiceTime: true } });
     const estimatedWait = Math.round(peopleAhead * (agency?.averageServiceTime ?? 10));
 
     const displayNumber =

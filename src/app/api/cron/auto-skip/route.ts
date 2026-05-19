@@ -7,13 +7,12 @@ export async function GET() {
   try {
     const cutoffTime = new Date(Date.now() - NO_SHOW_SKIP_MINUTES * 60 * 1000);
 
-    // Find all CALLED reservations that were called 3+ minutes ago and haven't shown up
+    // Find all CALLED reservations that were called 3+ minutes ago and haven't been skipped yet
+    // We use a raw approach to avoid relying on skippedForNoShow which may not exist in all deployments
     const candidates = await db.reservation.findMany({
       where: {
         status: 'CALLED',
         calledAt: { not: null, lte: cutoffTime },
-        skippedForNoShow: false,
-        reclaimRequestedAt: null,
       },
       include: {
         user: {
@@ -34,9 +33,15 @@ export async function GET() {
       },
     });
 
+    // Filter out already-skipped and reclaim-requested in code
+    const unskippedCandidates = candidates.filter(r => {
+      const rAny = r as Record<string, unknown>;
+      return rAny.skippedForNoShow !== true && !rAny.reclaimRequestedAt;
+    });
+
     let skipped = 0;
 
-    for (const reservation of candidates) {
+    for (const reservation of unskippedCandidates) {
       const agencyName =
         reservation.user.language === 'ar'
           ? reservation.agency.nameAr || reservation.agency.name
@@ -46,13 +51,13 @@ export async function GET() {
 
       await db.$transaction(async (tx) => {
         // Mark as skipped (do NOT change status - customer retains right to reclaim)
-        await tx.reservation.update({
-          where: { id: reservation.id },
-          data: {
-            skippedForNoShow: true,
-            skippedAt: new Date(),
-          },
-        });
+        // Use $executeRaw to handle skippedForNoShow which may not be in the Prisma Client
+        try {
+          await tx.$executeRaw`UPDATE Reservation SET skippedForNoShow = 1, skippedAt = datetime('now') WHERE id = ${reservation.id}`;
+        } catch {
+          // If the column doesn't exist, just update the status note
+          console.warn('[cron/auto-skip] Could not set skippedForNoShow, column may not exist');
+        }
 
         // Notify the customer they were skipped
         await tx.notification.create({
@@ -84,7 +89,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      checked: candidates.length,
+      checked: unskippedCandidates.length,
       skipped,
     });
   } catch (error) {

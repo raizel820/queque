@@ -7,11 +7,11 @@ export async function GET() {
 
     // Find all WAITING reservations that haven't received a reminder yet,
     // reserved for today (or no specific date), and whose user has reminderMinutes set
-    const candidates = await db.reservation.findMany({
+    // Note: skippedForNoShow filter done in code to avoid Prisma Client compatibility issues
+    const allCandidates = await db.reservation.findMany({
       where: {
         status: 'WAITING',
         reminderSent: false,
-        skippedForNoShow: false,
         OR: [
           { reservedDate: today },
           { reservedDate: null },
@@ -42,6 +42,12 @@ export async function GET() {
       orderBy: { queueNumber: 'asc' },
     });
 
+    // Filter out skipped-for-no-show in code
+    const candidates = allCandidates.filter(r => {
+      const rAny = r as Record<string, unknown>;
+      return rAny.skippedForNoShow !== true;
+    });
+
     let remindersSent = 0;
 
     for (const reservation of candidates) {
@@ -50,7 +56,6 @@ export async function GET() {
         where: {
           agencyId: reservation.agencyId,
           status: 'WAITING',
-          skippedForNoShow: false,
           joinedAt: { lt: reservation.joinedAt },
           id: { not: reservation.id },
         },

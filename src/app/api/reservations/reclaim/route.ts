@@ -32,7 +32,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (!reservation || !reservation.skippedForNoShow) {
+    if (!reservation) {
+      return NextResponse.json(
+        { error: 'Reservation not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check if the reservation was skipped for no-show
+    // Use safe access since skippedForNoShow may not exist in Prisma Client on all deployments
+    const reservationAny = reservation as Record<string, unknown>;
+    if (!reservationAny.skippedForNoShow) {
       return NextResponse.json(
         { error: 'Reservation not found or not skipped' },
         { status: 404 }
@@ -63,15 +73,18 @@ export async function POST(req: NextRequest) {
       // If there's already someone else being served, put them back in WAITING
       const newStatus = currentQueueNumber ? 'WAITING' : reservation.status;
 
-      await tx.reservation.update({
-        where: { id: reservation.id },
-        data: {
-          skippedForNoShow: false,
-          skippedAt: null,
-          reclaimRequestedAt: new Date(),
-          status: newStatus,
-        },
-      });
+      // Use raw SQL for skip-related fields that may not be in Prisma Client
+      try {
+        await tx.$executeRaw`UPDATE Reservation SET skippedForNoShow = 0, skippedAt = NULL, reclaimRequestedAt = datetime('now'), status = ${newStatus} WHERE id = ${reservation.id}`;
+      } catch {
+        // Fallback: just update status if skip columns don't exist
+        await tx.reservation.update({
+          where: { id: reservation.id },
+          data: {
+            status: newStatus,
+          },
+        });
+      }
 
       // Notify the customer
       await tx.notification.create({

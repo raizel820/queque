@@ -10,13 +10,13 @@ export async function GET() {
     const cutoffTime = new Date(Date.now() - SMS_FALLBACK_MINUTES * 60 * 1000);
 
     // Find reservations where in-app reminder was sent 10+ minutes ago but SMS not yet sent
-    const candidates = await db.reservation.findMany({
+    // Note: skippedForNoShow filter done in code to avoid Prisma Client compatibility issues
+    const allCandidates = await db.reservation.findMany({
       where: {
         status: { in: ['WAITING', 'CALLED'] },
         reminderSent: true,
         reminderSentAt: { not: null, lte: cutoffTime },
         smsReminderSent: false,
-        skippedForNoShow: false,
         user: {
           smsNotificationsEnabled: true,
           phoneNumber: { not: null },
@@ -47,6 +47,12 @@ export async function GET() {
           },
         },
       },
+    });
+
+    // Filter out skipped-for-no-show in code
+    const candidates = allCandidates.filter(r => {
+      const rAny = r as Record<string, unknown>;
+      return rAny.skippedForNoShow !== true;
     });
 
     let smsSent = 0;

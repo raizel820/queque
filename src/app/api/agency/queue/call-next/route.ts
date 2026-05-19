@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { Prisma } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,11 +15,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Queue is paused' }, { status: 400 });
     }
 
-    // Build the where clause: WAITING, NOT skipped for no-show
-    const where: Prisma.ReservationWhereInput = {
+    // Build the where clause: find next WAITING reservation
+    // Note: skipped-for-no-show reservations have status CALLED, not WAITING,
+    // so status: WAITING is sufficient to exclude them
+    const where: {
+      agencyId: string;
+      status: string;
+      serviceId?: string;
+    } = {
       agencyId,
       status: 'WAITING',
-      skippedForNoShow: false,
     };
     if (serviceId) {
       where.serviceId = serviceId;
@@ -45,17 +49,14 @@ export async function POST(req: NextRequest) {
       const recheck = await tx.reservation.findUnique({ where: { id: candidate.id } });
       if (!recheck || recheck.status !== 'WAITING') return;
 
-      // If this reservation was previously reclaimed, clear the reclaim flag
-      // and reset the skip-related fields
-      const updateData: Prisma.ReservationUpdateInput = {
+      // Update reservation to CALLED status
+      const updateData: {
+        status: string;
+        calledAt: Date;
+      } = {
         status: 'CALLED',
         calledAt: new Date(),
       };
-      if (recheck.reclaimRequestedAt) {
-        updateData.skippedForNoShow = false;
-        updateData.skippedAt = null;
-        updateData.reclaimRequestedAt = null;
-      }
 
       await tx.reservation.update({
         where: { id: candidate.id },
