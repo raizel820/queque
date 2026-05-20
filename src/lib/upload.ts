@@ -39,12 +39,13 @@ export const DEFAULT_TYPE = 'general';
 /** 
  * When the Vercel Blob store is configured as private, ALL uploads must use access: 'private'.
  * Files are then served through the /api/upload/proxy endpoint server-side.
- * If the store is public, we can use 'public' for non-sensitive types.
- * We detect this by checking BLOB_STORE_ACCESS env var or defaulting to 'public' for
- * better compatibility. Set BLOB_STORE_ACCESS=private if your Vercel Blob store is private.
+ * Default is 'private' for maximum compatibility (private stores can't use 'public',
+ * but public stores CAN use 'private' and serve through proxy).
+ * Set BLOB_STORE_ACCESS=public if your Vercel Blob store is public and you want
+ * direct public URLs for avatars/logos/general files.
  * Receipts are always uploaded as private regardless of this setting.
  */
-const BLOB_STORE_ACCESS = process.env.BLOB_STORE_ACCESS || 'public';
+const BLOB_STORE_ACCESS = process.env.BLOB_STORE_ACCESS || 'private';
 
 /** Types that should always use private access regardless of store config */
 const ALWAYS_PRIVATE_TYPES = new Set(['receipt']);
@@ -474,7 +475,7 @@ export async function migrateToBlob(localUrl: string): Promise<UploadResult | nu
     const buffer = await fs.readFile(resolved);
     const filename = localUrl.replace('/uploads/', '');
     const blob = await put(filename, buffer, {
-      access: 'public',
+      access: BLOB_STORE_ACCESS === 'public' ? 'public' : 'private',
       token,
       addRandomSuffix: true,
     });

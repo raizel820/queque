@@ -6,7 +6,15 @@ import { put, del, head, list } from '@vercel/blob';
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf']);
 const VALID_TYPES = new Set(['general', 'receipt', 'logo', 'avatar']);
-const PRIVATE_TYPES = new Set(['receipt']);
+
+/**
+ * When the Vercel Blob store is configured as private, ALL uploads must use access: 'private'.
+ * Files are then served through the /api/upload/proxy endpoint server-side.
+ * Set BLOB_STORE_ACCESS=private if your Vercel Blob store is private.
+ * Default is 'private' for maximum compatibility (private stores can't use 'public',
+ * but public stores CAN use 'private' and serve through proxy).
+ */
+const BLOB_STORE_ACCESS = process.env.BLOB_STORE_ACCESS || 'private';
 
 function getBlobToken(): string | undefined {
   return process.env.BLOB_READ_WRITE_TOKEN;
@@ -20,8 +28,20 @@ function getExtension(filename: string): string {
   return filename.split('.').pop()?.toLowerCase() || '';
 }
 
+/**
+ * Determine access level based on upload type and store configuration.
+ * - If the blob store is private, ALL uploads must use 'private'
+ * - If the blob store is public, receipts still use 'private', others use 'public'
+ * - Defaulting to 'private' is safest because:
+ *   - Private stores REJECT 'public' access (throws error)
+ *   - Public stores ACCEPT 'private' access (works fine, served via proxy)
+ */
 function getAccessForType(type: string): 'public' | 'private' {
-  return PRIVATE_TYPES.has(type) ? 'private' : 'public';
+  // If the blob store is private, all uploads must be private
+  if (BLOB_STORE_ACCESS === 'private') return 'private';
+  // If store is public, receipts are still private, others are public
+  if (type === 'receipt') return 'private';
+  return 'public';
 }
 
 // ─── POST: Upload file ──────────────────────────────────────────────────────
