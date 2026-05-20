@@ -260,7 +260,7 @@ export function AdminTransactions() {
                         </p>
                         <div className="flex items-center gap-2 flex-wrap mt-0.5">
                           <Badge variant="secondary" className="text-[10px]">
-                            {payment.plan === 'PREMIUM' ? t('premiumPlan') : t('basicPlan')}
+                            {payment.plan === 'PREMIUM' ? t('premiumPlan') : payment.plan === 'ENTERPRISE' ? t('enterprisePlan') : t('basicPlan')}
                           </Badge>
                           <Badge
                             className={`text-[10px] ${

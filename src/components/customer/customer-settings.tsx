@@ -27,6 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { getProxiedUrl } from '@/lib/utils';
 import {
   User,
   Phone,
@@ -231,6 +232,14 @@ export function CustomerSettings() {
         const data = await res.json();
         toast.success(t('success'));
         if (user) setUser({ ...user, avatarUrl: data.url });
+        // Persist avatarUrl to the database
+        try {
+          await fetch('/api/user/profile', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user?.id, avatarUrl: data.url }),
+          });
+        } catch { /* silent */ }
       } else {
         toast.error(t('error'));
       }
@@ -324,7 +333,7 @@ export function CustomerSettings() {
               <div className="relative">
                 <div className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-400 via-teal-400 to-emerald-600 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-white dark:ring-gray-900 shadow-xl flex-shrink-0 overflow-hidden">
                   {user?.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.fullName} className="h-full w-full object-cover" />
+                    <img src={getProxiedUrl(user.avatarUrl)} alt={user.fullName} className="h-full w-full object-cover" />
                   ) : (
                     getInitials()
                   )}

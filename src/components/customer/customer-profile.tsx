@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
+import { getProxiedUrl } from '@/lib/utils';
 import {
   User,
   Phone,
@@ -451,8 +452,12 @@ export function CustomerProfile() {
                 transition={{ type: 'spring', stiffness: 260, damping: 20 }}
                 className="relative"
               >
-                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-400 via-teal-400 to-emerald-600 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-white dark:ring-gray-900 shadow-xl flex-shrink-0">
-                  {getInitials()}
+                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-emerald-400 via-teal-400 to-emerald-600 flex items-center justify-center text-white text-2xl font-bold ring-4 ring-white dark:ring-gray-900 shadow-xl flex-shrink-0 overflow-hidden">
+                  {user?.avatarUrl ? (
+                    <img src={getProxiedUrl(user.avatarUrl)} alt={user.fullName} className="h-full w-full object-cover" />
+                  ) : (
+                    getInitials()
+                  )}
                 </div>
                 {/* Online indicator dot */}
                 <div className="absolute bottom-0.5 end-0.5 h-5 w-5 rounded-full bg-emerald-500 border-[3px] border-white dark:border-gray-900" />

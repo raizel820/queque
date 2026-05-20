@@ -4,6 +4,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { useUpload } from '@/hooks/use-upload';
+import { getProxiedUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -137,7 +138,7 @@ export function RegisterForm() {
     maxSize: 2 * 1024 * 1024,
     accept: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     onSuccess: (result) => {
-      setAvatarPreview(result.url);
+      setAvatarPreview(getProxiedUrl(result.url));
       toast.success(t('avatarUpdated'));
     },
     onError: (error) => {

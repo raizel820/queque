@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, phoneNumber, notificationPreferences, reminderMinutes, smsNotificationsEnabled } = body;
+    const { userId, phoneNumber, notificationPreferences, reminderMinutes, smsNotificationsEnabled, avatarUrl, fullName, language } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
@@ -65,6 +65,15 @@ export async function PATCH(request: NextRequest) {
     }
     if (smsNotificationsEnabled !== undefined) {
       updateData.smsNotificationsEnabled = Boolean(smsNotificationsEnabled);
+    }
+    if (avatarUrl !== undefined) {
+      updateData.avatarUrl = avatarUrl;
+    }
+    if (fullName !== undefined) {
+      updateData.fullName = fullName;
+    }
+    if (language !== undefined) {
+      updateData.language = language;
     }
 
     if (Object.keys(updateData).length === 0) {

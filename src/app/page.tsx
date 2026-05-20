@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAppStore, updateDocumentDirection } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { isRTL, type Language } from '@/i18n';
+import { getProxiedUrl } from '@/lib/utils';
 
 // Auth Views
 import { LandingPage } from '@/components/auth/landing-page';
@@ -256,10 +257,14 @@ function CustomerBottomNav() {
               </SheetHeader>
               {/* User header */}
               <div className="flex items-center gap-3 px-5 pb-4">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg flex-shrink-0">
-                  <span className="text-lg font-bold text-white">
-                    {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden">
+                  {user?.avatarUrl ? (
+                    <img src={getProxiedUrl(user.avatarUrl)} alt={user.fullName} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-lg font-bold text-white">
+                      {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-foreground truncate">{user?.fullName}</p>
@@ -424,10 +429,14 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
       <div className="mx-3 border-t border-border" />
       <div className="px-3 py-4 space-y-2">
         <div className="flex items-center gap-2 px-3 py-2">
-          <div className="relative h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
-              {user?.fullName?.charAt(0)?.toUpperCase() || 'A'}
-            </span>
+          <div className="relative h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center overflow-hidden">
+            {user?.avatarUrl ? (
+              <img src={getProxiedUrl(user.avatarUrl)} alt={user.fullName} className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                {user?.fullName?.charAt(0)?.toUpperCase() || 'A'}
+              </span>
+            )}
             <div className="absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-gray-950" />
           </div>
           <div className="flex-1 min-w-0">
@@ -614,8 +623,12 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
       <div className="mx-3 border-t border-border" />
       <div className="px-3 py-4 space-y-2">
         <div className="flex items-center gap-2 px-3 py-2">
-          <div className="relative h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-            <ShieldCheck className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+          <div className="relative h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center overflow-hidden">
+            {user?.avatarUrl ? (
+              <img src={getProxiedUrl(user.avatarUrl)} alt={user.fullName} className="h-full w-full object-cover" />
+            ) : (
+              <ShieldCheck className="h-4 w-4 text-amber-700 dark:text-amber-400" />
+            )}
             <div className="absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-gray-950" />
           </div>
           <div className="flex-1 min-w-0">
