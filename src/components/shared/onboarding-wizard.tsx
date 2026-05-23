@@ -84,7 +84,7 @@ export function OnboardingWizard({ open, user, onComplete, onSkip }: OnboardingP
     <Dialog open={open} onOpenChange={(v) => { if (!v) onSkip(); }}>
       <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden border-0 bg-white dark:bg-gray-950">
         <DialogHeader className="sr-only">
-          <DialogTitle>{t('welcomeTo')} QueueWise</DialogTitle>
+          <DialogTitle>{t('welcomeTo')} DALTI</DialogTitle>
           <DialogDescription>{t('setupAccountDesc')}</DialogDescription>
         </DialogHeader>
         {/* Step indicator */}
@@ -121,7 +121,7 @@ export function OnboardingWizard({ open, user, onComplete, onSkip }: OnboardingP
                     </div>
                     <div>
                       <h2 className="text-lg font-bold text-foreground">{t('welcomeTo')}</h2>
-                      <p className="text-xs text-muted-foreground">QueueWise</p>
+                      <p className="text-xs text-muted-foreground">DALTI</p>
                     </div>
                   </div>
                   <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-4">

@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
     }
 
-    const result = await sendSms(phone.trim(), '[QueueWise] Test SMS - SMS gateway is working correctly.');
+    const result = await sendSms(phone.trim(), '[DALTI] Test SMS - SMS gateway is working correctly.');
 
     if (result.success) {
       return NextResponse.json({ success: true, logId: result.logId });

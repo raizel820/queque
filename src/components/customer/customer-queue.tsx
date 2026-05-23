@@ -6,6 +6,7 @@ import { useLanguage } from '@/hooks/use-language';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
 import { SlideToConfirm } from '@/components/shared/slide-to-confirm';
 import { startNotificationSound, stopNotificationSound, playConfirmSound, markReservationConfirmed, isReservationConfirmed } from '@/lib/sounds';
 import {
@@ -28,6 +29,7 @@ import {
   ShieldAlert,
   Star,
   Search,
+  ArrowDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -44,6 +46,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -74,6 +77,9 @@ interface Reservation {
   reservedDate?: string;
   rating?: number | null;
   skippedForNoShow?: boolean;
+  preferredTime?: string;
+  fixedTimeEnabled?: boolean;
+  postponeCount?: number;
 }
 
 // Confetti particle component
@@ -145,6 +151,10 @@ export function CustomerQueue() {
   const soundStartedRef = useRef(false);
   const turnAlertRef = useRef<HTMLDivElement>(null);
   const [isFastPolling, setIsFastPolling] = useState(false);
+  const [postponeDialogOpen, setPostponeDialogOpen] = useState(false);
+  const [postponeResId, setPostponeResId] = useState<string | null>(null);
+  const [postponePositions, setPostponePositions] = useState(1);
+  const [postponeLoading, setPostponeLoading] = useState(false);
 
   const fetchReservations = useCallback(async () => {
     if (!user?.id) return;
@@ -173,6 +183,9 @@ export function CustomerQueue() {
             reservedDate: (r.reservedDate as string) || undefined,
             rating: (r.rating as number) ?? null,
             skippedForNoShow: (r as Record<string, unknown>).skippedForNoShow === true,
+            preferredTime: (r.preferredTime as string) || undefined,
+            fixedTimeEnabled: (r.fixedTimeEnabled as boolean) || false,
+            postponeCount: (r.postponeCount as number) || 0,
           };
         });
 
@@ -367,7 +380,55 @@ export function CustomerQueue() {
         body: JSON.stringify({ status: 'CANCELLED' }),
       });
       if (res.ok) {
-        toast.success(t('cancelReservation'));
+        toast.success(t('cancelSuccess'));
+        fetchReservations();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setCancelling(null);
+    }
+  };
+
+  const handlePostpone = async () => {
+    if (!postponeResId || postponePositions < 1) return;
+    setPostponeLoading(true);
+    try {
+      const res = await fetch(`/api/reservations/${postponeResId}/postpone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id, positions: postponePositions }),
+      });
+      if (res.ok) {
+        toast.success(t('postponeSuccess'));
+        setPostponeDialogOpen(false);
+        setPostponeResId(null);
+        setPostponePositions(1);
+        fetchReservations();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setPostponeLoading(false);
+    }
+  };
+
+  const handleToggleFixedTime = async (resId: string, currentEnabled: boolean) => {
+    setCancelling(resId);
+    try {
+      const res = await fetch(`/api/reservations/${resId}/toggle-fixed-time`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id, fixedTimeEnabled: !currentEnabled }),
+      });
+      if (res.ok) {
+        toast.success(!currentEnabled ? t('fixedTimeOn') : t('fixedTimeOff'));
         fetchReservations();
       } else {
         const data = await res.json();
@@ -478,7 +539,7 @@ export function CustomerQueue() {
       .replace('{service}', serviceName)
       .replace('{number}', res.queueNumber);
     if (navigator.share) {
-      navigator.share({ title: 'QueueWise', text: shareText }).catch(() => {});
+      navigator.share({ title: 'DALTI', text: shareText }).catch(() => {});
     } else {
       navigator.clipboard.writeText(shareText).then(() => {
         toast.success(t('copied') || 'Copied to clipboard');
@@ -1284,9 +1345,35 @@ export function CustomerQueue() {
                       </motion.div>
                     </div>
 
-                    {/* Cancel & Leave Queue Buttons */}
+                    {/* Cancel, Postpone & Leave Queue Buttons */}
                     {res.status === 'WAITING' && (
-                      <div className="flex gap-2">
+                      <div className="space-y-2">
+                        {/* Fixed Time Toggle */}
+                        {res.preferredTime && (
+                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/30">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Clock className="h-4 w-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400 truncate">
+                                  {res.fixedTimeEnabled ? t('fixedTimeOn') : t('fixedTimeOff')}
+                                </p>
+                                {res.fixedTimeEnabled && res.preferredTime && (
+                                  <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70" dir="ltr">{res.preferredTime}</p>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-[10px] px-2 rounded-lg border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                              onClick={() => handleToggleFixedTime(res.id, res.fixedTimeEnabled || false)}
+                              disabled={cancelling === res.id}
+                            >
+                              {t('toggleFixedTime')}
+                            </Button>
+                          </div>
+                        )}
+                        <div className="flex gap-2">
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
                           <Button
                             variant="outline"
@@ -1305,6 +1392,20 @@ export function CustomerQueue() {
                         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
                           <Button
                             variant="outline"
+                            className="w-full h-11 rounded-xl border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all duration-300"
+                            onClick={() => {
+                              setPostponeResId(res.id);
+                              setPostponePositions(1);
+                              setPostponeDialogOpen(true);
+                            }}
+                          >
+                            <ArrowDown className="h-4 w-4 me-2" />
+                            <span className="text-sm">{t('postponeTurn')}</span>
+                          </Button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="flex-1">
+                          <Button
+                            variant="outline"
                             className="w-full h-11 rounded-xl border-2 border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 font-semibold transition-all duration-300 gap-2"
                             onClick={() => setLeaveDialogOpen(true)}
                           >
@@ -1312,6 +1413,7 @@ export function CustomerQueue() {
                             <span className="text-sm">{t('leaveQueue')}</span>
                           </Button>
                         </motion.div>
+                      </div>
                       </div>
                     )}
 
@@ -1596,6 +1698,57 @@ export function CustomerQueue() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Postpone Turn Dialog */}
+      <Dialog open={postponeDialogOpen} onOpenChange={setPostponeDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowDown className="h-5 w-5 text-amber-600" />
+              {t('postponeTurn')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('postponeLimit')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-3">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">{t('postponeBy')}</Label>
+              <div className="flex items-center gap-3">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setPostponePositions(n)}
+                    className={`h-9 w-9 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                      postponePositions === n
+                        ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30 scale-110'
+                        : 'bg-gray-100 dark:bg-gray-800 text-muted-foreground hover:bg-amber-100 dark:hover:bg-amber-900/20 hover:text-amber-600'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t('postponePositions')}: <span className="font-semibold text-amber-600">{postponePositions}</span>
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setPostponeDialogOpen(false)} disabled={postponeLoading} className="rounded-xl">
+              {lang === 'ar' ? 'إلغاء' : lang === 'fr' ? 'Annuler' : 'Cancel'}
+            </Button>
+            <Button
+              onClick={handlePostpone}
+              disabled={postponeLoading}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl gap-1.5"
+            >
+              {postponeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowDown className="h-4 w-4" />}
+              {t('postponeConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

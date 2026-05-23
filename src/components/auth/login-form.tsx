@@ -123,12 +123,12 @@ export function LoginForm() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center"
+            className="h-9 w-9 rounded-lg overflow-hidden"
           >
-            <TicketCheck className="h-4 w-4 text-white" />
+            <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
           </motion.div>
-          <span className="font-bold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
-            QueueWise
+          <span className="font-extrabold tracking-tight" style={{ color: '#059669' }}>
+            DALTI
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -164,9 +164,9 @@ export function LoginForm() {
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.1 }}
-                  className="mx-auto mb-3 h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25"
+                  className="mx-auto mb-3 h-16 w-16 rounded-2xl overflow-hidden shadow-lg shadow-teal-500/20"
                 >
-                  <TicketCheck className="h-7 w-7 text-white" />
+                  <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
                 </motion.div>
                 <CardTitle className="text-2xl font-bold text-foreground">
                   {t('login')}
@@ -380,11 +380,11 @@ export function LoginForm() {
             className="mt-6 flex flex-col items-center gap-2"
           >
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
-                <TicketCheck className="h-3.5 w-3.5 text-white" />
+              <div className="h-7 w-7 rounded-lg overflow-hidden">
+                <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
               </div>
-              <span className="text-xs font-semibold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
-                QueueWise
+              <span className="text-xs font-bold tracking-tight" style={{ color: '#059669' }}>
+                DALTI
               </span>
             </div>
             <p className="text-[10px] text-muted-foreground/50">{t('rightsReserved')} · {t('version')}</p>

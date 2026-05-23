@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getNextCustomerToCall } from '@/lib/queue-scheduler';
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,86 +28,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Queue is paused' }, { status: 400 });
     }
 
-    // Build the where clause: find next WAITING reservation
-    // Note: skipped-for-no-show reservations have status CALLED, not WAITING,
-    // so status: WAITING is sufficient to exclude them
-    const where: {
-      agencyId: string;
-      status: string;
-      serviceId?: string;
-    } = {
-      agencyId,
-      status: 'WAITING',
-    };
-    if (serviceId) {
-      where.serviceId = serviceId;
-    }
-
-    // Use findFirst + update in a transaction to prevent double-calling
+    // Use transaction to prevent double-calling
     let nextReservation;
     await db.$transaction(async (tx) => {
-      const candidate = await tx.reservation.findFirst({
-        where,
-        include: {
-          service: true,
-          user: {
-            select: { id: true, fullName: true },
-          },
+      // Get all WAITING reservations for this agency, ordered by queueNumber
+      const waitingReservations = await tx.reservation.findMany({
+        where: {
+          agencyId,
+          status: 'WAITING',
+          ...(serviceId ? { serviceId } : {}),
         },
         orderBy: { queueNumber: 'asc' },
+        select: {
+          id: true,
+          queueNumber: true,
+          preferredTime: true,
+          fixedTimeEnabled: true,
+        },
+      });
+
+      // Use queue scheduler to find next customer (respects preferred times)
+      const nextId = getNextCustomerToCall(waitingReservations);
+      if (!nextId) return;
+
+      const candidate = await tx.reservation.findUnique({
+        where: { id: nextId },
+        include: {
+          service: true,
+          user: { select: { id: true, fullName: true } },
+        },
       });
       if (!candidate) return;
 
-      // Re-check status inside transaction to prevent race
+      // Re-check status inside transaction
       const recheck = await tx.reservation.findUnique({ where: { id: candidate.id } });
       if (!recheck || recheck.status !== 'WAITING') return;
 
-      // Update reservation to CALLED status
-      const updateData: {
-        status: string;
-        calledAt: Date;
-      } = {
-        status: 'CALLED',
-        calledAt: new Date(),
-      };
-
-      await tx.reservation.update({
-        where: { id: candidate.id },
-        data: updateData,
-      });
-
-      if (queueSettings) {
-        await tx.queueSettings.update({
-          where: { id: queueSettings.id },
-          data: { currentServingNumber: candidate.queueNumber },
-        });
-      }
-
-      await tx.notification.create({
-        data: {
-          userId: candidate.userId,
-          type: 'QUEUE_CALLED',
-          title: 'Queue Called',
-          message: `Your number ${candidate.displayNumber} has been called. Please proceed.`,
-        },
-      });
-
-      // Validate userId exists before creating audit log with it
-      const auditUser = await tx.user.findUnique({ where: { id: candidate.userId } });
-      await tx.auditLog.create({
-        data: {
-          userId: auditUser ? candidate.userId : null,
-          action: 'QUEUE_CALL',
-          entityType: 'RESERVATION',
-          entityId: candidate.id,
-          details: JSON.stringify({
-            displayNumber: candidate.displayNumber,
-            agencyId,
-            serviceId: candidate.serviceId,
-          }),
-        },
-      });
-
+      await processCandidate(tx, candidate, queueSettings, agencyId);
       nextReservation = candidate;
     });
 
@@ -119,7 +77,8 @@ export async function POST(req: NextRequest) {
       reservation: {
         id: nextReservation.id,
         displayNumber: nextReservation.displayNumber,
-        customerName: (nextReservation as { user?: { fullName: string } }).user?.fullName ?? '',
+        customerName: (nextReservation as { user?: { fullName: string }; walkInCustomerName?: string }).walkInCustomerName || (nextReservation as { user?: { fullName: string } }).user?.fullName || '',
+        isWalkIn: !!(nextReservation as { isWalkIn?: boolean }).isWalkIn,
       },
     });
   } catch (error: unknown) {
@@ -130,4 +89,50 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+async function processCandidate(tx: any, candidate: any, queueSettings: any, agencyId: string) {
+  await tx.reservation.update({
+    where: { id: candidate.id },
+    data: { status: 'CALLED', calledAt: new Date() },
+  });
+
+  if (queueSettings) {
+    await tx.queueSettings.update({
+      where: { id: queueSettings.id },
+      data: { currentServingNumber: candidate.queueNumber },
+    });
+  }
+
+  // Only create notification if user exists (not walk-in)
+  if (candidate.userId) {
+    await tx.notification.create({
+      data: {
+        userId: candidate.userId,
+        type: 'QUEUE_CALLED',
+        title: 'Queue Called',
+        message: `Your number ${candidate.displayNumber} has been called. Please proceed.`,
+      },
+    });
+  }
+
+  const auditUser = candidate.userId
+    ? await tx.user.findUnique({ where: { id: candidate.userId } })
+    : null;
+
+  await tx.auditLog.create({
+    data: {
+      userId: auditUser ? candidate.userId : null,
+      action: 'QUEUE_CALL',
+      entityType: 'RESERVATION',
+      entityId: candidate.id,
+      details: JSON.stringify({
+        displayNumber: candidate.displayNumber,
+        agencyId,
+        serviceId: candidate.serviceId,
+        isWalkIn: candidate.isWalkIn || false,
+        walkInCustomerName: candidate.walkInCustomerName || null,
+      }),
+    },
+  });
 }

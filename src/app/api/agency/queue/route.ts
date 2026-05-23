@@ -28,13 +28,18 @@ export async function GET(req: NextRequest) {
     const entries = reservations.map((res, idx) => ({
       id: res.id,
       queueNumber: res.displayNumber,
-      customerName: res.user.fullName || res.user.username,
+      customerName: res.isWalkIn ? (res.walkInCustomerName || 'Walk-in') : (res.user?.fullName || res.user?.username || 'Unknown'),
       serviceName: res.service.name,
       serviceNameAr: res.service.nameAr,
       serviceNameFr: res.service.nameFr,
       joinedAt: res.joinedAt.toISOString(),
       status: res.status,
       position: res.status === 'WAITING' ? waitingReservations.indexOf(res) + 1 : 0,
+      isWalkIn: res.isWalkIn,
+      walkInCustomerName: res.walkInCustomerName,
+      preferredTime: res.preferredTime,
+      fixedTimeEnabled: res.fixedTimeEnabled,
+      postponeCount: res.postponeCount,
     }));
 
     return NextResponse.json({ entries });

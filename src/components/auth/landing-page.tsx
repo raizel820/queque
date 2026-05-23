@@ -74,6 +74,7 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 
 /* ─── Phone Mockup SVG Illustration ──────────── */
 function PhoneMockup() {
+  const { t } = useLanguage();
   return (
     <motion.div
       className="hidden lg:flex items-center justify-center relative"
@@ -106,10 +107,10 @@ function PhoneMockup() {
             <div className="px-3 pt-1">
               {/* Header */}
               <div className="flex items-center gap-1.5 mb-3">
-                <div className="w-5 h-5 rounded-md bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                  <TicketCheck className="w-3 h-3 text-white" />
+                <div className="h-5 w-5 rounded-md overflow-hidden">
+                  <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
                 </div>
-                <span className="text-[8px] font-bold text-emerald-700 dark:text-emerald-400">QueueWise</span>
+                <span className="text-[8px] font-bold" style={{ color: '#059669' }}>DALTI</span>
               </div>
 
               {/* Queue ticket card */}
@@ -398,17 +399,17 @@ export function LandingPage() {
 
       {/* ─── Top Bar ──────────────────────────────── */}
       <header className="w-full px-4 py-3 flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/25"
+            className="h-11 w-11 rounded-xl overflow-hidden shadow-lg shadow-teal-500/20"
           >
-            <TicketCheck className="h-5 w-5 text-white" />
+            <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
           </motion.div>
-          <span className="font-bold text-lg bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
-            QueueWise
+          <span className="font-extrabold text-xl tracking-tight" style={{ color: '#059669' }}>
+            DALTI
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -1042,12 +1043,12 @@ export function LandingPage() {
           <div className="max-w-4xl mx-auto">
             {/* Footer top: Logo + social */}
             <div className="flex flex-col items-center gap-6 mb-8">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
-                  <TicketCheck className="h-4 w-4 text-white" />
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl overflow-hidden">
+                  <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
                 </div>
-                <span className="font-bold text-lg bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
-                  QueueWise
+                <span className="font-extrabold text-xl tracking-tight" style={{ color: '#059669' }}>
+                  {t('appName')}
                 </span>
               </div>
               <p className="text-sm text-muted-foreground text-center max-w-md">
@@ -1108,7 +1109,7 @@ export function LandingPage() {
                 {t('poweredBy')} Z.ai Technology
               </p>
               <p className="text-xs text-muted-foreground/60">
-                QueueWise © {new Date().getFullYear()} · {t('rightsReserved')}
+                {t('appName')} © {new Date().getFullYear()} · {t('rightsReserved')}
               </p>
               <p className="text-[10px] text-muted-foreground/40 mt-1">{t('version')}</p>
             </div>

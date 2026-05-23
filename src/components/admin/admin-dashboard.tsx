@@ -700,7 +700,7 @@ export function AdminDashboard() {
                 </div>
                 {t('adminDashboard')}
               </h1>
-              <p className="text-sm text-emerald-100 mt-1 ms-[52px]">QueueWise Platform Management</p>
+              <p className="text-sm text-emerald-100 mt-1 ms-[52px]">DALTI Platform Management</p>
             </div>
             <div className="hidden sm:flex items-center gap-2">
               <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm text-xs px-3 py-1">
@@ -1343,7 +1343,7 @@ export function AdminDashboard() {
                       value={smsSettings.senderName}
                       onChange={(e) => setSmsSettings({ ...smsSettings, senderName: e.target.value })}
                       className="h-9 text-sm"
-                      placeholder="QueueWise"
+                      placeholder="DALTI"
                     />
                   </div>
 

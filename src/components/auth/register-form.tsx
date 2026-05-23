@@ -290,12 +290,12 @@ export function RegisterForm() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center"
+            className="h-9 w-9 rounded-lg overflow-hidden"
           >
-            <TicketCheck className="h-4 w-4 text-white" />
+            <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
           </motion.div>
-          <span className="font-bold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
-            QueueWise
+          <span className="font-extrabold tracking-tight" style={{ color: '#059669' }}>
+            DALTI
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -780,7 +780,7 @@ export function RegisterForm() {
                       className="text-center"
                     >
                       <p className="text-lg font-bold text-foreground">{t('registerSuccess')}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Welcome to QueueWise!</p>
+                      <p className="text-sm text-muted-foreground mt-1">Welcome to {t('appName')}!</p>
                     </motion.div>
                   </motion.div>
                 </motion.div>
@@ -796,11 +796,11 @@ export function RegisterForm() {
             className="mt-6 flex flex-col items-center gap-2"
           >
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
-                <TicketCheck className="h-3.5 w-3.5 text-white" />
+              <div className="h-7 w-7 rounded-lg overflow-hidden">
+                <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
               </div>
-              <span className="text-xs font-semibold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
-                QueueWise
+              <span className="text-xs font-bold tracking-tight" style={{ color: '#059669' }}>
+                DALTI
               </span>
             </div>
             <p className="text-[10px] text-muted-foreground/50">{t('rightsReserved')} · {t('version')}</p>

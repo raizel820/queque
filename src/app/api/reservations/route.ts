@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, agencyId, serviceId, reservedDate } = body
+    const { userId, agencyId, serviceId, reservedDate, preferredTime, fixedTimeEnabled } = body
 
     // Validate required fields
     if (!userId || !agencyId) {
@@ -207,6 +207,8 @@ export async function POST(request: NextRequest) {
           status: 'WAITING',
           estimatedWait,
           reservedDate: targetDate,
+          preferredTime: preferredTime || null,
+          fixedTimeEnabled: fixedTimeEnabled !== undefined ? fixedTimeEnabled : (preferredTime ? true : false),
         },
         include: {
           agency: {

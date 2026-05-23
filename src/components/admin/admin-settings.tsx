@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { AdminFaqManager } from '@/components/admin/admin-faq-manager';
 
 // ─── Interfaces (shared with admin-dashboard) ─────────────────────
 interface SmsSettingsData {
@@ -469,7 +470,7 @@ export function AdminSettings() {
                       onChange={(e) =>
                         setSmsSettings({ ...smsSettings, senderName: e.target.value })
                       }
-                      placeholder="QueueWise"
+                      placeholder="DALTI"
                       className="h-9 text-sm"
                       aria-label={t('smsSenderName')}
                     />
@@ -943,6 +944,11 @@ export function AdminSettings() {
             </div>
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* ─── FAQ Management ─── */}
+      <motion.div {...fadeUp} transition={{ delay: 0.5 }}>
+        <AdminFaqManager />
       </motion.div>
     </div>
   );

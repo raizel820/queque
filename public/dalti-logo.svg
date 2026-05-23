@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%">
+    <defs>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700;800&amp;family=Montserrat:wght@400;700;800&amp;display=swap');
+        </style>
+        <!-- Emerald to teal gradient for the icon shape -->
+        <linearGradient id="emeraldTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#059669" />
+            <stop offset="50%" stop-color="#0d9488" />
+            <stop offset="100%" stop-color="#14b8a6" />
+        </linearGradient>
+        <!-- Gradient for the icon background -->
+        <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#059669" />
+            <stop offset="40%" stop-color="#0d9488" />
+            <stop offset="100%" stop-color="#0f766e" />
+        </linearGradient>
+        <!-- Text gradient -->
+        <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#059669" />
+            <stop offset="60%" stop-color="#0d9488" />
+            <stop offset="100%" stop-color="#14b8a6" />
+        </linearGradient>
+    </defs>
+
+    <!-- White background -->
+    <rect width="100%" height="100%" fill="#ffffff" />
+
+    <!-- Icon section with emerald-teal gradient background -->
+    <g transform="translate(100, 130)">
+        <!-- Rounded square icon background -->
+        <rect width="310" height="310" rx="65" fill="url(#bgGradient)" />
+        <!-- Subtle overlay -->
+        <rect width="310" height="310" rx="65" fill="url(#emeraldTeal)" opacity="0.15" />
+        
+        <!-- D-shape chair icon -->
+        <g transform="translate(32, 50) scale(0.72)">
+            <!-- Left vertical stroke of D (chair back) -->
+            <path d="M 0,0 C 30,40 45,80 45,130 L 45,250" 
+                  fill="none" stroke="#ffffff" stroke-width="40" stroke-linecap="butt" />
+            <!-- Gap for chair seat -->
+            <path d="M -35,175 L 160,175" 
+                  fill="none" stroke="url(#bgGradient)" stroke-width="62" />
+            <!-- Right curve of D (armrest) -->
+            <path d="M 80,0 L 150,0 C 270,0 270,175 150,175 L -30,175" 
+                  fill="none" stroke="#ffffff" stroke-width="40" stroke-linecap="butt" />
+            <!-- Chair leg -->
+            <path d="M 205,155 L 240,250" 
+                  fill="none" stroke="#ffffff" stroke-width="40" stroke-linecap="butt" />
+            <!-- Orange notification dot -->
+            <circle cx="245" cy="-25" r="34" fill="#f97316" />
+            <circle cx="245" cy="-25" r="40" fill="#f97316" opacity="0.2" />
+        </g>
+    </g>
+
+    <!-- Text section -->
+    <g transform="translate(470, 175)">
+        
+        <!-- Arabic title -->
+        <text x="0" y="100" 
+              font-family="'Cairo', sans-serif" 
+              font-weight="800" 
+              font-size="140px" 
+              fill="url(#textGradient)">دالتي</text>
+        
+        <!-- English title -->
+        <text x="0" y="265" 
+              font-family="'Montserrat', sans-serif" 
+              font-weight="800" 
+              font-size="115px" 
+              letter-spacing="2px"
+              fill="url(#textGradient)">DALTI</text>
+        
+    </g>
+
+    <!-- Slogan section -->
+    <g transform="translate(530, 560)" text-anchor="middle">
+        
+        <!-- Decorative line -->
+        <line x1="-60" y1="-15" x2="60" y2="-15" stroke="url(#textGradient)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+        
+        <!-- English slogan -->
+        <text y="15" 
+              font-family="'Montserrat', sans-serif" 
+              font-weight="400" 
+              font-size="26px" 
+              fill="#0d9488"
+              opacity="0.8">Your Smart Queue</text>
+        
+        <!-- Arabic slogan -->
+        <text y="55" 
+              font-family="'Cairo', sans-serif" 
+              font-weight="700" 
+              font-size="32px" 
+              fill="#0d9488"
+              opacity="0.8">حجزك الذكي</text>
+        
+    </g>
+
+</svg>

@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "QueueWise - Smart Queue Management",
-  description: "Digital queue management platform for businesses in Algeria. Join queues remotely, track your position in real time.",
-  icons: { icon: "/favicon.ico" },
+  title: "DALTI - إدارة الطوابير الذكية",
+  description: "منصة إدارة الطوابير الذكية للمؤسسات في الجزائر. انضم للطوابير عن بعد وتتبع موقعك في الوقت الحقيقي.",
+  icons: { icon: "/favicon.png", apple: "/dalti-icon.svg" },
 };
 
 export default function RootLayout({

@@ -382,10 +382,10 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-            <TicketCheck className="h-4 w-4 text-white" />
+          <div className="h-9 w-9 rounded-lg overflow-hidden">
+            <img src="/dalti-icon.svg" alt={t('appName')} className="h-full w-full" />
           </div>
-          <span className="font-bold text-gradient">QueueWise</span>
+          <span className="font-extrabold text-lg tracking-tight" style={{ color: '#059669' }}>{t('appName')}</span>
         </div>
         <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -578,10 +578,10 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 h-16 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-            <ShieldCheck className="h-4 w-4 text-white" />
+          <div className="h-9 w-9 rounded-lg overflow-hidden">
+            <img src="/dalti-icon.svg" alt={t('appName')} className="h-full w-full" />
           </div>
-          <span className="font-bold text-gradient">QueueWise Admin</span>
+          <span className="font-extrabold text-lg tracking-tight" style={{ color: '#059669' }}>{t('appName')} Admin</span>
         </div>
         <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -737,28 +737,28 @@ export default function Home() {
   // Dynamic document title based on current view
   useEffect(() => {
     const titles: Record<string, string> = {
-      'landing': 'QueueWise - Smart Queue Management',
-      'login': t('login') + ' - QueueWise',
-      'register': t('register') + ' - QueueWise',
-      'customer-home': t('home') + ' - QueueWise',
-      'customer-queue': t('myQueue') + ' - QueueWise',
-      'customer-history': t('history') + ' - QueueWise',
-      'customer-profile': t('profile') + ' - QueueWise',
-      'customer-notifications': t('notifications') + ' - QueueWise',
-      'customer-favorites': t('favorites') + ' - QueueWise',
-      'agency-dashboard': t('dashboard') + ' - QueueWise',
-      'agency-settings': t('settings') + ' - QueueWise',
-      'agency-profile': t('profile') + ' - QueueWise',
-      'agency-subscription': t('subscription') + ' - QueueWise',
-      'admin-dashboard': t('dashboard') + ' - QueueWise',
-      'admin-transactions': t('transactions') + ' - QueueWise',
-      'admin-agencies': t('agencies') + ' - QueueWise',
-      'admin-audit': t('auditLogs') + ' - QueueWise',
-      'admin-users': t('userManagement') + ' - QueueWise',
-      'admin-analytics': t('analytics') + ' - QueueWise',
-    'admin-settings': t('platformSettings') + ' - QueueWise',
+      'landing': t('appName') + ' - Smart Queue Management',
+      'login': t('login') + ' - ' + t('appName'),
+      'register': t('register') + ' - ' + t('appName'),
+      'customer-home': t('home') + ' - ' + t('appName'),
+      'customer-queue': t('myQueue') + ' - ' + t('appName'),
+      'customer-history': t('history') + ' - ' + t('appName'),
+      'customer-profile': t('profile') + ' - ' + t('appName'),
+      'customer-notifications': t('notifications') + ' - ' + t('appName'),
+      'customer-favorites': t('favorites') + ' - ' + t('appName'),
+      'agency-dashboard': t('dashboard') + ' - ' + t('appName'),
+      'agency-settings': t('settings') + ' - ' + t('appName'),
+      'agency-profile': t('profile') + ' - ' + t('appName'),
+      'agency-subscription': t('subscription') + ' - ' + t('appName'),
+      'admin-dashboard': t('dashboard') + ' - ' + t('appName'),
+      'admin-transactions': t('transactions') + ' - ' + t('appName'),
+      'admin-agencies': t('agencies') + ' - ' + t('appName'),
+      'admin-audit': t('auditLogs') + ' - ' + t('appName'),
+      'admin-users': t('userManagement') + ' - ' + t('appName'),
+      'admin-analytics': t('analytics') + ' - ' + t('appName'),
+    'admin-settings': t('platformSettings') + ' - ' + t('appName'),
     };
-    document.title = titles[currentView] || 'QueueWise';
+    document.title = titles[currentView] || t('appName');
   }, [currentView, t]);
 
   // Scroll to top on view change

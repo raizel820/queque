@@ -191,7 +191,7 @@ export function AgencyProfile() {
   const getAgencyNameForShare = () => {
     if (lang === 'ar' && profile?.nameAr) return profile.nameAr;
     if (lang === 'fr' && profile?.nameFr) return profile.nameFr;
-    return profile?.name || 'QueueWise Agency';
+    return profile?.name || 'DALTI Agency';
   };
 
   const shareText = `Join the queue at ${getAgencyNameForShare()}`;

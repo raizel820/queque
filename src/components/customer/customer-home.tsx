@@ -130,6 +130,8 @@ export function CustomerHome() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [pendingJoin, setPendingJoin] = useState<{ agencyId: string; serviceId?: string } | null>(null);
   const [joining, setJoining] = useState(false);
+  const [preferredTime, setPreferredTime] = useState('');
+  const [fixedTimeEnabled, setFixedTimeEnabled] = useState(false);
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const [activeReservations, setActiveReservations] = useState<{ agencyName: string; position: number; agencyId: string }[]>([]);
   const featuredScrollRef = useRef<HTMLDivElement>(null);
@@ -329,7 +331,7 @@ export function CustomerHome() {
     if (!pendingJoin) return;
     setJoining(true);
     try {
-      const body: Record<string, string> = { userId: user.id, agencyId: pendingJoin.agencyId };
+      const body: Record<string, string | boolean> = { userId: user.id, agencyId: pendingJoin.agencyId };
       if (pendingJoin.serviceId) body.serviceId = pendingJoin.serviceId;
       // Add reserved date if selected (not today)
       if (selectedDate) {
@@ -340,6 +342,11 @@ export function CustomerHome() {
         if (!isToday) {
           body.reservedDate = selectedDate.toISOString().split('T')[0];
         }
+      }
+      // Add preferred time if set
+      if (preferredTime) {
+        body.preferredTime = preferredTime;
+        body.fixedTimeEnabled = fixedTimeEnabled;
       }
 
       const res = await fetch('/api/reservations', {
@@ -354,6 +361,9 @@ export function CustomerHome() {
         setSelectedAgency(null);
         setDateDialogOpen(false);
         setPendingJoin(null);
+        setSelectedDate(undefined);
+        setPreferredTime('');
+        setFixedTimeEnabled(false);
         setView('customer-queue');
       } else {
         toast.error(data.error || t('error'));
@@ -524,6 +534,47 @@ export function CustomerHome() {
               </p>
             </div>
           )}
+
+          {/* Preferred Time Section */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">{t('preferredTime')}</p>
+                <p className="text-xs text-muted-foreground">{t('preferredTimeDesc')}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="time"
+                value={preferredTime}
+                onChange={(e) => {
+                  setPreferredTime(e.target.value);
+                  if (e.target.value && !fixedTimeEnabled) setFixedTimeEnabled(true);
+                }}
+                className="h-10 px-3 rounded-lg border border-border bg-background text-sm focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-colors"
+                dir="ltr"
+              />
+              {preferredTime && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={fixedTimeEnabled}
+                    onChange={(e) => setFixedTimeEnabled(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-xs text-muted-foreground">{t('enableFixedTime')}</span>
+                </label>
+              )}
+              {preferredTime && (
+                <button
+                  onClick={() => { setPreferredTime(''); setFixedTimeEnabled(false); }}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         <DialogFooter className="flex-col gap-2 sm:flex-row">
           <Button variant="outline" onClick={() => { setDateDialogOpen(false); setPendingJoin(null); setSelectedDate(undefined); }} className="rounded-xl h-10">

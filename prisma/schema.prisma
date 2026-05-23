@@ -121,7 +121,7 @@ model QueueSettings {
 
 model Reservation {
   id                  String    @id @default(cuid())
-  userId              String
+  userId              String?
   agencyId            String
   serviceId           String
   queueNumber         Int
@@ -144,14 +144,20 @@ model Reservation {
   skippedForNoShow    Boolean   @default(false)
   skippedAt           DateTime?
   reclaimRequestedAt   DateTime?
+  preferredTime       String?
+  fixedTimeEnabled    Boolean   @default(false)
+  postponeCount       Int       @default(0)
+  isWalkIn            Boolean   @default(false)
+  walkInCustomerName  String?
   agency              Agency    @relation(fields: [agencyId], references: [id])
   service             Service   @relation(fields: [serviceId], references: [id])
-  user                User      @relation(fields: [userId], references: [id])
+  user                User?     @relation(fields: [userId], references: [id])
   review              Review?
 
   @@index([agencyId, status])
   @@index([userId, status])
   @@index([serviceId, status])
+  @@index([agencyId, status, preferredTime])
 }
 
 model Transaction {
@@ -248,15 +254,15 @@ model SmsSettings {
 }
 
 model SmsLog {
-  id           String      @id @default(cuid())
-  userId       String?
-  phoneNumber  String
-  message      String
-  status       String      @default("PENDING")
-  provider     String      @default("")
-  errorMessage String?
-  createdAt    DateTime    @default(now())
-  smsSettings  SmsSettings? @relation(fields: [smsSettingsId], references: [id])
+  id            String      @id @default(cuid())
+  userId        String?
+  phoneNumber   String
+  message       String
+  status        String      @default("PENDING")
+  provider      String      @default("")
+  errorMessage  String?
+  createdAt     DateTime    @default(now())
+  smsSettings   SmsSettings? @relation(fields: [smsSettingsId], references: [id])
   smsSettingsId String?
 }
 
@@ -295,6 +301,23 @@ model Review {
   @@index([agencyId])
   @@index([userId])
   @@index([createdAt])
-  @@map("reviews")
+}
+
+model FAQ {
+  id          String   @id @default(cuid())
+  question    String
+  questionFr  String?
+  questionAr  String?
+  answer      String
+  answerFr    String?
+  answerAr    String?
+  category    String   @default("SUBSCRIPTION")
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, isActive])
+  @@index([order])
 }
 

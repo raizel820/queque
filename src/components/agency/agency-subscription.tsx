@@ -79,13 +79,13 @@ const PLAN_COMPARISON = {
   customBranding: { basic: false, premium: false },
 };
 
-const FAQ_ITEMS = [
-  { qKey: 'faqActivation', aKey: 'faqActivationAnswer' },
-  { qKey: 'faqChangePlan', aKey: 'faqChangePlanAnswer' },
-  { qKey: 'faqExpiry', aKey: 'faqExpiryAnswer' },
-  { qKey: 'faqFreeTrial', aKey: 'faqFreeTrialAnswer' },
-  { qKey: 'faqRefund', aKey: 'faqRefundAnswer' },
-];
+interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+  category: string;
+  order: number;
+}
 
 // ─── Payment Dialog Component ───
 function PaymentDialog({
@@ -813,10 +813,24 @@ export function AgencySubscription() {
 
   // FAQ expand state
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [faqs, setFaqs] = useState<FaqItem[]>([]);
 
   useEffect(() => {
     fetchSubscription();
+    fetchFaqs();
   }, []);
+
+  const fetchFaqs = async () => {
+    try {
+      const res = await fetch(`/api/faqs?category=SUBSCRIPTION&lang=${lang}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFaqs(data.faqs || []);
+      }
+    } catch {
+      // silently fail, FAQs are not critical
+    }
+  };
 
   const fetchSubscription = async () => {
     setLoading(true);
@@ -1180,9 +1194,14 @@ export function AgencySubscription() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
+            {faqs.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-sm text-muted-foreground">{t('faqNoItems') || 'No FAQs available.'}</p>
+              </div>
+            ) : (
             <div className="space-y-2">
-              {FAQ_ITEMS.map((item, i) => (
-                <div key={i}>
+              {faqs.map((item, i) => (
+                <div key={item.id}>
                   <button
                     onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
                     className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors text-start"
@@ -1190,7 +1209,7 @@ export function AgencySubscription() {
                     <span className="h-6 w-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
                       {i + 1}
                     </span>
-                    <span className="text-sm font-medium text-foreground flex-1">{t(item.qKey)}</span>
+                    <span className="text-sm font-medium text-foreground flex-1">{item.question}</span>
                     <motion.span
                       animate={{ rotate: expandedFaq === i ? 180 : 0 }}
                       transition={{ duration: 0.2 }}
@@ -1208,13 +1227,14 @@ export function AgencySubscription() {
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
-                        <p className="text-sm text-muted-foreground ps-12 pe-3 pb-3 leading-relaxed">{t(item.aKey)}</p>
+                        <p className="text-sm text-muted-foreground ps-12 pe-3 pb-3 leading-relaxed">{item.answer}</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
               ))}
             </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
