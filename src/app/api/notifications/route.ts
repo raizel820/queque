@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { cache, CACHE_TTL } from '@/lib/cache'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const unreadOnly = searchParams.get('unreadOnly') === 'true'
-    const type = searchParams.get('type')
+    const type = searchParams.get('type') // QUEUE, GENERAL, etc.
 
     if (!userId) {
       return NextResponse.json(
@@ -16,51 +15,44 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Cache notifications for 3 seconds - short TTL since they change frequently
-    const cacheKey = `notifications:${userId}:${unreadOnly}:${type || 'all'}`;
-    const result = await cache.getOrSet(cacheKey, async () => {
-      const where: Record<string, unknown> = { userId }
+    const where: Record<string, unknown> = { userId }
 
-      if (unreadOnly) {
-        where.isRead = false
+    if (unreadOnly) {
+      where.isRead = false
+    }
+
+    if (type) {
+      // Support comma-separated types
+      const types = type.split(',').map(t => t.trim()).filter(Boolean)
+      if (types.length === 1) {
+        where.type = types[0]
+      } else if (types.length > 1) {
+        where.type = { in: types }
       }
+    }
 
-      if (type) {
-        const types = type.split(',').map(t => t.trim()).filter(Boolean)
-        if (types.length === 1) {
-          where.type = types[0]
-        } else if (types.length > 1) {
-          where.type = { in: types }
-        }
-      }
+    const notifications = await db.notification.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    })
 
-      const [notifications, unreadCount] = await Promise.all([
-        db.notification.findMany({
-          where,
-          orderBy: { createdAt: 'desc' },
-          take: 50,
-          select: {
-            id: true,
-            type: true,
-            title: true,
-            message: true,
-            isRead: true,
-            entityId: true,
-            createdAt: true,
-          },
-        }),
-        db.notification.count({
-          where: { userId, isRead: false },
-        }),
-      ])
+    // Get unread count
+    const unreadCount = await db.notification.count({
+      where: { userId, isRead: false },
+    })
 
-      return { success: true, notifications, unreadCount }
-    }, CACHE_TTL.SHORT);
-
-    return NextResponse.json(result)
+    return NextResponse.json({
+      success: true,
+      notifications,
+      unreadCount,
+    })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    )
   }
 }
 
@@ -87,13 +79,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Invalidate notifications cache for this user
-    cache.deleteByPrefix(`notifications:${userId}:`)
-
     return NextResponse.json({ success: true, notification }, { status: 201 })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    )
   }
 }
 
@@ -103,23 +95,27 @@ export async function PATCH(request: NextRequest) {
     const { notificationIds, userId, markAll } = body
 
     if (markAll && userId) {
+      // Mark all notifications as read for a user
       const result = await db.notification.updateMany({
         where: { userId, isRead: false },
         data: { isRead: true },
       })
-      // Invalidate cache
-      cache.deleteByPrefix(`notifications:${userId}:`)
-      return NextResponse.json({ success: true, markedCount: result.count })
+      return NextResponse.json({
+        success: true,
+        markedCount: result.count,
+      })
     }
 
     if (notificationIds && Array.isArray(notificationIds) && notificationIds.length > 0) {
+      // Mark specific notifications as read
       const result = await db.notification.updateMany({
         where: { id: { in: notificationIds }, isRead: false },
         data: { isRead: true },
       })
-      // Invalidate cache for affected users (best effort)
-      if (userId) cache.deleteByPrefix(`notifications:${userId}:`)
-      return NextResponse.json({ success: true, markedCount: result.count })
+      return NextResponse.json({
+        success: true,
+        markedCount: result.count,
+      })
     }
 
     return NextResponse.json(
@@ -128,6 +124,9 @@ export async function PATCH(request: NextRequest) {
     )
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json({ success: false, error: message }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    )
   }
 }

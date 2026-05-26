@@ -330,11 +330,11 @@ function DailyReservationsChart({ dailyReservations }: { dailyReservations: numb
       <div className="flex items-center justify-center gap-4 mt-2">
         <div className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full bg-emerald-500" />
-          <span className="text-[10px] text-muted-foreground">Today</span>
+          <span className="text-[10px] text-muted-foreground">{t('today')}</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="h-2 w-2 rounded-full bg-emerald-200 dark:bg-emerald-800" />
-          <span className="text-[10px] text-muted-foreground">Previous days</span>
+          <span className="text-[10px] text-muted-foreground">{t('previousDays')}</span>
         </div>
       </div>
     </div>
@@ -557,7 +557,7 @@ export function AdminDashboard() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `queuewise-${type}-${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `blasti-${type}-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
         toast.success(t('exportSuccess'));
@@ -695,12 +695,12 @@ export function AdminDashboard() {
           <div className="relative flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <ShieldCheck className="h-5 w-5 text-white" />
+                <div className="h-10 w-10 rounded-xl overflow-hidden bg-white/20 backdrop-blur-sm">
+                  <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
                 </div>
                 {t('adminDashboard')}
               </h1>
-              <p className="text-sm text-emerald-100 mt-1 ms-[52px]">DALTI Platform Management</p>
+              <p className="text-sm text-emerald-100 mt-1 ms-[52px]">BLASTI Platform Management</p>
             </div>
             <div className="hidden sm:flex items-center gap-2">
               <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm text-xs px-3 py-1">
@@ -1343,7 +1343,7 @@ export function AdminDashboard() {
                       value={smsSettings.senderName}
                       onChange={(e) => setSmsSettings({ ...smsSettings, senderName: e.target.value })}
                       className="h-9 text-sm"
-                      placeholder="DALTI"
+                      placeholder="BLASTI"
                     />
                   </div>
 

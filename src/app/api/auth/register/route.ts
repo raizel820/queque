@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
 
 const VALID_ROLES = ['CUSTOMER', 'AGENCY_OWNER']
-const ADMIN_SECRET = 'QUEUEWISE_ADMIN_2024'
+const ADMIN_SECRET = 'BLASTI_ADMIN_2024'
 
 export async function POST(request: NextRequest) {
   try {

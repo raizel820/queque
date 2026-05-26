@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DALTI - إدارة الطوابير الذكية",
-  description: "منصة إدارة الطوابير الذكية للمؤسسات في الجزائر. انضم للطوابير عن بعد وتتبع موقعك في الوقت الحقيقي.",
-  icons: { icon: "/favicon.png", apple: "/dalti-icon.svg" },
+  title: "BLASTI - بلاصتي - إدارة الطوابير الذكية",
+  description: "بلاصتي - منصة إدارة الطوابير الذكية للمؤسسات في الجزائر. انضم للطوابير عن بعد وتتبع موقعك في الوقت الحقيقي.",
+  icons: { icon: "/logo.svg" },
 };
 
 export default function RootLayout({

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useLanguage } from '@/hooks/use-language';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -137,6 +138,7 @@ function generateActivityData(joins: number) {
 
 // ─── Component ──────────────────────────────────────────────────────
 export function PerformanceDashboard() {
+  const { t, lang } = useLanguage();
   const [performance, setPerformance] = useState<PerformanceData | null>(null);
   const [loadTest, setLoadTest] = useState<LoadTestResults | null>(null);
   const [loading, setLoading] = useState(true);
@@ -198,12 +200,12 @@ export function PerformanceDashboard() {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <AlertTriangle className="h-10 w-10 mx-auto mb-3 text-amber-500" />
-        <p className="text-sm">Failed to load performance data</p>
+        <p className="text-sm">{t('failedToLoadPerformance', lang)}</p>
         <button
           onClick={() => fetchData(true)}
           className="mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
         >
-          Try again
+          {t('tryAgain', lang)}
         </button>
       </div>
     );
@@ -246,14 +248,14 @@ export function PerformanceDashboard() {
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
           </span>
           <span className="text-xs text-muted-foreground">
-            Live · Updated {lastRefresh.toLocaleTimeString()}
+            {t('liveUpdated')} {lastRefresh.toLocaleTimeString()}
           </span>
         </div>
         <button
           onClick={() => fetchData(true)}
           disabled={refreshing}
           className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          aria-label="Refresh performance data"
+          aria-label={t('refreshPerformanceData', lang)}
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
         </button>
@@ -269,7 +271,7 @@ export function PerformanceDashboard() {
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40 flex items-center justify-center shadow-sm">
                   <Database className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                Database Stats
+                {t('databaseStats')}
                 <Badge className="text-[9px] px-1.5 py-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0 ms-auto">
                   SQLite
                 </Badge>
@@ -278,12 +280,12 @@ export function PerformanceDashboard() {
             <CardContent className="pt-0">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Total Users', value: performance.database.totalUsers, icon: Users, color: 'text-emerald-600 dark:text-emerald-400' },
-                  { label: 'Agencies', value: performance.database.totalAgencies, icon: HardDrive, color: 'text-teal-600 dark:text-teal-400' },
-                  { label: 'Reservations', value: performance.database.totalReservations, icon: Clock, color: 'text-amber-600 dark:text-amber-400' },
-                  { label: 'Active Res.', value: performance.database.activeReservations, icon: Activity, color: 'text-rose-600 dark:text-rose-400' },
-                  { label: 'Notifications', value: performance.database.totalNotifications, icon: Zap, color: 'text-purple-600 dark:text-purple-400' },
-                  { label: 'Audit Logs', value: performance.database.totalAuditLogs, icon: BarChart3, color: 'text-cyan-600 dark:text-cyan-400' },
+                  { label: t('totalUsersLabel', lang), value: performance.database.totalUsers, icon: Users, color: 'text-emerald-600 dark:text-emerald-400' },
+                  { label: t('agenciesLabel', lang), value: performance.database.totalAgencies, icon: HardDrive, color: 'text-teal-600 dark:text-teal-400' },
+                  { label: t('reservationsLabel', lang), value: performance.database.totalReservations, icon: Clock, color: 'text-amber-600 dark:text-amber-400' },
+                  { label: t('activeResLabel', lang), value: performance.database.activeReservations, icon: Activity, color: 'text-rose-600 dark:text-rose-400' },
+                  { label: t('notificationsLabel', lang), value: performance.database.totalNotifications, icon: Zap, color: 'text-purple-600 dark:text-purple-400' },
+                  { label: t('auditLogsLabel', lang), value: performance.database.totalAuditLogs, icon: BarChart3, color: 'text-cyan-600 dark:text-cyan-400' },
                 ].map((item, idx) => {
                   const Icon = item.icon;
                   return (
@@ -304,7 +306,7 @@ export function PerformanceDashboard() {
               {/* DB Size */}
               <div className="mt-3 flex items-center gap-2 p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200/50 dark:border-emerald-800/30">
                 <HardDrive className="h-4 w-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                <span className="text-xs text-muted-foreground">DB Size:</span>
+                <span className="text-xs text-muted-foreground">{t('dbSize', lang)}:</span>
                 <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                   {formatBytes(performance.database.dbSizeBytes)}
                 </span>
@@ -321,20 +323,20 @@ export function PerformanceDashboard() {
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-200 to-teal-300 dark:from-teal-900/40 dark:to-teal-800/40 flex items-center justify-center shadow-sm">
                   <Activity className="h-4 w-4 text-teal-600 dark:text-teal-400" />
                 </div>
-                Queue Stats
+                {t('queueStats')}
                 <Badge className="text-[9px] px-1.5 py-0 bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-0 ms-auto">
-                  Live
+                  {t('liveLabel')}
                 </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Open Queues', value: performance.queues.totalOpenQueues, icon: Server, color: 'text-emerald-600 dark:text-emerald-400' },
-                  { label: 'Waiting', value: performance.queues.totalWaitingCustomers, icon: Users, color: 'text-amber-600 dark:text-amber-400' },
-                  { label: 'Called', value: performance.queues.totalCalledCustomers, icon: UserCheck, color: 'text-teal-600 dark:text-teal-400' },
-                  { label: 'Avg Queue Size', value: performance.queues.avgQueueSize, icon: BarChart3, color: 'text-cyan-600 dark:text-cyan-400' },
-                  { label: 'Max Queue Size', value: performance.queues.maxQueueSize, icon: AlertTriangle, color: 'text-red-600 dark:text-red-400' },
+                  { label: t('openQueues', lang), value: performance.queues.totalOpenQueues, icon: Server, color: 'text-emerald-600 dark:text-emerald-400' },
+                  { label: t('waitingLabel', lang), value: performance.queues.totalWaitingCustomers, icon: Users, color: 'text-amber-600 dark:text-amber-400' },
+                  { label: t('calledLabel', lang), value: performance.queues.totalCalledCustomers, icon: UserCheck, color: 'text-teal-600 dark:text-teal-400' },
+                  { label: t('avgQueueSize', lang), value: performance.queues.avgQueueSize, icon: BarChart3, color: 'text-cyan-600 dark:text-cyan-400' },
+                  { label: t('maxQueueSize', lang), value: performance.queues.maxQueueSize, icon: AlertTriangle, color: 'text-red-600 dark:text-red-400' },
                 ].map((item, idx) => {
                   const Icon = item.icon;
                   return (
@@ -356,17 +358,17 @@ export function PerformanceDashboard() {
               {/* Queue by category */}
               {Object.keys(performance.queues.queuesByCategory).length > 0 && (
                 <div className="mt-3 space-y-1.5">
-                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">By Category</p>
+                  <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{t('byCategory', lang)}</p>
                   <div className="max-h-32 overflow-y-auto space-y-1">
                     {Object.entries(performance.queues.queuesByCategory).map(([cat, data]) => (
                       <div key={cat} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-xs">
                         <span className="text-muted-foreground truncate">{cat}</span>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <Badge className="text-[9px] px-1.5 py-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0">
-                            {data.open} open
+                            {data.open} {t('openLower', lang)}
                           </Badge>
                           <Badge className="text-[9px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0">
-                            {data.waiting} waiting
+                            {data.waiting} {t('waitingLower', lang)}
                           </Badge>
                         </div>
                       </div>
@@ -386,7 +388,7 @@ export function PerformanceDashboard() {
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-amber-200 to-amber-300 dark:from-amber-900/40 dark:to-amber-800/40 flex items-center justify-center shadow-sm">
                   <Timer className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
-                Today&apos;s Activity
+                {t('todaysActivity', lang)}
                 <Badge className="text-[9px] px-1.5 py-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0 ms-auto">
                   {new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </Badge>
@@ -402,7 +404,7 @@ export function PerformanceDashboard() {
                     <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400 leading-tight">
                       {performance.today.joins.toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Joins</p>
+                    <p className="text-[10px] text-muted-foreground">{t('joins', lang)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-teal-50 dark:bg-teal-900/10">
@@ -413,7 +415,7 @@ export function PerformanceDashboard() {
                     <p className="text-lg font-bold text-teal-700 dark:text-teal-400 leading-tight">
                       {performance.today.completions.toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Completions</p>
+                    <p className="text-[10px] text-muted-foreground">{t('completions', lang)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-red-50 dark:bg-red-900/10">
@@ -424,7 +426,7 @@ export function PerformanceDashboard() {
                     <p className="text-lg font-bold text-red-700 dark:text-red-400 leading-tight">
                       {performance.today.cancellations.toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Cancellations</p>
+                    <p className="text-[10px] text-muted-foreground">{t('cancellations', lang)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/10">
@@ -435,7 +437,7 @@ export function PerformanceDashboard() {
                     <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-tight">
                       {performance.today.avgWaitTime}m
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Avg Wait</p>
+                    <p className="text-[10px] text-muted-foreground">{t('avgWait', lang)}</p>
                   </div>
                 </div>
               </div>
@@ -443,7 +445,7 @@ export function PerformanceDashboard() {
               {/* Activity Area Chart */}
               <div className="mt-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                  Hourly Reservation Activity
+                  {t('hourlyReservationActivity', lang)}
                 </p>
                 <div className="h-[120px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -496,9 +498,9 @@ export function PerformanceDashboard() {
                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-rose-200 to-rose-300 dark:from-rose-900/40 dark:to-rose-800/40 flex items-center justify-center shadow-sm">
                   <Server className="h-4 w-4 text-rose-600 dark:text-rose-400" />
                 </div>
-                System Health
+                {t('systemHealth', lang)}
                 <Badge className={`text-[9px] px-1.5 py-0 border-0 ms-auto ${healthColors.badge}`}>
-                  {healthStatus === 'healthy' ? 'Healthy' : healthStatus === 'warning' ? 'Warning' : 'Critical'}
+                  {healthStatus === 'healthy' ? t('healthy', lang) : healthStatus === 'warning' ? t('warning', lang) : t('critical', lang)}
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -509,7 +511,7 @@ export function PerformanceDashboard() {
                   <Clock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">Uptime</p>
+                  <p className="text-xs text-muted-foreground">{t('uptime', lang)}</p>
                   <p className="text-sm font-bold text-foreground">{formatUptime(performance.system.uptime)}</p>
                 </div>
                 <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
@@ -522,7 +524,7 @@ export function PerformanceDashboard() {
               <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 space-y-2">
                 <div className="flex items-center gap-2">
                   <MemoryStick className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                  <span className="text-xs font-medium text-foreground">Memory</span>
+                  <span className="text-xs font-medium text-foreground">{t('memory', lang)}</span>
                   <span className="text-[10px] text-muted-foreground ms-auto">
                     {formatBytes(performance.system.memoryUsage.heapUsed)} / {formatBytes(performance.system.memoryUsage.heapTotal)}
                   </span>
@@ -530,10 +532,10 @@ export function PerformanceDashboard() {
                 <Progress value={memoryUsagePercent} className="h-2" />
                 <div className="grid grid-cols-2 gap-2">
                   <div className="text-[10px] text-muted-foreground">
-                    RSS: <span className="font-medium text-foreground">{formatBytes(performance.system.memoryUsage.rss)}</span>
+                    {t('rss', lang)}: <span className="font-medium text-foreground">{formatBytes(performance.system.memoryUsage.rss)}</span>
                   </div>
                   <div className="text-[10px] text-muted-foreground">
-                    Heap: <span className="font-medium text-foreground">{memoryUsagePercent}%</span>
+                    {t('heap', lang)}: <span className="font-medium text-foreground">{memoryUsagePercent}%</span>
                   </div>
                 </div>
               </div>
@@ -543,17 +545,17 @@ export function PerformanceDashboard() {
                 <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-gray-50 dark:bg-gray-900/50">
                   <Cpu className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                   <p className="text-sm font-bold text-foreground">{performance.system.cpus}</p>
-                  <p className="text-[9px] text-muted-foreground">CPUs</p>
+                  <p className="text-[9px] text-muted-foreground">{t('cpus', lang)}</p>
                 </div>
                 <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-gray-50 dark:bg-gray-900/50">
                   <Server className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                   <p className="text-xs font-bold text-foreground">{performance.system.nodeVersion}</p>
-                  <p className="text-[9px] text-muted-foreground">Node</p>
+                  <p className="text-[9px] text-muted-foreground">{t('node', lang)}</p>
                 </div>
                 <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-gray-50 dark:bg-gray-900/50">
                   <HardDrive className="h-4 w-4 text-rose-600 dark:text-rose-400" />
                   <p className="text-xs font-bold text-foreground capitalize">{performance.system.platform}</p>
-                  <p className="text-[9px] text-muted-foreground">OS</p>
+                  <p className="text-[9px] text-muted-foreground">{t('os', lang)}</p>
                 </div>
               </div>
             </CardContent>
@@ -569,14 +571,14 @@ export function PerformanceDashboard() {
               <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-cyan-200 to-cyan-300 dark:from-cyan-900/40 dark:to-cyan-800/40 flex items-center justify-center shadow-sm">
                 <BarChart3 className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
               </div>
-              Load Test Results
+              {t('loadTestResults', lang)}
               {loadTest?.hasResults ? (
                 <Badge className="text-[9px] px-1.5 py-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0 ms-auto">
-                  Available
+                  {t('available', lang)}
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-muted-foreground ms-auto">
-                  No Data
+                  {t('noDataLabel', lang)}
                 </Badge>
               )}
             </CardTitle>
@@ -587,10 +589,10 @@ export function PerformanceDashboard() {
                 {/* Key metrics grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
-                    { label: 'Total Requests', value: totalRequests > 0 ? totalRequests.toLocaleString() : '—', icon: Activity, color: 'text-emerald-600 dark:text-emerald-400' },
-                    { label: 'Error Rate', value: errorRate > 0 ? `${(errorRate * 100).toFixed(1)}%` : '—', icon: AlertTriangle, color: errorRate > 0.05 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' },
-                    { label: 'P95 Latency', value: p95Latency !== undefined ? `${Math.round(p95Latency)}ms` : '—', icon: Timer, color: p95Latency && p95Latency > 1000 ? 'text-amber-600 dark:text-amber-400' : 'text-teal-600 dark:text-teal-400' },
-                    { label: 'RPS', value: rps > 0 ? rps.toFixed(1) : '—', icon: Zap, color: 'text-cyan-600 dark:text-cyan-400' },
+                    { label: t('totalRequests', lang), value: totalRequests > 0 ? totalRequests.toLocaleString() : '—', icon: Activity, color: 'text-emerald-600 dark:text-emerald-400' },
+                    { label: t('errorRate', lang), value: errorRate > 0 ? `${(errorRate * 100).toFixed(1)}%` : '—', icon: AlertTriangle, color: errorRate > 0.05 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' },
+                    { label: t('p95Latency', lang), value: p95Latency !== undefined ? `${Math.round(p95Latency)}ms` : '—', icon: Timer, color: p95Latency && p95Latency > 1000 ? 'text-amber-600 dark:text-amber-400' : 'text-teal-600 dark:text-teal-400' },
+                    { label: t('rpsLabel', lang), value: rps > 0 ? rps.toFixed(1) : '—', icon: Zap, color: 'text-cyan-600 dark:text-cyan-400' },
                   ].map((item, idx) => {
                     const Icon = item.icon;
                     return (
@@ -610,12 +612,12 @@ export function PerformanceDashboard() {
                   <div className="flex items-center gap-4 px-3 py-2 rounded-xl bg-cyan-50 dark:bg-cyan-900/10 border border-cyan-200/50 dark:border-cyan-800/30">
                     {iterationCount > 0 && (
                       <span className="text-[11px] text-muted-foreground">
-                        Iterations: <span className="font-medium text-foreground">{iterationCount.toLocaleString()}</span>
+                        {t('iterations', lang)}: <span className="font-medium text-foreground">{iterationCount.toLocaleString()}</span>
                       </span>
                     )}
                     {vusMax > 0 && (
                       <span className="text-[11px] text-muted-foreground">
-                        Max VUs: <span className="font-medium text-foreground">{vusMax}</span>
+                        {t('maxVus', lang)}: <span className="font-medium text-foreground">{vusMax}</span>
                       </span>
                     )}
                   </div>
@@ -626,7 +628,7 @@ export function PerformanceDashboard() {
                   <details className="group">
                     <summary className="text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors flex items-center gap-1">
                       <span className="group-open:rotate-90 transition-transform">▶</span>
-                      View Full Summary
+                      {t('viewFullSummary', lang)}
                     </summary>
                     <pre className="mt-2 p-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 overflow-x-auto text-[10px] text-muted-foreground whitespace-pre-wrap max-h-64 overflow-y-auto">
                       {loadTest.summary}
@@ -639,9 +641,9 @@ export function PerformanceDashboard() {
                 <div className="h-12 w-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3">
                   <BarChart3 className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <p className="text-sm text-muted-foreground">No load test results available</p>
+                <p className="text-sm text-muted-foreground">{t('noLoadTestResults', lang)}</p>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Run <code className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-xs font-mono">bun run test:load:10k</code> to generate results
+                  {t('runToGenerate', lang).replace('{command}', 'bun run test:load:10k')}
                 </p>
               </div>
             )}

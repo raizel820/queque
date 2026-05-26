@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Encode as a URL so phone scanners can open it as a clickable link
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://queuewise.dz';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://blasti.dz';
     const qrData = `${baseUrl}/?code=${code}`;
 
     const svgString = await QRCode.toString(qrData, {

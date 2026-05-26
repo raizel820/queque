@@ -20,7 +20,7 @@ export async function POST(
     }
 
     // Hash the new password (same method as register)
-    const salt = process.env.PASSWORD_SALT || 'queuewise-salt-2024';
+    const salt = process.env.PASSWORD_SALT || 'blasti-salt-2024';
     const passwordHash = scryptSync(newPassword, salt, 64).toString('hex');
 
     // Update password

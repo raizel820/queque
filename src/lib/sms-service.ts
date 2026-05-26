@@ -146,27 +146,27 @@ interface SmsTemplateVars {
 const SMS_TEMPLATES = {
   turnApproaching: {
     ar: (v: SmsTemplateVars) =>
-      `🔄 DALTI: اقترب دورك! تذكرتك ${v.ticketNumber} في ${v.agencyName}. المركز: ${v.position}. الانتظار المتوقع: ${v.estimatedMinutes} دقيقة.`,
+      `🔄 BLASTI: اقترب دورك! تذكرتك ${v.ticketNumber} في ${v.agencyName}. المركز: ${v.position}. الانتظار المتوقع: ${v.estimatedMinutes} دقيقة.`,
     fr: (v: SmsTemplateVars) =>
-      `🔄 DALTI: Votre tour approche! Billet ${v.ticketNumber} a ${v.agencyName}. Position: ${v.position}. Attente estimee: ${v.estimatedMinutes} min.`,
+      `🔄 BLASTI: Votre tour approche! Billet ${v.ticketNumber} a ${v.agencyName}. Position: ${v.position}. Attente estimee: ${v.estimatedMinutes} min.`,
     en: (v: SmsTemplateVars) =>
-      `🔄 DALTI: Your turn is approaching! Ticket ${v.ticketNumber} at ${v.agencyName}. Position: ${v.position}. Est. wait: ${v.estimatedMinutes} min.`,
+      `🔄 BLASTI: Your turn is approaching! Ticket ${v.ticketNumber} at ${v.agencyName}. Position: ${v.position}. Est. wait: ${v.estimatedMinutes} min.`,
   },
   yourTurn: {
     ar: (v: SmsTemplateVars) =>
-      `🎫 DALTI: دورك الآن! تذكرتك ${v.ticketNumber} في ${v.agencyName}. يرجى التوجه فوراً.`,
+      `🎫 BLASTI: دورك الآن! تذكرتك ${v.ticketNumber} في ${v.agencyName}. يرجى التوجه فوراً.`,
     fr: (v: SmsTemplateVars) =>
-      `🎫 DALTI: C'est votre tour! Billet ${v.ticketNumber} a ${v.agencyName}. Veuillez vous presenter.`,
+      `🎫 BLASTI: C'est votre tour! Billet ${v.ticketNumber} a ${v.agencyName}. Veuillez vous presenter.`,
     en: (v: SmsTemplateVars) =>
-      `🎫 DALTI: It's your turn! Ticket ${v.ticketNumber} at ${v.agencyName}. Please proceed now.`,
+      `🎫 BLASTI: It's your turn! Ticket ${v.ticketNumber} at ${v.agencyName}. Please proceed now.`,
   },
   noShowWarning: {
     ar: (v: SmsTemplateVars) =>
-      `⚠️ DALTI: تم تخطي تذكرتك ${v.ticketNumber} في ${v.agencyName} بسبب عدم الحضور. يمكنك استعادة مركزك من التطبيق.`,
+      `⚠️ BLASTI: تم تخطي تذكرتك ${v.ticketNumber} في ${v.agencyName} بسبب عدم الحضور. يمكنك استعادة مركزك من التطبيق.`,
     fr: (v: SmsTemplateVars) =>
-      `⚠️ DALTI: Votre billet ${v.ticketNumber} a ${v.agencyName} a ete saute (absence). Vous pouvez recuperer votre position.`,
+      `⚠️ BLASTI: Votre billet ${v.ticketNumber} a ${v.agencyName} a ete saute (absence). Vous pouvez recuperer votre position.`,
     en: (v: SmsTemplateVars) =>
-      `⚠️ DALTI: Your ticket ${v.ticketNumber} at ${v.agencyName} was skipped (no-show). You can reclaim your position.`,
+      `⚠️ BLASTI: Your ticket ${v.ticketNumber} at ${v.agencyName} was skipped (no-show). You can reclaim your position.`,
   },
 };
 
@@ -193,7 +193,7 @@ export async function getSmsSettings() {
         provider: 'winsms',
         apiUrl: ALGERIAN_PROVIDERS.winsms.defaultApiUrl,
         apiKey: '',
-        senderName: 'DALTI',
+        senderName: 'BLASTI',
         enabled: false,
         smsPerReminder: 1,
         maxSmsPerDay: 5,
@@ -587,7 +587,7 @@ export async function sendSms(phoneNumber: string, message: string, userId?: str
   // Validate API configuration
   const apiUrl = settings.apiUrl || process.env.SMS_API_URL;
   const apiKey = settings.apiKey || process.env.SMS_API_KEY;
-  const senderName = settings.senderName || 'DALTI';
+  const senderName = settings.senderName || 'BLASTI';
 
   if (!apiUrl || !apiKey) {
     const log = await db.smsLog.create({
@@ -676,7 +676,7 @@ export async function sendSms(phoneNumber: string, message: string, userId?: str
  */
 export async function testSms(phoneNumber: string): Promise<SendSmsResult> {
   const now = new Date().toLocaleString('ar-DZ', { timeZone: 'Africa/Algiers' });
-  const testMessage = `[DALTI] ${now} - رسالة اختبار. Test SMS. If you receive this, your SMS gateway is working correctly.`;
+  const testMessage = `[BLASTI] ${now} - رسالة اختبار. Test SMS. If you receive this, your SMS gateway is working correctly.`;
   return sendSms(phoneNumber, testMessage);
 }
 

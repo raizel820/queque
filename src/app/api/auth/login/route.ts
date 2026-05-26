@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword } from '@/lib/password'
-import { cache, CACHE_TTL } from '@/lib/cache'
 
 export async function POST(request: NextRequest) {
   try {
@@ -57,18 +56,27 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user's role matches the expected role from login tab
+    // Customer tab: accepts CUSTOMER and SUPER_ADMIN roles
+    // Agency tab: accepts AGENCY_OWNER, AGENCY_STAFF, and SUPER_ADMIN roles
+    // SUPER_ADMIN can login from either tab
     const agencyRoles = ['AGENCY_OWNER', 'AGENCY_STAFF'];
     const isAgencyTab = agencyRoles.includes(expectedRole);
     const isCustomerTab = expectedRole === 'CUSTOMER';
 
     if (expectedRole) {
+      // SUPER_ADMIN can login from any tab
       if (user.role === 'SUPER_ADMIN') {
         // allowed
-      } else if (isAgencyTab && agencyRoles.includes(user.role)) {
+      }
+      // Agency tab: AGENCY_OWNER and AGENCY_STAFF are allowed
+      else if (isAgencyTab && agencyRoles.includes(user.role)) {
         // allowed
-      } else if (isCustomerTab && user.role === 'CUSTOMER') {
+      }
+      // Customer tab: only CUSTOMER role is allowed
+      else if (isCustomerTab && user.role === 'CUSTOMER') {
         // allowed
-      } else {
+      }
+      else {
         return NextResponse.json(
           { success: false, error: 'wrongRoleError' },
           { status: 403 }
@@ -76,63 +84,41 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create audit log asynchronously (don't block the response)
-    // Use setImmediate to avoid blocking the login response
-    const userId = user.id;
-    setImmediate(() => {
-      db.auditLog.create({
-        data: {
-          userId,
-          action: 'LOGIN',
-          entityType: 'USER',
-          entityId: userId,
-        },
-      }).catch(() => {
-        // Ignore audit log errors - don't fail the login
-      });
-    });
+    // Create audit log
+    await db.auditLog.create({
+      data: {
+        userId: user.id,
+        action: 'LOGIN',
+        entityType: 'USER',
+        entityId: user.id,
+      },
+    })
 
     // Return user data (exclude passwordHash)
     const { passwordHash: _, ...userData } = user
 
-    // Cache agency lookup for agency roles (reduces repeated queries)
+    // Look up agencyId for agency owners, staff, and super admin
     let agencyId: string | undefined;
     if (user.role === 'SUPER_ADMIN') {
-      const cachedAgency = await cache.getOrSet(
-        'superadmin:agencyId',
-        async () => {
-          const firstAgency = await db.agency.findFirst({ select: { id: true } });
-          return firstAgency?.id || null;
-        },
-        CACHE_TTL.LONG
-      );
-      agencyId = cachedAgency || undefined;
-    } else if (user.role === 'AGENCY_OWNER') {
-      const cachedAgency = await cache.getOrSet(
-        `owner:agencyId:${user.id}`,
-        async () => {
-          const ownedAgency = await db.agency.findFirst({
-            where: { ownerId: user.id },
-            select: { id: true },
-          });
-          return ownedAgency?.id || null;
-        },
-        CACHE_TTL.LONG
-      );
-      agencyId = cachedAgency || undefined;
-    } else if (user.role === 'AGENCY_STAFF') {
-      const cachedAgency = await cache.getOrSet(
-        `staff:agencyId:${user.id}`,
-        async () => {
-          const staffAssignment = await db.agencyStaff.findFirst({
-            where: { userId: user.id, isActive: true },
-            select: { agencyId: true },
-          });
-          return staffAssignment?.agencyId || null;
-        },
-        CACHE_TTL.LONG
-      );
-      agencyId = cachedAgency || undefined;
+      // SUPER_ADMIN gets agencyId from first available agency
+      const firstAgency = await db.agency.findFirst({
+        select: { id: true },
+      });
+      agencyId = firstAgency?.id;
+    } else if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_STAFF') {
+      if (user.role === 'AGENCY_OWNER') {
+        const ownedAgency = await db.agency.findFirst({
+          where: { ownerId: user.id },
+          select: { id: true },
+        });
+        agencyId = ownedAgency?.id;
+      } else {
+        const staffAssignment = await db.agencyStaff.findFirst({
+          where: { userId: user.id, isActive: true },
+          select: { agencyId: true },
+        });
+        agencyId = staffAssignment?.agencyId;
+      }
     }
 
     return NextResponse.json({ success: true, user: { ...userData, agencyId } })

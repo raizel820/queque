@@ -297,7 +297,7 @@ export function AgencyDashboard() {
   // Generate QR code client-side
   useEffect(() => {
     if (!agencyCode) return;
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://queuewise.dz';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://blasti.dz';
     const qrData = `${baseUrl}/?code=${agencyCode}`;
     QRCode.toDataURL(qrData, {
       width: 256,
@@ -552,7 +552,7 @@ export function AgencyDashboard() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `queuewise-reservations-${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `blasti-reservations-${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
         toast.success(t('exportSuccess'));

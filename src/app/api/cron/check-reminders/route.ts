@@ -1,29 +1,14 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { cache, CACHE_TTL, rateLimit } from '@/lib/cache';
 
 export async function GET() {
   try {
-    // Rate limit: skip if called within last 30 seconds
-    if (!rateLimit('cron:check-reminders', 30_000)) {
-      return NextResponse.json({
-        checked: 0,
-        remindersSent: 0,
-        skipped: 'rate_limited',
-      });
-    }
-
-    // Check if we recently ran and there were no candidates
-    const recentResult = cache.get<{ checked: number; remindersSent: number }>('cron:reminders:result');
-    if (recentResult && recentResult.checked === 0) {
-      return NextResponse.json(recentResult);
-    }
-
     const today = new Date().toISOString().split('T')[0];
 
-    // Batch query: get all WAITING reservations with their position info
-    // Instead of N+1 queries, we compute positions in a single query
-    const candidates = await db.reservation.findMany({
+    // Find all WAITING reservations that haven't received a reminder yet,
+    // reserved for today (or no specific date), and whose user has reminderMinutes set
+    // Note: skippedForNoShow filter done in code to avoid Prisma Client compatibility issues
+    const allCandidates = await db.reservation.findMany({
       where: {
         status: 'WAITING',
         reminderSent: false,
@@ -35,13 +20,7 @@ export async function GET() {
           reminderMinutes: { gt: 0 },
         },
       },
-      select: {
-        id: true,
-        agencyId: true,
-        displayNumber: true,
-        joinedAt: true,
-        userId: true,
-        skippedForNoShow: true,
+      include: {
         user: {
           select: {
             id: true,
@@ -60,48 +39,33 @@ export async function GET() {
           },
         },
       },
-      orderBy: { joinedAt: 'asc' },
-      take: 100, // Limit batch size to prevent overload
+      orderBy: { queueNumber: 'asc' },
     });
 
     // Filter out skipped-for-no-show in code
-    const activeCandidates = candidates.filter(r => !r.skippedForNoShow);
-
-    if (activeCandidates.length === 0) {
-      const result = { checked: 0, remindersSent: 0 };
-      cache.set('cron:reminders:result', result, CACHE_TTL.MEDIUM);
-      return NextResponse.json(result);
-    }
-
-    // Batch: count people ahead per agency in ONE query per agency
-    const agencyIds = [...new Set(activeCandidates.map(r => r.agencyId))];
-    const aheadCounts = new Map<string, number>();
-
-    for (const agencyId of agencyIds) {
-      // Get count of WAITING reservations per agency (approximation of position)
-      const count = await db.reservation.count({
-        where: {
-          agencyId,
-          status: 'WAITING',
-        },
-      });
-      aheadCounts.set(agencyId, count);
-    }
+    const candidates = allCandidates.filter(r => {
+      const rAny = r as Record<string, unknown>;
+      return rAny.skippedForNoShow !== true;
+    });
 
     let remindersSent = 0;
 
-    // Process candidates - but limit to 20 per run to avoid overloading
-    const batchToProcess = activeCandidates.slice(0, 20);
+    for (const reservation of candidates) {
+      // Calculate people ahead: WAITING reservations for same agency joined before this one
+      const peopleAhead = await db.reservation.count({
+        where: {
+          agencyId: reservation.agencyId,
+          status: 'WAITING',
+          joinedAt: { lt: reservation.joinedAt },
+          id: { not: reservation.id },
+        },
+      });
 
-    for (const reservation of batchToProcess) {
-      const totalInQueue = aheadCounts.get(reservation.agencyId) || 0;
       const avgServiceTime = reservation.agency.averageServiceTime || 10;
       const userReminderMinutes = reservation.user.reminderMinutes || 10;
 
-      // Estimate position: total waiting minus those already sent reminders
-      // This is an approximation but much faster than N+1 queries
-      const estimatedMinutesUntilTurn = Math.max(0, (totalInQueue - 1) * avgServiceTime);
-
+      // If estimated wait time is within user's reminder window, send reminder
+      const estimatedMinutesUntilTurn = peopleAhead * avgServiceTime;
       if (estimatedMinutesUntilTurn <= userReminderMinutes) {
         const agencyName =
           reservation.user.language === 'ar'
@@ -110,39 +74,35 @@ export async function GET() {
               ? reservation.agency.nameFr || reservation.agency.name
               : reservation.agency.name;
 
-        try {
-          await db.$transaction(async (tx) => {
-            await tx.reservation.update({
-              where: { id: reservation.id },
-              data: {
-                reminderSent: true,
-                reminderSentAt: new Date(),
-              },
-            });
-
-            await tx.notification.create({
-              data: {
-                userId: reservation.userId!,
-                type: 'TURN_APPROACHING',
-                title: 'Your Turn is Approaching',
-                message: `Your ticket ${reservation.displayNumber} at ${agencyName} is coming up soon. ${totalInQueue <= 1 ? 'You are next!' : `Approximately ${totalInQueue - 1} ahead of you.`}`,
-              },
-            });
+        await db.$transaction(async (tx) => {
+          // Mark reminder as sent
+          await tx.reservation.update({
+            where: { id: reservation.id },
+            data: {
+              reminderSent: true,
+              reminderSentAt: new Date(),
+            },
           });
 
-          remindersSent++;
-          // Update the ahead count for this agency
-          aheadCounts.set(reservation.agencyId, Math.max(0, totalInQueue - 1));
-        } catch {
-          // Skip on transaction error (likely concurrent modification)
-        }
+          // Create in-app notification
+          await tx.notification.create({
+            data: {
+              userId: reservation.userId,
+              type: 'TURN_APPROACHING',
+              title: 'Your Turn is Approaching',
+              message: `Your ticket ${reservation.displayNumber} at ${agencyName} is coming up soon. ${peopleAhead === 0 ? 'You are next!' : `Approximately ${peopleAhead} ahead of you.}`}`,
+            },
+          });
+        });
+
+        remindersSent++;
       }
     }
 
-    const result = { checked: activeCandidates.length, remindersSent };
-    cache.set('cron:reminders:result', result, CACHE_TTL.SHORT);
-
-    return NextResponse.json(result);
+    return NextResponse.json({
+      checked: candidates.length,
+      remindersSent,
+    });
   } catch (error) {
     console.error('[cron/check-reminders] Error:', error);
     return NextResponse.json(

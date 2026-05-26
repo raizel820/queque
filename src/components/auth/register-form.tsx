@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { TicketCheck, ArrowLeft, ArrowRight, Loader2, Eye, EyeOff, UserPlus, Shield, Camera, Check, CircleDot, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Eye, EyeOff, UserPlus, Shield, Camera, Check, CircleDot, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { UserRole } from '@/store/use-app-store';
@@ -216,7 +216,7 @@ export function RegisterForm() {
         toast.success(t('registerSuccess'));
         if (data.isNewUser && !onboarded) {
           setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('queuewise:show-onboarding', { detail: data.user }));
+            window.dispatchEvent(new CustomEvent('blasti:show-onboarding', { detail: data.user }));
           }, 300);
         }
       } else {
@@ -290,12 +290,12 @@ export function RegisterForm() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="h-8 w-8 rounded-lg overflow-hidden"
+            className="h-10 w-10 rounded-xl overflow-hidden"
           >
-            <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
+            <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
           </motion.div>
-          <span className="font-bold" style={{ color: '#059669' }}>
-            DALTI
+          <span className="font-bold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
+            BLASTI
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -417,7 +417,7 @@ export function RegisterForm() {
                                 <img
                                   src={avatarPreview}
                                   alt="Avatar"
-                                  className="h-20 w-20 rounded-full object-cover border-2 border-emerald-300 dark:border-emerald-700 shadow-md"
+                                  className="h-20 w-20 rounded-full object-contain border-2 border-emerald-300 dark:border-emerald-700 shadow-md"
                                 />
                                 {avatarUpload.uploading && (
                                   <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
@@ -780,7 +780,7 @@ export function RegisterForm() {
                       className="text-center"
                     >
                       <p className="text-lg font-bold text-foreground">{t('registerSuccess')}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Welcome to DALTI!</p>
+                      <p className="text-sm text-muted-foreground mt-1">{t('welcomeToBlasti')}</p>
                     </motion.div>
                   </motion.div>
                 </motion.div>
@@ -796,11 +796,11 @@ export function RegisterForm() {
             className="mt-6 flex flex-col items-center gap-2"
           >
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-lg overflow-hidden shadow-sm">
-                <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
+              <div className="h-8 w-8 rounded-lg overflow-hidden shadow-sm">
+                <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
               </div>
-              <span className="text-xs font-semibold" style={{ color: '#059669' }}>
-                DALTI
+              <span className="text-xs font-semibold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
+                BLASTI
               </span>
             </div>
             <p className="text-[10px] text-muted-foreground/50">{t('rightsReserved')} · {t('version')}</p>

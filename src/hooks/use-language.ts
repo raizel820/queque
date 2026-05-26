@@ -24,7 +24,7 @@ export function setLanguage(lang: Language) {
 
 // Initialize from localStorage
 if (typeof window !== 'undefined') {
-  const stored = localStorage.getItem('queuewise-lang') as Language | null;
+  const stored = localStorage.getItem('blasti-lang') as Language | null;
   if (stored) currentLang = stored;
 }
 

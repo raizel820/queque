@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { TicketCheck, ArrowLeft, Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { UserRole } from '@/store/use-app-store';
@@ -123,12 +123,12 @@ export function LoginForm() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="h-8 w-8 rounded-lg overflow-hidden"
+            className="h-10 w-10 rounded-xl overflow-hidden"
           >
-            <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
+            <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
           </motion.div>
-          <span className="font-bold" style={{ color: '#059669' }}>
-            DALTI
+          <span className="font-bold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
+            BLASTI
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -164,9 +164,9 @@ export function LoginForm() {
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.1 }}
-                  className="mx-auto mb-3 h-14 w-14 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/25"
+                  className="mx-auto mb-3 h-20 w-20 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/25"
                 >
-                  <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
+                  <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
                 </motion.div>
                 <CardTitle className="text-2xl font-bold text-foreground">
                   {t('login')}
@@ -253,7 +253,7 @@ export function LoginForm() {
                     <div className="h-4 w-4 rounded border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
                       <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                     </div>
-                    {t('rememberMe') || 'Remember me'}
+                    {t('rememberMe')}
                   </button>
                 </div>
                 <AnimatePresence mode="wait">
@@ -319,7 +319,7 @@ export function LoginForm() {
                       <div className="w-full border-t border-border" />
                     </div>
                     <div className="relative flex justify-center text-xs">
-                      <span className="bg-white dark:bg-gray-900 px-3 text-muted-foreground">{t('orContinueWith') || 'Or continue with'}</span>
+                      <span className="bg-white dark:bg-gray-900 px-3 text-muted-foreground">{t('orContinueWith')}</span>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -380,11 +380,11 @@ export function LoginForm() {
             className="mt-6 flex flex-col items-center gap-2"
           >
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-lg overflow-hidden shadow-sm">
-                <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
+              <div className="h-8 w-8 rounded-lg overflow-hidden shadow-sm">
+                <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
               </div>
-              <span className="text-xs font-semibold" style={{ color: '#059669' }}>
-                DALTI
+              <span className="text-xs font-semibold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
+                BLASTI
               </span>
             </div>
             <p className="text-[10px] text-muted-foreground/50">{t('rightsReserved')} · {t('version')}</p>

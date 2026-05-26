@@ -180,7 +180,7 @@ export function AgencyProfile() {
     const url = URL.createObjectURL(svgBlob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `queuewise-${profile?.code || 'qr'}.svg`;
+    a.download = `blasti-${profile?.code || 'qr'}.svg`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -191,7 +191,7 @@ export function AgencyProfile() {
   const getAgencyNameForShare = () => {
     if (lang === 'ar' && profile?.nameAr) return profile.nameAr;
     if (lang === 'fr' && profile?.nameFr) return profile.nameFr;
-    return profile?.name || 'DALTI Agency';
+    return profile?.name || t('appName');
   };
 
   const shareText = `Join the queue at ${getAgencyNameForShare()}`;
@@ -515,7 +515,7 @@ export function AgencyProfile() {
               <div className="flex-1 text-center sm:text-start">
                 <p className="text-sm font-medium text-foreground mb-1">{t('agencyCode')}</p>
                 <p className="text-2xl font-mono font-bold text-emerald-700 dark:text-emerald-400 mb-1" dir="ltr">
-                  {profile?.code || 'N/A'}
+                  {profile?.code || t('notAvailable')}
                 </p>
                 <p className="text-xs text-muted-foreground mb-3">
                   {t('shareCodeText')}

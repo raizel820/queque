@@ -1,7 +1,7 @@
 const ar = {
   // ─── App ─────────────────────────────────
-  appName: "دالتي",
-  appTagline: "حجزك الذكي",
+  appName: "بلاصتي",
+  appTagline: "إدارة طوابير ذكية للمؤسسات في الجزائر",
 
   // ─── Common ──────────────────────────────
   loading: "جاري التحميل...",
@@ -84,7 +84,7 @@ const ar = {
   language: "اللغة",
 
   // ─── Customer ────────────────────────────
-  welcomeTitle: "مرحباً بك في دالتي",
+  welcomeTitle: "مرحباً بك في بلاصتي",
   welcomeSubtitle: "انضم إلى الطوابير عن بُعد، لا حاجة للانتظار!",
   searchAgency: "ابحث عن مؤسسة...",
   searchByCategory: "ابحث حسب التصنيف",
@@ -310,7 +310,7 @@ const ar = {
   testimonial2: "المنصة سهلة الاستخدام جداً. حتى كبار السن يمكنهم استخدامها بسهولة.",
   testimonial2Name: "فاطمة الزهراء",
   testimonial2Role: "زبونة",
-  testimonial3: "ساعدتني دالتي في تنظيم طابور العيادة بشكل أفضل. العملاء راضون جداً.",
+  testimonial3: "ساعدتني بلاصتي في تنظيم طابور العيادة بشكل أفضل. العملاء راضون جداً.",
   testimonial3Name: "د. محمد",
   testimonial3Role: "صاحب عيادة",
   trustedBy: "موثوق من قبل",
@@ -954,7 +954,7 @@ const ar = {
   electronicPayment: 'الدفع الإلكتروني (محفظة)',
   paymentInstructions: 'تعليمات الدفع',
   paymentInstructionsDesc: 'اتبع هذه الخطوات لإتمام الدفع',
-  ccpInstructions: 'أرسل الدفع إلى حساب CCP: 0000 0000 0000 0000 — المفتاح: 00 — المستفيد: دالتي',
+  ccpInstructions: 'أرسل الدفع إلى حساب CCP: 0000 0000 0000 0000 — المفتاح: 00 — المستفيد: BLASTI',
   bankInstructions: 'حوّل إلى الحساب: 0000 0000 0000 0000 — RIB: 00 000 00000 000 0000 000 — البنك: BNA',
   eWalletInstructions: 'أرسل إلى رقم المحفظة: 0XXX XXX XXX عبر BaridiMob أو CCP',
   faq: 'الأسئلة الشائعة',
@@ -1184,6 +1184,60 @@ const ar = {
   noPreferredTime: 'لم يتم تحديد وقت مفضل',
   selectTime: 'اختر الوقت',
   enableFixedTime: 'تفعيل الوقت الثابت',
+  welcomeToBlasti: 'مرحباً بك في بلاصتي!',
+
+  // ─── Task 4c: Hardcoded English Fixes ─────
+  previousDays: 'الأيام السابقة',
+  unknownAgency: 'مؤسسة غير معروفة',
+  systemLabel: 'النظام',
+  notAvailable: 'غير متوفر',
+  defaultUser: 'مستخدم',
+  defaultAgency: 'مؤسسة',
+  defaultService: 'خدمة',
+
+  // ─── Onboarding Wizard ──────────
+  welcomeTo: 'مرحباً بك في بلاصتي',
+  setupAccount: 'لنُعدّ حسابك',
+  chooseLanguage: 'اختر لغتك المفضلة',
+  setupNotifications: 'تفضيلات الإشعارات',
+  smsNotifications: 'إشعارات الرسائل القصيرة',
+  pushNotifications: 'الإشعارات الفورية',
+  reminderTime: 'ذكّرني قبل دوري',
+  skip: 'تخطي',
+  finish: 'إنهاء',
+  quickTips: 'نصائح سريعة',
+  onboardingStep: 'الخطوة {current} من {total}',
+  agencyTip1: 'اذهب إلى لوحة التحكم لإدارة الطابور',
+  agencyTip2: 'استخدم "استدعاء التالي" لخدمة العملاء',
+  agencyTip3: 'تحقق من التحليلات للحصول على رؤى',
+  preferencesSaved: 'تم حفظ التفضيلات بنجاح',
+  onboardingComplete: 'تم الإعداد!',
+  onboardingSkipped: 'يمكنك إكمال الإعداد لاحقاً من الإعدادات',
+  helloUser: 'مرحباً، {name}!',
+  setupAccountDesc: 'لنُعدّ حسابك بسرعة',
+  adminOnboardingNote: 'كمدير، يمكنك إدارة جميع المؤسسات والمستخدمين وإعدادات المنصة من لوحة التحكم.',
+  agencyTip4: 'أضف موظفين من "إدارة الموظفين" في الإعدادات',
+  stayNotified: 'ابقَ على اطلاع',
+  customerTip1: 'فعّل إشعارات الرسائل القصيرة حتى لا يفوتك دورك',
+  customerTip2: 'اضبط لغتك المفضلة لتجربة أفضل',
+  customerTip3: 'أضف المؤسسات إلى المفضلات للوصول السريع',
+
+  // ─── Review System ──────────
+  writeReview: 'اكتب تقييماً',
+  editReview: 'تعديل التقييم',
+  deleteReview: 'حذف التقييم',
+  reviewSubmitted: 'تم إرسال التقييم',
+  reviewUpdated: 'تم تحديث التقييم',
+  reviewDeleted: 'تم حذف التقييم',
+  ratingRequired: 'يرجى اختيار تقييم',
+  reviewCommentPlaceholder: 'شارك تجربتك...',
+  outOf5: 'من 5',
+  totalReviewsCount: 'تقييم',
+  alreadyReviewed: 'لقد قيّمت هذه المؤسسة بالفعل',
+  submitReview: 'إرسال التقييم',
+  updateReview: 'تحديث التقييم',
+  confirmDeleteReview: 'هل أنت متأكد من حذف تقييمك؟',
+  reviewReply: 'رد المؤسسة',
 };
 
 export default ar;

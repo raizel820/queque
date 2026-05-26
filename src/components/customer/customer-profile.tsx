@@ -463,7 +463,7 @@ export function CustomerProfile() {
                 <div className="absolute bottom-0.5 end-0.5 h-5 w-5 rounded-full bg-emerald-500 border-[3px] border-white dark:border-gray-900" />
               </motion.div>
               <div className="pb-1 min-w-0 flex-1">
-                <h2 className="text-xl font-bold text-foreground truncate">{user?.fullName || 'User'}</h2>
+                <h2 className="text-xl font-bold text-foreground truncate">{user?.fullName || t('defaultUser')}</h2>
                 <div className="flex items-center gap-2 mt-0.5">
                   <p className="text-sm text-muted-foreground truncate">@{user?.username || 'user'}</p>
                   {phoneNumber && (

@@ -90,7 +90,7 @@ export function AdminTransactions() {
           const agency = tx.agency as Record<string, string> | undefined;
           return {
             id: tx.id,
-            agencyName: agency?.name || 'Unknown Agency',
+            agencyName: agency?.name || t('unknownAgency'),
             amount: tx.amount as number,
             plan: tx.plan as string,
             method: tx.paymentMethod as string,

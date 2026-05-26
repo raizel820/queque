@@ -132,15 +132,15 @@ export const useAppStore = create<AppState>()(
         // Clear persisted storage AFTER set (persist middleware writes during set)
         setTimeout(() => {
           if (typeof window !== 'undefined') {
-            localStorage.removeItem('queuewise-app');
-            localStorage.removeItem('queuewise-lang');
+            localStorage.removeItem('blasti-app');
+            localStorage.removeItem('blasti-lang');
             window.location.href = '/';
           }
         }, 100);
       },
     }),
     {
-      name: 'queuewise-app',
+      name: 'blasti-app',
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
@@ -156,8 +156,8 @@ export const useAppStore = create<AppState>()(
 if (useAppStore.persist) {
   useAppStore.persist.clearStorage = () => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('queuewise-app');
-      localStorage.removeItem('queuewise-lang');
+      localStorage.removeItem('blasti-app');
+      localStorage.removeItem('blasti-lang');
     }
   };
 }

@@ -179,7 +179,7 @@ export function AdminAuditLogs() {
                   {/* User avatar */}
                   <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900/40 dark:to-emerald-800/40 flex items-center justify-center flex-shrink-0 shadow-sm">
                     <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
-                      {(log.user?.fullName || 'System').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'S'}
+                      {(log.user?.fullName || t('systemLabel')).split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'S'}
                     </span>
                   </div>
                   <Badge
@@ -191,7 +191,7 @@ export function AdminAuditLogs() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-foreground truncate">{log.details}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{log.user?.fullName || 'System'}</span>
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{log.user?.fullName || t('systemLabel')}</span>
                       <span className="text-[10px] text-muted-foreground">·</span>
                       <span className="text-[10px] text-muted-foreground">{log.entityType}</span>
                       <span className="text-[10px] text-muted-foreground">·</span>

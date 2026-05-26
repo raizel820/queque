@@ -10,11 +10,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Settings,
   MessageSquare,
-  Activity,
   RefreshCw,
   Loader2,
   Send,
@@ -41,7 +39,6 @@ import {
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { AdminFaqManager } from '@/components/admin/admin-faq-manager';
-import { PerformanceDashboard } from '@/components/admin/performance-dashboard';
 
 // ─── Interfaces (shared with admin-dashboard) ─────────────────────
 interface SmsSettingsData {
@@ -346,20 +343,6 @@ export function AdminSettings() {
         </div>
       </motion.div>
 
-      {/* ─── Tab Navigation ─── */}
-      <Tabs defaultValue="sms-faq" className="w-full">
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="sms-faq" className="gap-1.5">
-            <MessageSquare className="h-3.5 w-3.5" />
-            SMS & FAQ
-          </TabsTrigger>
-          <TabsTrigger value="performance" className="gap-1.5">
-            <Activity className="h-3.5 w-3.5" />
-            Performance
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="sms-faq" className="space-y-5 mt-5">
       {/* ─── SMS Gateway Configuration (PRIMARY) ─── */}
       <motion.div {...fadeUp} transition={{ delay: 0.1 }}>
         <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
@@ -487,7 +470,7 @@ export function AdminSettings() {
                       onChange={(e) =>
                         setSmsSettings({ ...smsSettings, senderName: e.target.value })
                       }
-                      placeholder="DALTI"
+                      placeholder="BLASTI"
                       className="h-9 text-sm"
                       aria-label={t('smsSenderName')}
                     />
@@ -967,12 +950,6 @@ export function AdminSettings() {
       <motion.div {...fadeUp} transition={{ delay: 0.5 }}>
         <AdminFaqManager />
       </motion.div>
-        </TabsContent>
-
-        <TabsContent value="performance" className="mt-5">
-          <PerformanceDashboard />
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }

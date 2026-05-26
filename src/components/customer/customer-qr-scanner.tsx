@@ -163,7 +163,7 @@ export function CustomerQrScanner({ open, onOpenChange, onAgencyFound }: Custome
 
     if (code && code.data) {
       // Parse QR code data - extract agency code
-      // Supports URLs like: https://queuewise.dz/?code=CLINIC01
+      // Supports URLs like: https://blasti.dz/?code=CLINIC01
       // Supports legacy: "QW:CLINIC01", or plain "CLINIC01"
       let agencyCode = code.data.trim();
       

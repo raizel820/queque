@@ -2,8 +2,8 @@ import type { TranslationKeys } from './ar';
 
 const fr: Record<TranslationKeys, string> = {
   // ─── App ─────────────────────────────────
-  appName: "DALTI",
-  appTagline: "Votre file d'attente intelligente",
+  appName: "BLASTI",
+  appTagline: "Gestion intelligente des files d'attente pour les établissements en Algérie",
 
   // ─── Common ──────────────────────────────
   loading: "Chargement...",
@@ -86,7 +86,7 @@ const fr: Record<TranslationKeys, string> = {
   language: "Langue",
 
   // ─── Customer ────────────────────────────
-  welcomeTitle: "Bienvenue sur DALTI",
+  welcomeTitle: "Bienvenue sur BLASTI",
   welcomeSubtitle: "Rejoignez les files d'attente à distance, plus besoin d'attendre !",
   searchAgency: "Rechercher un établissement...",
   searchByCategory: "Rechercher par catégorie",
@@ -315,7 +315,7 @@ const fr: Record<TranslationKeys, string> = {
   testimonial2: "La plateforme est très facile à utiliser. Même les personnes âgées peuvent l'utiliser facilement.",
   testimonial2Name: "Fatima Zahra",
   testimonial2Role: "Cliente",
-  testimonial3: "DALTI m'a aidé à mieux organiser la file d'attente. Les clients sont très satisfaits.",
+  testimonial3: "BLASTI m'a aidé à mieux organiser la file d'attente. Les clients sont très satisfaits.",
   testimonial3Name: "Dr. Mohamed",
   testimonial3Role: "Propriétaire de clinique",
   trustedBy: "Approuvé par",
@@ -954,7 +954,7 @@ const fr: Record<TranslationKeys, string> = {
   electronicPayment: 'Paiement électronique (Portefeuille)',
   paymentInstructions: 'Instructions de paiement',
   paymentInstructionsDesc: 'Suivez ces étapes pour compléter votre paiement',
-  ccpInstructions: 'Envoyez le paiement au compte CCP : 0000 0000 0000 0000 — Clé : 00 — Bénéficiaire : DALTI',
+  ccpInstructions: 'Envoyez le paiement au compte CCP : 0000 0000 0000 0000 — Clé : 00 — Bénéficiaire : BLASTI',
   bankInstructions: 'Transférez au compte : 0000 0000 0000 0000 — RIB : 00 000 00000 000 0000 000 — Banque : BNA',
   eWalletInstructions: 'Envoyez au numéro de portefeuille : 0XXX XXX XXX via BaridiMob ou CCP',
   faq: 'Questions fréquentes',
@@ -1184,6 +1184,60 @@ const fr: Record<TranslationKeys, string> = {
   noPreferredTime: 'Aucune heure préférée définie',
   selectTime: "Sélectionner l'heure",
   enableFixedTime: "Activer l'heure fixe",
+  welcomeToBlasti: 'Bienvenue sur BLASTI !',
+
+  // ─── Hardcoded English Fixes ─────
+  previousDays: 'Jours précédents',
+  unknownAgency: 'Agence inconnue',
+  systemLabel: 'Système',
+  notAvailable: 'N/A',
+  defaultUser: 'Utilisateur',
+  defaultAgency: 'Agence',
+  defaultService: 'Service',
+
+  // ─── Onboarding Wizard ──────────
+  welcomeTo: 'Bienvenue sur BLASTI',
+  setupAccount: 'Configurons votre compte',
+  chooseLanguage: 'Choisissez votre langue préférée',
+  setupNotifications: 'Préférences de notification',
+  smsNotifications: 'Notifications par SMS',
+  pushNotifications: 'Notifications push',
+  reminderTime: 'Me rappeler avant mon tour',
+  skip: 'Passer',
+  finish: 'Terminer',
+  quickTips: 'Conseils rapides',
+  onboardingStep: 'Étape {current} sur {total}',
+  agencyTip1: 'Allez au Tableau de bord pour gérer votre file',
+  agencyTip2: 'Utilisez "Appeler le suivant" pour servir les clients',
+  agencyTip3: 'Consultez les Analyses pour des informations',
+  preferencesSaved: 'Préférences enregistrées avec succès',
+  onboardingComplete: 'Configuration terminée !',
+  onboardingSkipped: 'Vous pouvez terminer la configuration plus tard dans les Paramètres',
+  helloUser: 'Bonjour, {name} !',
+  setupAccountDesc: 'Configurons votre compte rapidement',
+  adminOnboardingNote: 'En tant qu\'administrateur, vous pouvez gérer toutes les agences, utilisateurs et paramètres de la plateforme depuis le tableau de bord.',
+  agencyTip4: 'Ajoutez des employés depuis la Gestion du personnel dans les Paramètres',
+  stayNotified: 'Restez informé',
+  customerTip1: 'Activez les notifications SMS pour ne jamais manquer votre tour',
+  customerTip2: 'Définissez votre langue préférée pour une meilleure expérience',
+  customerTip3: 'Ajoutez des agences aux favoris pour un accès rapide',
+
+  // ─── Review System ──────────
+  writeReview: 'Écrire un avis',
+  editReview: 'Modifier l\'avis',
+  deleteReview: 'Supprimer l\'avis',
+  reviewSubmitted: 'Avis soumis',
+  reviewUpdated: 'Avis mis à jour',
+  reviewDeleted: 'Avis supprimé',
+  ratingRequired: 'Veuillez sélectionner une note',
+  reviewCommentPlaceholder: 'Partagez votre expérience...',
+  outOf5: 'sur 5',
+  totalReviewsCount: 'avis',
+  alreadyReviewed: 'Vous avez déjà évalué cette agence',
+  submitReview: 'Soumettre l\'avis',
+  updateReview: 'Mettre à jour l\'avis',
+  confirmDeleteReview: 'Êtes-vous sûr de vouloir supprimer votre avis ?',
+  reviewReply: 'Réponse de l\'agence',
 };
 
 export default fr;

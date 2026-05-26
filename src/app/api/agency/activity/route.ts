@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { cache, CACHE_TTL } from '@/lib/cache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,55 +13,72 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Cache activity for 5 seconds
-    const cacheKey = `agency:activity:${agencyId}`;
-    const result = await cache.getOrSet(cacheKey, async () => {
-      const reservations = await db.reservation.findMany({
-        where: { agencyId },
-        select: {
-          id: true,
-          status: true,
-          displayNumber: true,
-          queueNumber: true,
-          joinedAt: true,
-          walkInCustomerName: true,
-          user: { select: { id: true, fullName: true, username: true } },
-          service: { select: { name: true, nameAr: true, nameFr: true } },
+    // Fetch recent reservations with user info, limited to last 10
+    const reservations = await db.reservation.findMany({
+      where: { agencyId },
+      include: {
+        user: {
+          select: { id: true, fullName: true, username: true },
         },
-        orderBy: { joinedAt: 'desc' },
-        take: 10,
-      });
+        service: {
+          select: { name: true, nameAr: true, nameFr: true },
+        },
+      },
+      orderBy: { joinedAt: 'desc' },
+      take: 10,
+    });
 
-      const events = reservations.map((r) => {
-        let eventType: string;
-        let eventKey: string;
+    // Transform into activity events
+    const events = reservations.map((r) => {
+      let eventType: string;
+      let eventKey: string;
 
-        switch (r.status) {
-          case 'WAITING': eventType = 'joined'; eventKey = 'customerJoinedQueue'; break;
-          case 'CALLED': eventType = 'called'; eventKey = 'customerWasCalled'; break;
-          case 'COMPLETED': eventType = 'completed'; eventKey = 'customerCompletedService'; break;
-          case 'CANCELLED': eventType = 'cancelled'; eventKey = 'customerCancelledRes'; break;
-          case 'NO_SHOW': eventType = 'cancelled'; eventKey = 'customerCancelledRes'; break;
-          default: eventType = 'joined'; eventKey = 'customerJoinedQueue';
-        }
+      switch (r.status) {
+        case 'WAITING':
+          eventType = 'joined';
+          eventKey = 'customerJoinedQueue';
+          break;
+        case 'CALLED':
+          eventType = 'called';
+          eventKey = 'customerWasCalled';
+          break;
+        case 'COMPLETED':
+          eventType = 'completed';
+          eventKey = 'customerCompletedService';
+          break;
+        case 'CANCELLED':
+          eventType = 'cancelled';
+          eventKey = 'customerCancelledRes';
+          break;
+        case 'NO_SHOW':
+          eventType = 'cancelled';
+          eventKey = 'customerCancelledRes';
+          break;
+        default:
+          eventType = 'joined';
+          eventKey = 'customerJoinedQueue';
+      }
 
-        return {
-          id: r.id,
-          eventType,
-          eventKey,
-          customerName: r.walkInCustomerName || r.user?.fullName || r.user?.username || 'Unknown',
-          queueNumber: r.displayNumber || r.queueNumber,
-          timestamp: r.joinedAt,
-          serviceName: r.service?.name,
-        };
-      });
+      return {
+        id: r.id,
+        eventType,
+        eventKey,
+        customerName: r.user?.fullName || r.user?.username || 'Unknown',
+        queueNumber: r.displayNumber || r.queueNumber,
+        timestamp: r.joinedAt,
+        serviceName: r.service?.name,
+      };
+    });
 
-      return { success: true, events };
-    }, CACHE_TTL.SHORT);
-
-    return NextResponse.json(result);
+    return NextResponse.json({
+      success: true,
+      events,
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    );
   }
 }
