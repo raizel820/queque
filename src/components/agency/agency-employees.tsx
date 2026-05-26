@@ -423,7 +423,7 @@ export function AgencyEmployees() {
                           : 'bg-gradient-to-br from-gray-400 to-gray-500'
                       }`}>
                         <span className="text-sm font-bold text-white">
-                          {(emp.fullName || '').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?'}
+                          {emp.fullName.split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?'}
                         </span>
                       </div>
 

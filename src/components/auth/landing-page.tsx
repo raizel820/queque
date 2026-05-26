@@ -74,7 +74,6 @@ function AnimatedCounter({ target, suffix = '' }: { target: number; suffix?: str
 
 /* ─── Phone Mockup SVG Illustration ──────────── */
 function PhoneMockup() {
-  const { t } = useLanguage();
   return (
     <motion.div
       className="hidden lg:flex items-center justify-center relative"
@@ -399,16 +398,16 @@ export function LandingPage() {
 
       {/* ─── Top Bar ──────────────────────────────── */}
       <header className="w-full px-4 py-3 flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="h-11 w-11 rounded-xl overflow-hidden shadow-lg shadow-teal-500/20"
+            className="h-9 w-9 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/25"
           >
             <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
           </motion.div>
-          <span className="font-extrabold text-xl tracking-tight" style={{ color: '#059669' }}>
+          <span className="font-bold text-lg" style={{ color: '#059669' }}>
             DALTI
           </span>
         </div>
@@ -1043,12 +1042,12 @@ export function LandingPage() {
           <div className="max-w-4xl mx-auto">
             {/* Footer top: Logo + social */}
             <div className="flex flex-col items-center gap-6 mb-8">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg overflow-hidden shadow-md">
                   <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
                 </div>
-                <span className="font-extrabold text-xl tracking-tight" style={{ color: '#059669' }}>
-                  {t('appName')}
+                <span className="font-bold text-lg" style={{ color: '#059669' }}>
+                  DALTI
                 </span>
               </div>
               <p className="text-sm text-muted-foreground text-center max-w-md">
@@ -1109,7 +1108,7 @@ export function LandingPage() {
                 {t('poweredBy')} Z.ai Technology
               </p>
               <p className="text-xs text-muted-foreground/60">
-                {t('appName')} © {new Date().getFullYear()} · {t('rightsReserved')}
+                DALTI © {new Date().getFullYear()} · {t('rightsReserved')}
               </p>
               <p className="text-[10px] text-muted-foreground/40 mt-1">{t('version')}</p>
             </div>

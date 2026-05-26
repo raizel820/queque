@@ -123,11 +123,11 @@ export function LoginForm() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="h-9 w-9 rounded-lg overflow-hidden"
+            className="h-8 w-8 rounded-lg overflow-hidden"
           >
             <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
           </motion.div>
-          <span className="font-extrabold tracking-tight" style={{ color: '#059669' }}>
+          <span className="font-bold" style={{ color: '#059669' }}>
             DALTI
           </span>
         </div>
@@ -164,7 +164,7 @@ export function LoginForm() {
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.1 }}
-                  className="mx-auto mb-3 h-16 w-16 rounded-2xl overflow-hidden shadow-lg shadow-teal-500/20"
+                  className="mx-auto mb-3 h-14 w-14 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/25"
                 >
                   <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
                 </motion.div>
@@ -380,10 +380,10 @@ export function LoginForm() {
             className="mt-6 flex flex-col items-center gap-2"
           >
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg overflow-hidden">
+              <div className="h-6 w-6 rounded-lg overflow-hidden shadow-sm">
                 <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
               </div>
-              <span className="text-xs font-bold tracking-tight" style={{ color: '#059669' }}>
+              <span className="text-xs font-semibold" style={{ color: '#059669' }}>
                 DALTI
               </span>
             </div>

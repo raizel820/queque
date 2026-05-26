@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getTodayStart, getTodayEnd } from '@/lib/date-utils';
+import { cache, CACHE_TTL } from '@/lib/cache';
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,140 +10,133 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'agencyId required' }, { status: 400 });
     }
 
-    const agency = await db.agency.findUnique({ where: { id: agencyId } });
-    if (!agency) {
+    // Cache per-agency stats for 10 seconds
+    const cacheKey = `agency:stats:${agencyId}`;
+    const result = await cache.getOrSet(cacheKey, async () => {
+      const agency = await db.agency.findUnique({ where: { id: agencyId } });
+      if (!agency) {
+        return { error: 'not_found' };
+      }
+
+      const todayStart = getTodayStart();
+      const todayEnd = getTodayEnd();
+
+      const [
+        todayReservations,
+        waitingCount,
+        servedToday,
+        noShowCount,
+        cancelledCount,
+        queueSettings,
+        ratingAgg,
+        totalAllTime,
+        completedAllTime,
+        noShowAllTime,
+      ] = await Promise.all([
+        db.reservation.count({
+          where: { agencyId, joinedAt: { gte: todayStart, lte: todayEnd } },
+        }),
+        db.reservation.count({
+          where: { agencyId, status: { in: ['WAITING', 'CALLED'] } },
+        }),
+        db.reservation.count({
+          where: { agencyId, status: { in: ['COMPLETED'] }, completedAt: { gte: todayStart, lte: todayEnd } },
+        }),
+        db.reservation.count({
+          where: { agencyId, status: { in: ['NO_SHOW'] }, cancelledAt: { gte: todayStart, lte: todayEnd } },
+        }),
+        db.reservation.count({
+          where: { agencyId, status: { in: ['CANCELLED'] }, cancelledAt: { gte: todayStart, lte: todayEnd } },
+        }),
+        db.queueSettings.findFirst({ where: { agencyId } }),
+        db.reservation.aggregate({
+          where: { agencyId, rating: { not: null } },
+          _avg: { rating: true },
+          _count: { rating: true },
+        }),
+        db.reservation.count({ where: { agencyId } }),
+        db.reservation.count({ where: { agencyId, status: 'COMPLETED' } }),
+        db.reservation.count({ where: { agencyId, status: 'NO_SHOW' } }),
+      ]);
+
+      // Peak hour - use raw SQL for efficiency
+      const peakHourResult = await db.$queryRaw<Array<{ hour: number; cnt: number }>>`
+        SELECT CAST(strftime('%H', joinedAt) AS INTEGER) as hour, COUNT(*) as cnt
+        FROM Reservation
+        WHERE agencyId = ${agencyId}
+        AND joinedAt >= ${todayStart}
+        AND joinedAt <= ${todayEnd}
+        GROUP BY hour
+        ORDER BY cnt DESC
+        LIMIT 1
+      `;
+      const peakHour = peakHourResult.length > 0
+        ? `${String(Number(peakHourResult[0].hour)).padStart(2, '0')}:00`
+        : '—';
+
+      // Rating distribution - use raw SQL
+      const ratingDistResult = await db.$queryRaw<Array<{ rating: number; cnt: bigint }>>`
+        SELECT rating, COUNT(*) as cnt FROM Reservation
+        WHERE agencyId = ${agencyId} AND rating IS NOT NULL
+        GROUP BY rating ORDER BY rating
+      `;
+      const ratingDist = [0, 0, 0, 0, 0];
+      ratingDistResult.forEach(r => {
+        const ratingNum = Number(r.rating);
+        if (ratingNum >= 1 && ratingNum <= 5) ratingDist[ratingNum - 1] = Number(r.cnt);
+      });
+
+      // Hourly wait time - simplified using raw SQL
+      const hourlyWaitResult = await db.$queryRaw<Array<{ hour: bigint; avgWait: number }>>`
+        SELECT CAST(strftime('%H', joinedAt) AS INTEGER) as hour,
+               ROUND(AVG((julianday(completedAt) - julianday(joinedAt)) * 1440)) as avgWait
+        FROM Reservation
+        WHERE agencyId = ${agencyId}
+        AND status = 'COMPLETED'
+        AND completedAt >= ${todayStart}
+        AND completedAt <= ${todayEnd}
+        GROUP BY hour
+      `;
+      const avgHourlyWait = new Array(24).fill(0);
+      hourlyWaitResult.forEach(r => {
+        const h = Number(r.hour);
+        if (h >= 0 && h < 24) avgHourlyWait[h] = Number(r.avgWait);
+      });
+
+      const currentQueueNumber = queueSettings
+        ? `${queueSettings.currentServingNumber}`
+        : '—';
+
+      const avgRating = ratingAgg._avg.rating ? Math.round(ratingAgg._avg.rating * 10) / 10 : 0;
+      const totalRatings = ratingAgg._count.rating;
+      const completionRate = totalAllTime > 0 ? Math.round((completedAllTime / totalAllTime) * 100) : 0;
+      const noShowRate = totalAllTime > 0 ? Math.round((noShowAllTime / totalAllTime) * 100) : 0;
+
+      return {
+        todayReservations,
+        currentlyWaiting: waitingCount,
+        servedToday,
+        noShowCount,
+        cancelledCount,
+        avgWaitTime: agency.averageServiceTime,
+        currentQueueNumber,
+        isPaused: queueSettings?.isPaused ?? false,
+        peakHour,
+        avgRating,
+        totalRatings,
+        completionRate,
+        noShowRate,
+        hourlyWaitTime: avgHourlyWait,
+        ratingDistribution: ratingDist,
+        subscriptionStatus: agency.subscriptionStatus,
+      };
+    }, CACHE_TTL.SHORT);
+
+    if (result.error === 'not_found') {
       return NextResponse.json({ error: 'Agency not found' }, { status: 404 });
     }
 
-    const todayStart = getTodayStart();
-    const todayEnd = getTodayEnd();
-
-    const [
-      todayReservations,
-      waitingCount,
-      servedToday,
-      noShowCount,
-      cancelledCount,
-      queueSettings,
-      ratingAgg,
-      totalRated,
-      totalAllTime,
-      completedAllTime,
-      noShowAllTime,
-    ] = await Promise.all([
-      db.reservation.count({
-        where: { agencyId, joinedAt: { gte: todayStart, lte: todayEnd } },
-      }),
-      db.reservation.count({
-        where: { agencyId, status: { in: ['WAITING', 'CALLED'] } },
-      }),
-      db.reservation.count({
-        where: { agencyId, status: { in: ['COMPLETED'] }, completedAt: { gte: todayStart, lte: todayEnd } },
-      }),
-      db.reservation.count({
-        where: { agencyId, status: { in: ['NO_SHOW'] }, cancelledAt: { gte: todayStart, lte: todayEnd } },
-      }),
-      db.reservation.count({
-        where: { agencyId, status: { in: ['CANCELLED'] }, cancelledAt: { gte: todayStart, lte: todayEnd } },
-      }),
-      db.queueSettings.findFirst({ where: { agencyId } }),
-      db.reservation.aggregate({
-        where: { agencyId, rating: { not: null } },
-        _avg: { rating: true },
-        _count: { rating: true },
-      }),
-      // total rated today
-      db.reservation.count({
-        where: { agencyId, rating: { not: null }, completedAt: { gte: todayStart, lte: todayEnd } },
-      }),
-      // all-time totals
-      db.reservation.count({ where: { agencyId } }),
-      db.reservation.count({ where: { agencyId, status: 'COMPLETED' } }),
-      db.reservation.count({ where: { agencyId, status: 'NO_SHOW' } }),
-    ]);
-
-    // Calculate peak hour today
-    const todayReservationsList = await db.reservation.findMany({
-      where: { agencyId, joinedAt: { gte: todayStart, lte: todayEnd } },
-      select: { joinedAt: true },
-    });
-
-    let peakHour = '—';
-    if (todayReservationsList.length > 0) {
-      const hourCounts: Record<number, number> = {};
-      todayReservationsList.forEach((r) => {
-        const h = r.joinedAt.getHours();
-        hourCounts[h] = (hourCounts[h] || 0) + 1;
-      });
-      let maxCount = 0;
-      let peakH = 0;
-      for (const [hour, count] of Object.entries(hourCounts)) {
-        if (count > maxCount) {
-          maxCount = count;
-          peakH = parseInt(hour);
-        }
-      }
-      peakHour = `${String(peakH).padStart(2, '0')}:00`;
-    }
-
-    const currentQueueNumber = queueSettings
-      ? `${queueSettings.currentServingNumber}`
-      : '—';
-
-    // Performance metrics
-    const avgRating = ratingAgg._avg.rating ? Math.round(ratingAgg._avg.rating * 10) / 10 : 0;
-    const totalRatings = ratingAgg._count.rating;
-    const completionRate = totalAllTime > 0 ? Math.round((completedAllTime / totalAllTime) * 100) : 0;
-    const noShowRate = totalAllTime > 0 ? Math.round((noShowAllTime / totalAllTime) * 100) : 0;
-
-    // Hourly wait time data (today)
-    const todayCompleted = await db.reservation.findMany({
-      where: { agencyId, status: 'COMPLETED', completedAt: { gte: todayStart, lte: todayEnd } },
-      select: { joinedAt: true, completedAt: true, calledAt: true },
-    });
-    const hourlyWaitTime: number[] = new Array(24).fill(0);
-    const hourlyCount: number[] = new Array(24).fill(0);
-    todayCompleted.forEach((r) => {
-      if (r.calledAt && r.completedAt) {
-        const waitMinutes = Math.round((r.completedAt.getTime() - r.joinedAt.getTime()) / 60000);
-        const h = r.joinedAt.getHours();
-        hourlyWaitTime[h] += waitMinutes;
-        hourlyCount[h]++;
-      }
-    });
-    const avgHourlyWait = hourlyWaitTime.map((total, i) => hourlyCount[i] > 0 ? Math.round(total / hourlyCount[i]) : 0);
-
-    // Rating distribution
-    const ratingDist = [0, 0, 0, 0, 0]; // 1-5 stars
-    const allRated = await db.reservation.findMany({
-      where: { agencyId, rating: { not: null } },
-      select: { rating: true },
-    });
-    allRated.forEach((r) => {
-      if (r.rating && r.rating >= 1 && r.rating <= 5) ratingDist[r.rating - 1]++;
-    });
-
-    return NextResponse.json({
-      todayReservations,
-      currentlyWaiting: waitingCount,
-      servedToday,
-      noShowCount,
-      cancelledCount,
-      avgWaitTime: agency.averageServiceTime,
-      currentQueueNumber,
-      isPaused: queueSettings?.isPaused ?? false,
-      peakHour,
-      // Performance metrics
-      avgRating,
-      totalRatings,
-      completionRate,
-      noShowRate,
-      // Chart data
-      hourlyWaitTime: avgHourlyWait,
-      ratingDistribution: ratingDist,
-      // Subscription info
-      subscriptionStatus: agency.subscriptionStatus,
-    });
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Agency stats error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

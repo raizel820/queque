@@ -1,7 +1,7 @@
 const ar = {
   // ─── App ─────────────────────────────────
   appName: "دالتي",
-  appTagline: "إدارة طوابير ذكية للمؤسسات في الجزائر",
+  appTagline: "حجزك الذكي",
 
   // ─── Common ──────────────────────────────
   loading: "جاري التحميل...",
@@ -161,12 +161,7 @@ const ar = {
   callNext: "استدعاء التالي",
   markCompleted: "تمت الخدمة",
   markNoShow: "لم يحضر",
-  completeService: "إتمام",
   cancelRes: "إلغاء الحجز",
-  calledAt: "تم الاستدعاء في",
-  noCustomerBeingServed: "لا يوجد عميل يتم خدمته حالياً",
-  nextUp: "التالي",
-  waitingQueue: "قائمة الانتظار",
   markCancelled: "تحديد كملغي",
   pauseQueue: "إيقاف مؤقت",
   resumeQueue: "استئناف",
@@ -959,7 +954,7 @@ const ar = {
   electronicPayment: 'الدفع الإلكتروني (محفظة)',
   paymentInstructions: 'تعليمات الدفع',
   paymentInstructionsDesc: 'اتبع هذه الخطوات لإتمام الدفع',
-  ccpInstructions: 'أرسل الدفع إلى حساب CCP: 0000 0000 0000 0000 — المفتاح: 00 — المستفيد: DALTI',
+  ccpInstructions: 'أرسل الدفع إلى حساب CCP: 0000 0000 0000 0000 — المفتاح: 00 — المستفيد: دالتي',
   bankInstructions: 'حوّل إلى الحساب: 0000 0000 0000 0000 — RIB: 00 000 00000 000 0000 000 — البنك: BNA',
   eWalletInstructions: 'أرسل إلى رقم المحفظة: 0XXX XXX XXX عبر BaridiMob أو CCP',
   faq: 'الأسئلة الشائعة',

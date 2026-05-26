@@ -3,7 +3,7 @@ import type { TranslationKeys } from './ar';
 const fr: Record<TranslationKeys, string> = {
   // ─── App ─────────────────────────────────
   appName: "DALTI",
-  appTagline: "Gestion intelligente des files d'attente pour les établissements en Algérie",
+  appTagline: "Votre file d'attente intelligente",
 
   // ─── Common ──────────────────────────────
   loading: "Chargement...",
@@ -166,12 +166,7 @@ const fr: Record<TranslationKeys, string> = {
   callNext: "Appeler le suivant",
   markCompleted: "Terminer",
   markNoShow: "Absent",
-  completeService: "Terminer",
   cancelRes: "Annuler",
-  calledAt: "Appelé à",
-  noCustomerBeingServed: "Aucun client en cours de service",
-  nextUp: "Suivant",
-  waitingQueue: "File d'attente",
   markCancelled: "Marquer comme annulé",
   pauseQueue: "Pause",
   resumeQueue: "Reprendre",

@@ -290,11 +290,11 @@ export function RegisterForm() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="h-9 w-9 rounded-lg overflow-hidden"
+            className="h-8 w-8 rounded-lg overflow-hidden"
           >
             <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
           </motion.div>
-          <span className="font-extrabold tracking-tight" style={{ color: '#059669' }}>
+          <span className="font-bold" style={{ color: '#059669' }}>
             DALTI
           </span>
         </div>
@@ -780,7 +780,7 @@ export function RegisterForm() {
                       className="text-center"
                     >
                       <p className="text-lg font-bold text-foreground">{t('registerSuccess')}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Welcome to {t('appName')}!</p>
+                      <p className="text-sm text-muted-foreground mt-1">Welcome to DALTI!</p>
                     </motion.div>
                   </motion.div>
                 </motion.div>
@@ -796,10 +796,10 @@ export function RegisterForm() {
             className="mt-6 flex flex-col items-center gap-2"
           >
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg overflow-hidden">
+              <div className="h-6 w-6 rounded-lg overflow-hidden shadow-sm">
                 <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
               </div>
-              <span className="text-xs font-bold tracking-tight" style={{ color: '#059669' }}>
+              <span className="text-xs font-semibold" style={{ color: '#059669' }}>
                 DALTI
               </span>
             </div>

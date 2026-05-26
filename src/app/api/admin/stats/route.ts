@@ -1,91 +1,67 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { cache, CACHE_TTL } from '@/lib/cache'
 
 export async function GET() {
   try {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const result = await cache.getOrSet(
+      'admin:stats',
+      async () => {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
 
-    // Run all queries in parallel for performance
-    const [
-      totalAgencies,
-      activeQueues,
-      todayReservations,
-      totalRevenue,
-      pendingTransactions,
-      totalUsers,
-      totalReservations,
-    ] = await Promise.all([
-      // Total agencies
-      db.agency.count({
-        where: { isActive: true },
-      }),
+        const [
+          totalAgencies,
+          activeQueues,
+          todayReservations,
+          totalRevenue,
+          pendingTransactions,
+          totalUsers,
+          totalReservations,
+        ] = await Promise.all([
+          db.agency.count({ where: { isActive: true } }),
+          db.queueSettings.count({ where: { isPaused: false } }),
+          db.reservation.count({ where: { joinedAt: { gte: today } } }),
+          db.transaction.aggregate({ where: { status: 'APPROVED' }, _sum: { amount: true } }),
+          db.transaction.count({ where: { status: 'PENDING' } }),
+          db.user.count(),
+          db.reservation.count(),
+        ])
 
-      // Active queues (agencies with isQueueOpen and not paused)
-      db.queueSettings.count({
-        where: { isPaused: false },
-      }),
+        const recentReservations = await db.reservation.findMany({
+          where: { joinedAt: { gte: today } },
+          orderBy: { joinedAt: 'desc' },
+          take: 5,
+          select: {
+            id: true,
+            displayNumber: true,
+            status: true,
+            joinedAt: true,
+            agency: { select: { name: true } },
+            service: { select: { name: true } },
+          },
+        })
 
-      // Today's reservations
-      db.reservation.count({
-        where: {
-          joinedAt: { gte: today },
-        },
-      }),
-
-      // Total revenue (approved transactions)
-      db.transaction.aggregate({
-        where: { status: 'APPROVED' },
-        _sum: { amount: true },
-      }),
-
-      // Pending transactions count
-      db.transaction.count({
-        where: { status: 'PENDING' },
-      }),
-
-      // Total users
-      db.user.count(),
-
-      // Total reservations
-      db.reservation.count(),
-    ])
-
-    // Get recent reservations for today
-    const recentReservations = await db.reservation.findMany({
-      where: {
-        joinedAt: { gte: today },
+        return {
+          success: true,
+          stats: {
+            totalAgencies,
+            activeQueues,
+            todayReservations,
+            totalRevenue: totalRevenue._sum.amount || 0,
+            pendingTransactions,
+            totalUsers,
+            totalReservations,
+            recentReservations,
+          },
+        }
       },
-      orderBy: { joinedAt: 'desc' },
-      take: 5,
-      include: {
-        agency: {
-          select: { name: true },
-        },
-        service: {
-          select: { name: true },
-        },
-      },
-    })
+      CACHE_TTL.MEDIUM // 30 seconds
+    )
 
-    return NextResponse.json({
-      success: true,
-      stats: {
-        totalAgencies,
-        activeQueues,
-        todayReservations,
-        totalRevenue: totalRevenue._sum.amount || 0,
-        pendingTransactions,
-        totalUsers,
-        totalReservations,
-        recentReservations,
-      },
-    })
+    return NextResponse.json(result)
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }

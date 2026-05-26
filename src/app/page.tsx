@@ -382,10 +382,10 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg overflow-hidden">
-            <img src="/dalti-icon.svg" alt={t('appName')} className="h-full w-full" />
+          <div className="h-8 w-8 rounded-lg overflow-hidden">
+            <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
           </div>
-          <span className="font-extrabold text-lg tracking-tight" style={{ color: '#059669' }}>{t('appName')}</span>
+          <span className="font-bold text-gradient">DALTI</span>
         </div>
         <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -578,10 +578,10 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 h-16 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg overflow-hidden">
-            <img src="/dalti-icon.svg" alt={t('appName')} className="h-full w-full" />
+          <div className="h-8 w-8 rounded-lg overflow-hidden">
+            <img src="/dalti-icon.svg" alt="DALTI" className="h-full w-full" />
           </div>
-          <span className="font-extrabold text-lg tracking-tight" style={{ color: '#059669' }}>{t('appName')} Admin</span>
+          <span className="font-bold text-gradient">DALTI Admin</span>
         </div>
         <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -737,28 +737,28 @@ export default function Home() {
   // Dynamic document title based on current view
   useEffect(() => {
     const titles: Record<string, string> = {
-      'landing': t('appName') + ' - Smart Queue Management',
-      'login': t('login') + ' - ' + t('appName'),
-      'register': t('register') + ' - ' + t('appName'),
-      'customer-home': t('home') + ' - ' + t('appName'),
-      'customer-queue': t('myQueue') + ' - ' + t('appName'),
-      'customer-history': t('history') + ' - ' + t('appName'),
-      'customer-profile': t('profile') + ' - ' + t('appName'),
-      'customer-notifications': t('notifications') + ' - ' + t('appName'),
-      'customer-favorites': t('favorites') + ' - ' + t('appName'),
-      'agency-dashboard': t('dashboard') + ' - ' + t('appName'),
-      'agency-settings': t('settings') + ' - ' + t('appName'),
-      'agency-profile': t('profile') + ' - ' + t('appName'),
-      'agency-subscription': t('subscription') + ' - ' + t('appName'),
-      'admin-dashboard': t('dashboard') + ' - ' + t('appName'),
-      'admin-transactions': t('transactions') + ' - ' + t('appName'),
-      'admin-agencies': t('agencies') + ' - ' + t('appName'),
-      'admin-audit': t('auditLogs') + ' - ' + t('appName'),
-      'admin-users': t('userManagement') + ' - ' + t('appName'),
-      'admin-analytics': t('analytics') + ' - ' + t('appName'),
-    'admin-settings': t('platformSettings') + ' - ' + t('appName'),
+      'landing': 'DALTI - إدارة الطوابير الذكية',
+      'login': t('login') + ' - DALTI',
+      'register': t('register') + ' - DALTI',
+      'customer-home': t('home') + ' - DALTI',
+      'customer-queue': t('myQueue') + ' - DALTI',
+      'customer-history': t('history') + ' - DALTI',
+      'customer-profile': t('profile') + ' - DALTI',
+      'customer-notifications': t('notifications') + ' - DALTI',
+      'customer-favorites': t('favorites') + ' - DALTI',
+      'agency-dashboard': t('dashboard') + ' - DALTI',
+      'agency-settings': t('settings') + ' - DALTI',
+      'agency-profile': t('profile') + ' - DALTI',
+      'agency-subscription': t('subscription') + ' - DALTI',
+      'admin-dashboard': t('dashboard') + ' - DALTI',
+      'admin-transactions': t('transactions') + ' - DALTI',
+      'admin-agencies': t('agencies') + ' - DALTI',
+      'admin-audit': t('auditLogs') + ' - DALTI',
+      'admin-users': t('userManagement') + ' - DALTI',
+      'admin-analytics': t('analytics') + ' - DALTI',
+    'admin-settings': t('platformSettings') + ' - DALTI',
     };
-    document.title = titles[currentView] || t('appName');
+    document.title = titles[currentView] || 'DALTI';
   }, [currentView, t]);
 
   // Scroll to top on view change
