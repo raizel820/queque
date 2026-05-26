@@ -1238,6 +1238,31 @@ const ar = {
   updateReview: 'تحديث التقييم',
   confirmDeleteReview: 'هل أنت متأكد من حذف تقييمك؟',
   reviewReply: 'رد المؤسسة',
+
+  // ─── Category 2: Missing keys with English fallbacks ─────
+  agencyQrCode: 'رمز QR المؤسسة',
+  analyticsDesc: 'تحليلات المنصة وإحصائيات الاستخدام',
+  called: 'تم الاستدعاء',
+  capacityDesc: 'إعدادات سعة الطابور والحد الأقصى',
+  closingTime: 'وقت الإغلاق',
+  current: 'الحالي',
+  generalSettingsDesc: 'الإعدادات العامة للمؤسسة',
+  manageAgencies: 'إدارة المؤسسات',
+  noCustomersWaiting: 'لا يوجد عملاء في الانتظار',
+  of: 'من',
+  page: 'صفحة',
+  past: 'السابق',
+  previous: 'السابق',
+  pullToRefresh: 'اسحب للتحديث',
+  queueActivity: 'نشاط الطابور',
+  rateExperienceDesc: 'قيّم تجربتك مع هذه المؤسسة',
+  recentlyAdded: 'أُضيفت مؤخراً',
+  servicesDesc: 'إدارة الخدمات المتاحة',
+  showing: 'عرض',
+  sortByName: 'ترتيب حسب الاسم',
+  sortByRating: 'ترتيب حسب التقييم',
+  upcoming: 'التالي',
+  today: 'اليوم',
 };
 
 export default ar;

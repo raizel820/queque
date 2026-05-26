@@ -237,6 +237,7 @@ function generateDailyReservationData(dailyReservations: number): { day: string;
  * DailyReservationsChart - Pure SVG bar chart showing last 7 days of reservations
  */
 function DailyReservationsChart({ dailyReservations }: { dailyReservations: number }) {
+  const { t } = useLanguage();
   const chartData = useMemo(() => generateDailyReservationData(dailyReservations || 5), [dailyReservations]);
   const [hoveredBar, setHoveredBar] = useState<number | null>(null);
 
@@ -695,8 +696,8 @@ export function AdminDashboard() {
           <div className="relative flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl overflow-hidden bg-white/20 backdrop-blur-sm">
-                  <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
+                <div className="h-12 w-12 rounded-xl overflow-hidden">
+                  <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
                 </div>
                 {t('adminDashboard')}
               </h1>

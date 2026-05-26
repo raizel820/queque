@@ -116,8 +116,8 @@ export function CtaSection() {
             {/* Footer top: Logo + social */}
             <div className="flex flex-col items-center gap-6 mb-8">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl overflow-hidden">
-                  <img src="/blasti-icon.svg" alt="BLASTI" className="h-full w-full" />
+                <div className="h-12 w-12 rounded-xl overflow-hidden">
+                  <img src="/blasti-icon.png" alt="BLASTI" className="h-full w-full object-contain" />
                 </div>
                 <span className="font-extrabold text-xl tracking-tight" style={{ color: '#059669' }}>
                   {t('appName')}

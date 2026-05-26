@@ -106,8 +106,8 @@ function PhoneMockup() {
             <div className="px-3 pt-1">
               {/* Header */}
               <div className="flex items-center gap-1.5 mb-3">
-                <div className="h-10 w-10 rounded-xl overflow-hidden">
-                  <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
+                <div className="h-12 w-12 rounded-xl overflow-hidden">
+                  <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
                 </div>
                 <span className="text-[8px] font-bold text-emerald-700 dark:text-emerald-400">BLASTI</span>
               </div>
@@ -403,9 +403,9 @@ export function LandingPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="h-16 w-16 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/25"
+            className="h-20 w-20 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/25"
           >
-            <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
+            <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
           </motion.div>
           <span className="font-bold text-lg bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
             BLASTI
@@ -1043,8 +1043,8 @@ export function LandingPage() {
             {/* Footer top: Logo + social */}
             <div className="flex flex-col items-center gap-6 mb-8">
               <div className="flex items-center gap-2">
-                <div className="h-12 w-12 rounded-xl overflow-hidden shadow-md">
-                  <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
+                <div className="h-16 w-16 rounded-xl overflow-hidden shadow-md">
+                  <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
                 </div>
                 <span className="font-bold text-lg bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
                   BLASTI

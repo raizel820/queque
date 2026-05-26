@@ -1237,6 +1237,30 @@ const en: Record<TranslationKeys, string> = {
   defaultUser: 'User',
   defaultAgency: 'Agency',
   defaultService: 'Service',
+
+  // ─── Category 2: Missing keys with English fallbacks ─────
+  agencyQrCode: 'Agency QR Code',
+  analyticsDesc: 'Platform analytics and usage statistics',
+  called: 'Called',
+  capacityDesc: 'Queue capacity settings and limits',
+  closingTime: 'Closing Time',
+  current: 'Current',
+  generalSettingsDesc: 'General agency settings',
+  manageAgencies: 'Manage Agencies',
+  noCustomersWaiting: 'No customers waiting',
+  of: 'of',
+  page: 'page',
+  past: 'Past',
+  previous: 'Previous',
+  pullToRefresh: 'Pull to refresh',
+  queueActivity: 'Queue Activity',
+  rateExperienceDesc: 'Rate your experience with this agency',
+  recentlyAdded: 'Recently Added',
+  servicesDesc: 'Manage available services',
+  showing: 'Showing',
+  sortByName: 'Sort by Name',
+  sortByRating: 'Sort by Rating',
+  upcoming: 'Upcoming',
 };
 
 export default en;

@@ -95,8 +95,8 @@ function PhoneMockup() {
             <div className="px-3 pt-1">
               {/* Header */}
               <div className="flex items-center gap-1.5 mb-3">
-                <div className="h-5 w-5 rounded-md overflow-hidden">
-                  <img src="/blasti-icon.svg" alt="BLASTI" className="h-full w-full" />
+                <div className="h-8 w-8 rounded-md overflow-hidden">
+                  <img src="/blasti-icon.png" alt="BLASTI" className="h-full w-full object-contain" />
                 </div>
                 <span className="text-[8px] font-bold" style={{ color: '#059669' }}>BLASTI</span>
               </div>

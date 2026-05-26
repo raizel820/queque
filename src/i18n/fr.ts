@@ -1238,6 +1238,31 @@ const fr: Record<TranslationKeys, string> = {
   updateReview: 'Mettre à jour l\'avis',
   confirmDeleteReview: 'Êtes-vous sûr de vouloir supprimer votre avis ?',
   reviewReply: 'Réponse de l\'agence',
+
+  // ─── Category 2: Missing keys with English fallbacks ─────
+  agencyQrCode: 'QR Code de l\'agence',
+  analyticsDesc: 'Analyses de la plateforme et statistiques d\'utilisation',
+  called: 'Appelé',
+  capacityDesc: 'Paramètres de capacité de la file et limite maximale',
+  closingTime: 'Heure de fermeture',
+  current: 'Actuel',
+  generalSettingsDesc: 'Paramètres généraux de l\'agence',
+  manageAgencies: 'Gérer les agences',
+  noCustomersWaiting: 'Aucun client en attente',
+  of: 'de',
+  page: 'page',
+  past: 'Passé',
+  previous: 'Précédent',
+  pullToRefresh: 'Tirer pour actualiser',
+  queueActivity: 'Activité de la file',
+  rateExperienceDesc: 'Évaluez votre expérience avec cette agence',
+  recentlyAdded: 'Ajouté récemment',
+  servicesDesc: 'Gestion des services disponibles',
+  showing: 'Affichage',
+  sortByName: 'Trier par nom',
+  sortByRating: 'Trier par note',
+  upcoming: 'À venir',
+  today: 'Aujourd\'hui',
 };
 
 export default fr;

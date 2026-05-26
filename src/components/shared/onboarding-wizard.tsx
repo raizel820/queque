@@ -116,8 +116,8 @@ export function OnboardingWizard({ open, user, onComplete, onSkip }: OnboardingP
               {step === 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="h-12 w-12 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/20">
-                      <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
+                    <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/20">
+                      <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
                     </div>
                     <div>
                       <h2 className="text-lg font-bold text-foreground">{t('welcomeTo')}</h2>

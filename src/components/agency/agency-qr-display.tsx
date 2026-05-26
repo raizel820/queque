@@ -78,8 +78,8 @@ export function AgencyQrDisplay() {
           <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
         </Button>
         <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-xl overflow-hidden">
-            <img src="/blasti-icon.svg" alt="BLASTI" className="h-full w-full object-contain" />
+          <div className="h-12 w-12 rounded-xl overflow-hidden">
+            <img src="/blasti-icon.png" alt="BLASTI" className="h-full w-full object-contain" />
           </div>
           <span className="font-bold" style={{ color: '#059669' }}>BLASTI</span>
         </div>
@@ -178,8 +178,8 @@ export function AgencyQrDisplay() {
             {/* Footer */}
             <div className="px-8 pb-6 text-center">
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                <div className="h-8 w-8 rounded-lg overflow-hidden">
-                  <img src="/blasti-icon.svg" alt="BLASTI" className="h-full w-full object-contain" />
+                <div className="h-10 w-10 rounded-lg overflow-hidden">
+                  <img src="/blasti-icon.png" alt="BLASTI" className="h-full w-full object-contain" />
                 </div>
                 <span className="text-xs font-semibold" style={{ color: '#059669' }}>BLASTI</span>
                 <span className="text-[10px] text-muted-foreground/50">· {t('rightsReserved')}</span>

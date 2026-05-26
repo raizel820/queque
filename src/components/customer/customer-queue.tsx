@@ -208,7 +208,7 @@ export function CustomerQueue() {
                 if (Notification.permission === 'granted') {
                   new Notification(t('yourTurn') || 'Your Turn!', {
                     body: t('turnNotifBody') || 'Please proceed to the service counter.',
-                    icon: '/logo.svg',
+                    icon: '/logo.png',
                     tag: 'blasti-turn',
                     requireInteraction: true,
                   });
@@ -243,7 +243,7 @@ export function CustomerQueue() {
             if (Notification.permission === 'granted') {
               new Notification(t('yourTurn') || 'Your Turn!', {
                 body: t('turnNotifBody') || 'Please proceed to the service counter.',
-                icon: '/favicon.ico',
+                icon: '/logo.png',
                 tag: 'blasti-turn',
                 requireInteraction: true,
               });

@@ -382,8 +382,8 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-xl overflow-hidden">
-            <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
+          <div className="h-12 w-12 rounded-xl overflow-hidden">
+            <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
           </div>
           <span className="font-bold text-gradient">BLASTI</span>
         </div>
@@ -578,8 +578,8 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 h-16 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-xl overflow-hidden">
-            <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
+          <div className="h-12 w-12 rounded-xl overflow-hidden">
+            <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
           </div>
           <span className="font-bold text-gradient">BLASTI Admin</span>
         </div>

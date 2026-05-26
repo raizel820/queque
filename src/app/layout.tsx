@@ -17,7 +17,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BLASTI - بلاصتي - إدارة الطوابير الذكية",
   description: "بلاصتي - منصة إدارة الطوابير الذكية للمؤسسات في الجزائر. انضم للطوابير عن بعد وتتبع موقعك في الوقت الحقيقي.",
-  icons: { icon: "/logo.svg" },
+  icons: {
+    icon: [
+      { url: "/logo.png", type: "image/png" },
+      { url: "/favicon.png", sizes: "64x64", type: "image/png" },
+      { url: "/logo-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/logo-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({

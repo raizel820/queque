@@ -35,8 +35,8 @@ export function AdminHeader({ dailyActivity, t, exportLoading, onExport }: Admin
           <div className="relative flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <ShieldCheck className="h-5 w-5 text-white" />
+                <div className="h-12 w-12 rounded-xl overflow-hidden">
+                  <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
                 </div>
                 {t('adminDashboard')}
               </h1>

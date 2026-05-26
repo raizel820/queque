@@ -123,9 +123,9 @@ export function LoginForm() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="h-10 w-10 rounded-xl overflow-hidden"
+            className="h-12 w-12 rounded-xl overflow-hidden"
           >
-            <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
+            <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
           </motion.div>
           <span className="font-bold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
             BLASTI
@@ -164,9 +164,9 @@ export function LoginForm() {
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.1 }}
-                  className="mx-auto mb-3 h-20 w-20 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/25"
+                  className="mx-auto mb-3 h-24 w-24 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/25"
                 >
-                  <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
+                  <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
                 </motion.div>
                 <CardTitle className="text-2xl font-bold text-foreground">
                   {t('login')}
@@ -380,8 +380,8 @@ export function LoginForm() {
             className="mt-6 flex flex-col items-center gap-2"
           >
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg overflow-hidden shadow-sm">
-                <img src="/logo.svg" alt="BLASTI" className="h-full w-full object-contain" />
+              <div className="h-10 w-10 rounded-lg overflow-hidden shadow-sm">
+                <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
               </div>
               <span className="text-xs font-semibold bg-gradient-to-r from-emerald-700 to-teal-600 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">
                 BLASTI
