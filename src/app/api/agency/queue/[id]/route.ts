@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function PATCH(
   req: NextRequest,
@@ -17,6 +18,9 @@ export async function PATCH(
     if (!reservation) {
       return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
     }
+
+    // Verify the authenticated user has access to this reservation's agency
+    await requireAgencyAccess(req, reservation.agencyId);
 
     const statusMap: Record<string, string> = {
       complete: 'COMPLETED',
@@ -65,6 +69,8 @@ export async function PATCH(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[agency/queue/[id]] Error:', message);
     return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });

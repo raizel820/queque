@@ -344,7 +344,7 @@ export function CustomerSettings() {
                 </label>
               </div>
               <div className="pb-1 min-w-0 flex-1">
-                <h2 className="text-lg font-bold text-foreground truncate">{user?.fullName || 'User'}</h2>
+                <h2 className="text-lg font-bold text-foreground truncate">{user?.fullName || t('defaultUser')}</h2>
                 <p className="text-sm text-muted-foreground truncate">@{user?.username}</p>
               </div>
             </div>

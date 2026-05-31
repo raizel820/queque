@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
 // GET - List global announcements
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
+
     const announcements = await db.globalAnnouncement.findMany({
       orderBy: { createdAt: 'desc' },
       take: 20,
@@ -11,18 +14,18 @@ export async function GET() {
 
     return NextResponse.json({ announcements });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/announcements GET] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }
 
 // POST - Create a global announcement (admin only)
 export async function POST(req: NextRequest) {
   try {
-    const { message, type, createdBy } = await req.json();
-    if (!message || !message.trim() || !createdBy) {
-      return NextResponse.json({ error: 'message and createdBy required' }, { status: 400 });
+    const admin = await requireAdmin(req);
+
+    const { message, type } = await req.json();
+    if (!message || !message.trim()) {
+      return NextResponse.json({ error: 'message is required' }, { status: 400 });
     }
 
     const validTypes = ['INFO', 'WARNING', 'URGENT'];
@@ -32,21 +35,21 @@ export async function POST(req: NextRequest) {
       data: {
         message: message.trim(),
         type: announcementType,
-        createdBy,
+        createdBy: admin.id,
       },
     });
 
     return NextResponse.json({ announcement }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/announcements POST] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }
 
 // DELETE - Delete a global announcement
 export async function DELETE(req: NextRequest) {
   try {
+    await requireAdmin(req);
+
     const id = req.nextUrl.searchParams.get('id');
     if (!id) {
       return NextResponse.json({ error: 'id required' }, { status: 400 });
@@ -58,8 +61,6 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/announcements DELETE] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

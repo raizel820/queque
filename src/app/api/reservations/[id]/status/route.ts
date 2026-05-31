@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireResourceOwnership, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
+import { realtime } from '@/lib/realtime'
 
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   WAITING: ['CALLED', 'CANCELLED'],
@@ -14,7 +16,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { status, updatedBy } = body
+    const { status } = body
 
     // Validate status
     const validStatuses = ['CALLED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'SERVED']
@@ -43,6 +45,14 @@ export async function PUT(
         { success: false, error: 'Reservation not found' },
         { status: 404 }
       )
+    }
+
+    // Verify ownership or agency access
+    try {
+      await requireResourceOwnership(request, reservation.userId)
+    } catch {
+      // If not the owner, check agency access
+      await requireAgencyAccess(request, reservation.agencyId)
     }
 
     // Validate transition
@@ -111,7 +121,7 @@ export async function PUT(
     // Create audit log
     await db.auditLog.create({
       data: {
-        userId: updatedBy || reservation.userId,
+        userId: reservation.userId,
         action: status === 'COMPLETED' ? 'QUEUE_COMPLETE' :
                 status === 'CANCELLED' ? 'QUEUE_CANCEL' :
                 status === 'NO_SHOW' ? 'QUEUE_NOSHOW' : 'QUEUE_CALL',
@@ -126,15 +136,54 @@ export async function PUT(
       },
     })
 
+    // Emit realtime events based on status change
+    if (reservation.userId) {
+      if (status === 'COMPLETED') {
+        await realtime.serviceCompleted(reservation.userId, {
+          reservationId: id,
+          displayNumber: reservation.displayNumber,
+          agencyId: reservation.agency.id,
+          agencyName: reservation.agency.name,
+        })
+      } else if (status === 'CALLED') {
+        await realtime.turnCalled(reservation.userId, {
+          reservationId: id,
+          displayNumber: reservation.displayNumber,
+          agencyId: reservation.agency.id,
+          message: 'Your turn has been called!',
+        })
+      } else if (status === 'CANCELLED') {
+        await realtime.reservationCancelled(reservation.userId, {
+          reservationId: id,
+          displayNumber: reservation.displayNumber,
+          agencyId: reservation.agency.id,
+        })
+      }
+      await realtime.positionChanged(reservation.userId, {
+        reservationId: id,
+        displayNumber: reservation.displayNumber,
+        newStatus: status,
+        agencyId: reservation.agency.id,
+      })
+    }
+
+    // Notify agency dashboard of queue update
+    await realtime.queueUpdated(reservation.agency.id, {
+      action: 'status-change',
+      reservationId: id,
+      displayNumber: reservation.displayNumber,
+      newStatus: status,
+    })
+    await realtime.agencyStatsUpdated(reservation.agency.id, {
+      action: 'queue-changed',
+      agencyId: reservation.agency.id,
+    })
+
     return NextResponse.json({
       success: true,
       reservation: updatedReservation,
     })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

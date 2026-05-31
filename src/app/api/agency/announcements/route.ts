@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 // GET: List active announcements for an agency
 export async function GET(request: NextRequest) {
@@ -10,6 +11,8 @@ export async function GET(request: NextRequest) {
     if (!agencyId) {
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
     }
+
+    await requireAgencyAccess(request, agencyId);
 
     const announcements = await db.announcement.findMany({
       where: {
@@ -26,6 +29,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ announcements });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('Fetch announcements error:', error);
     return NextResponse.json({ error: 'Failed to fetch announcements' }, { status: 500 });
   }
@@ -41,6 +46,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Agency ID and message required' }, { status: 400 });
     }
 
+    await requireAgencyAccess(request, agencyId);
+
     const announcement = await db.announcement.create({
       data: {
         agencyId,
@@ -52,6 +59,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, announcement });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('Create announcement error:', error);
     return NextResponse.json({ error: 'Failed to create announcement' }, { status: 500 });
   }
@@ -67,12 +76,22 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Announcement ID required' }, { status: 400 });
     }
 
+    // Verify the announcement belongs to the user's agency
+    const announcement = await db.announcement.findUnique({ where: { id } });
+    if (!announcement) {
+      return NextResponse.json({ error: 'Announcement not found' }, { status: 404 });
+    }
+
+    await requireAgencyAccess(request, announcement.agencyId);
+
     await db.announcement.delete({
       where: { id },
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('Delete announcement error:', error);
     return NextResponse.json({ error: 'Failed to delete announcement' }, { status: 500 });
   }

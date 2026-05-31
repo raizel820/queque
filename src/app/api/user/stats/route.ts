@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
 
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const userId = req.nextUrl.searchParams.get('userId');
-    if (!userId) {
-      return NextResponse.json({ error: 'userId required' }, { status: 400 });
-    }
+    const user = await requireAuth(request);
+    const userId = user.id;
 
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
@@ -75,7 +74,6 @@ export async function GET(req: NextRequest) {
       favoriteAgency,
     });
   } catch (error) {
-    console.error('User stats error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

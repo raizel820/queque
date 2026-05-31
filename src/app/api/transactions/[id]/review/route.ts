@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth(request)
     const { id } = await params
     const body = await request.json()
-    const { status, reviewedBy, rejectionReason } = body
+    const { status, rejectionReason } = body
 
     // Validate status
     const validStatuses = ['APPROVED', 'REJECTED']
@@ -17,15 +19,6 @@ export async function PUT(
         { success: false, error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
         { status: 400 }
       )
-    }
-
-    // Validate reviewedBy is a real user ID if provided
-    let validReviewedBy: string | null = null
-    if (reviewedBy) {
-      const reviewer = await db.user.findUnique({ where: { id: reviewedBy } })
-      if (reviewer) {
-        validReviewedBy = reviewedBy
-      }
     }
 
     // Find transaction
@@ -47,12 +40,15 @@ export async function PUT(
       )
     }
 
+    // Use session user.id as the reviewer
+    const reviewedBy = user.id
+
     // Update transaction
     const updatedTransaction = await db.transaction.update({
       where: { id },
       data: {
         status,
-        reviewedBy: validReviewedBy,
+        reviewedBy,
         reviewedAt: new Date(),
         rejectionReason: status === 'REJECTED' ? rejectionReason : null,
       },
@@ -93,7 +89,7 @@ export async function PUT(
     // Create audit log
     await db.auditLog.create({
       data: {
-        userId: validReviewedBy,
+        userId: reviewedBy,
         action: status === 'APPROVED' ? 'PAYMENT_APPROVE' : 'PAYMENT_REJECT',
         entityType: 'TRANSACTION',
         entityId: id,
@@ -113,10 +109,6 @@ export async function PUT(
       transaction: updatedTransaction,
     })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

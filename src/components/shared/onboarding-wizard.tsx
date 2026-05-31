@@ -84,7 +84,7 @@ export function OnboardingWizard({ open, user, onComplete, onSkip }: OnboardingP
     <Dialog open={open} onOpenChange={(v) => { if (!v) onSkip(); }}>
       <DialogContent className="sm:max-w-[480px] p-0 gap-0 overflow-hidden border-0 bg-white dark:bg-gray-950">
         <DialogHeader className="sr-only">
-          <DialogTitle>{t('welcomeTo')} DALTI</DialogTitle>
+          <DialogTitle>{t('welcomeTo')} BLASTI</DialogTitle>
           <DialogDescription>{t('setupAccountDesc')}</DialogDescription>
         </DialogHeader>
         {/* Step indicator */}
@@ -116,20 +116,23 @@ export function OnboardingWizard({ open, user, onComplete, onSkip }: OnboardingP
               {step === 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                      <Sparkles className="h-6 w-6 text-white" />
+                    <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/20">
+                      <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
                     </div>
                     <div>
                       <h2 className="text-lg font-bold text-foreground">{t('welcomeTo')}</h2>
-                      <p className="text-xs text-muted-foreground">DALTI</p>
+                      <p className="text-xs text-muted-foreground">BLASTI</p>
                     </div>
                   </div>
                   <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-4">
                     <p className="text-sm text-emerald-800 dark:text-emerald-300 font-medium">
-                      👋 {t('helloUser', { name: user.fullName })}!
+                      👋 {t('helloUser', { name: user.fullName || user.username })}!
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {t('setupAccountDesc')}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      @{user.username} · {user.role === 'SUPER_ADMIN' ? t('superAdmin') : user.role === 'AGENCY_OWNER' ? t('agencyOwner') : user.role === 'AGENCY_STAFF' ? t('agencyStaff') : t('customer')}
                     </p>
                   </div>
                   {user.role === 'SUPER_ADMIN' && (

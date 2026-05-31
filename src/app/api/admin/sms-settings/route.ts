@@ -10,10 +10,13 @@ import {
   ALGERIAN_PROVIDERS,
 } from '@/lib/sms-service';
 import { normalizeDzPhone, isValidDzPhone } from '@/lib/sms-service';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
 // GET - Return SMS settings + usage stats + providers
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
+
     const [settings, stats, recentLogs] = await Promise.all([
       getSmsSettings(),
       getSmsUsageStats(),
@@ -37,15 +40,15 @@ export async function GET() {
       })),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/sms-settings GET] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }
 
 // PUT - Update SMS settings
 export async function PUT(req: NextRequest) {
   try {
+    await requireAdmin(req);
+
     const body = await req.json();
     const {
       provider,
@@ -56,6 +59,10 @@ export async function PUT(req: NextRequest) {
       smsPerReminder,
       maxSmsPerDay,
       testPhoneNumber,
+      templateTurnApproaching,
+      templateYourTurn,
+      templateNoShow,
+      templateCustom,
     } = body;
 
     // Validate provider
@@ -108,6 +115,10 @@ export async function PUT(req: NextRequest) {
     if (smsPerReminder !== undefined) updateData.smsPerReminder = smsPerReminder;
     if (maxSmsPerDay !== undefined) updateData.maxSmsPerDay = maxSmsPerDay;
     if (testPhoneNumber !== undefined) updateData.testPhoneNumber = testPhoneNumber;
+    if (templateTurnApproaching !== undefined) updateData.templateTurnApproaching = templateTurnApproaching;
+    if (templateYourTurn !== undefined) updateData.templateYourTurn = templateYourTurn;
+    if (templateNoShow !== undefined) updateData.templateNoShow = templateNoShow;
+    if (templateCustom !== undefined) updateData.templateCustom = templateCustom;
 
     const updated = await db.smsSettings.update({
       where: { id: settings.id },
@@ -133,15 +144,15 @@ export async function PUT(req: NextRequest) {
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/sms-settings PUT] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }
 
 // POST - Send test SMS
 export async function POST(req: NextRequest) {
   try {
+    await requireAdmin(req);
+
     const body = await req.json();
     const { action, phoneNumber } = body;
 
@@ -157,7 +168,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
     }
 
-    const result = await sendSms(phone.trim(), '[DALTI] Test SMS - SMS gateway is working correctly.');
+    const result = await sendSms(phone.trim(), '[BLASTI] Test SMS - SMS gateway is working correctly.');
 
     if (result.success) {
       return NextResponse.json({ success: true, logId: result.logId });
@@ -168,8 +179,6 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/sms-settings POST] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

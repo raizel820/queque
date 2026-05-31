@@ -1,9 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getTodayStart, getTodayEnd } from '@/lib/date-utils';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
+
     const todayStart = getTodayStart();
     const todayEnd = getTodayEnd();
 
@@ -57,8 +60,6 @@ export async function GET() {
       })),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/dashboard] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

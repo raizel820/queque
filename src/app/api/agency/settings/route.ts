@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, resolveUserAgencyId, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(req: NextRequest) {
   try {
-    const agencyId = req.nextUrl.searchParams.get('agencyId');
+    const agencyIdParam = req.nextUrl.searchParams.get('agencyId');
+
+    let agencyId: string | null;
+    if (agencyIdParam) {
+      await requireAgencyAccess(req, agencyIdParam);
+      agencyId = agencyIdParam;
+    } else {
+      const user = await requireAuth(req);
+      agencyId = user.agencyId || await resolveUserAgencyId(user);
+    }
 
     let agency;
     if (agencyId) {
@@ -18,16 +28,13 @@ export async function GET(req: NextRequest) {
         },
       });
     } else {
-      // Fallback: first active agency
-      agency = await db.agency.findFirst({
-        where: { isActive: true },
-        include: {
-          services: {
-            where: { isActive: true },
-            select: { id: true, name: true, nameAr: true, nameFr: true, prefix: true },
-          },
-          queueSettings: true,
-        },
+      return NextResponse.json({
+        avgServiceTime: 10,
+        maxReservations: 50,
+        isQueueOpen: true,
+        services: [],
+        workingHoursStart: '08:00',
+        workingHoursEnd: '17:00',
       });
     }
 
@@ -52,6 +59,8 @@ export async function GET(req: NextRequest) {
       autoPauseWhenFull: agency.autoPauseWhenFull ?? false,
     });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[agency/settings GET] Error:', message);
     return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
@@ -61,14 +70,22 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { agencyId, avgServiceTime, maxReservations, isQueueOpen, workingHoursStart, workingHoursEnd, autoPauseWhenFull } = body;
+    const { agencyId: agencyIdParam, avgServiceTime, maxReservations, isQueueOpen, workingHoursStart, workingHoursEnd, autoPauseWhenFull } = body;
 
-    let targetAgency;
-    if (agencyId) {
-      targetAgency = await db.agency.findUnique({ where: { id: agencyId } });
+    let agencyId: string | null;
+    if (agencyIdParam) {
+      await requireAgencyAccess(req, agencyIdParam);
+      agencyId = agencyIdParam;
     } else {
-      targetAgency = await db.agency.findFirst({ where: { isActive: true } });
+      const user = await requireAuth(req);
+      agencyId = user.agencyId || await resolveUserAgencyId(user);
     }
+
+    if (!agencyId) {
+      return NextResponse.json({ error: 'No agency found' }, { status: 404 });
+    }
+
+    const targetAgency = await db.agency.findUnique({ where: { id: agencyId } });
     if (!targetAgency) {
       return NextResponse.json({ error: 'No agency found' }, { status: 404 });
     }
@@ -87,6 +104,8 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[agency/settings PATCH] Error:', message);
     return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });

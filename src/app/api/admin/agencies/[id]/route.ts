@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await requireAdmin(req);
+
     const { id } = await params;
     const { action } = await req.json();
 
@@ -33,6 +36,7 @@ export async function PATCH(
 
     await db.auditLog.create({
       data: {
+        userId: admin.id,
         action: `AGENCY_${action.toUpperCase()}`,
         entityType: 'AGENCY',
         entityId: id,
@@ -42,9 +46,7 @@ export async function PATCH(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/agencies/[id] PATCH] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }
 
@@ -53,6 +55,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await requireAdmin(req);
+
     const { id } = await params;
     // Cascade delete all related records
     await db.$transaction(async (tx) => {
@@ -64,10 +68,19 @@ export async function DELETE(
       await tx.transaction.deleteMany({ where: { agencyId: id } });
       await tx.agency.delete({ where: { id } });
     });
+
+    await db.auditLog.create({
+      data: {
+        userId: admin.id,
+        action: 'AGENCY_DELETE',
+        entityType: 'AGENCY',
+        entityId: id,
+        details: JSON.stringify({ action: 'delete' }),
+      },
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/agencies/[id] DELETE] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

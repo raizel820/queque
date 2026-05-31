@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireResourceOwnership, authErrorResponse } from '@/lib/auth-guard'
 
 export async function PATCH(
   request: NextRequest,
@@ -16,6 +17,9 @@ export async function PATCH(
       )
     }
 
+    // Verify ownership
+    await requireResourceOwnership(request, notification.userId)
+
     if (notification.isRead) {
       return NextResponse.json({
         success: true,
@@ -31,11 +35,7 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, notification: updated })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }
 
@@ -54,14 +54,13 @@ export async function DELETE(
       )
     }
 
+    // Verify ownership
+    await requireResourceOwnership(request, notification.userId)
+
     await db.notification.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

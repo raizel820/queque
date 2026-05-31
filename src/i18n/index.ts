@@ -16,6 +16,12 @@ export const languageNames: Record<Language, string> = {
 
 export const isRTL = (lang: Language) => lang === 'ar';
 
-export function t(key: TranslationKeys, lang: Language): string {
-  return translations[lang]?.[key] ?? translations.ar[key] ?? key;
+export function t(key: TranslationKeys, lang: Language, params?: Record<string, string>): string {
+  let str = translations[lang]?.[key] ?? translations.ar[key] ?? key;
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+    });
+  }
+  return str;
 }

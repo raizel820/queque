@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireResourceOwnership, requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
 // PATCH: Update a review
 export async function PATCH(
@@ -9,7 +10,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { rating, comment, userId } = body;
+    const { rating, comment } = body;
 
     // Find the review
     const review = await db.review.findUnique({ where: { id } });
@@ -17,13 +18,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Review not found' }, { status: 404 });
     }
 
-    // Only the author can update
-    if (userId && review.userId !== userId) {
-      return NextResponse.json(
-        { error: 'Only the review author can update it' },
-        { status: 403 }
-      );
-    }
+    // Verify ownership via requireResourceOwnership
+    await requireResourceOwnership(request, review.userId);
 
     // Validate rating if provided
     if (rating !== undefined && (rating < 1 || rating > 5)) {
@@ -71,11 +67,7 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, review: updated });
   } catch (error) {
-    console.error('Update review error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update review' },
-      { status: 500 }
-    );
+    return authErrorResponse(error);
   }
 }
 
@@ -86,9 +78,6 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-    const userRole = searchParams.get('userRole');
 
     // Find the review
     const review = await db.review.findUnique({ where: { id } });
@@ -96,25 +85,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'Review not found' }, { status: 404 });
     }
 
-    // Only the author or an admin can delete
-    const isAuthor = userId && review.userId === userId;
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN';
-
-    if (!isAuthor && !isAdmin) {
-      return NextResponse.json(
-        { error: 'Only the review author or an admin can delete it' },
-        { status: 403 }
-      );
+    // Only the author or a SUPER_ADMIN can delete
+    try {
+      await requireResourceOwnership(request, review.userId);
+    } catch {
+      // Not the owner — check if SUPER_ADMIN
+      await requireAdmin(request);
     }
 
     await db.review.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Delete review error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete review' },
-      { status: 500 }
-    );
+    return authErrorResponse(error);
   }
 }

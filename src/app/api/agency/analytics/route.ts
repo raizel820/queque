@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(req: NextRequest) {
   try {
@@ -7,6 +8,8 @@ export async function GET(req: NextRequest) {
     if (!agencyId) {
       return NextResponse.json({ error: 'agencyId required' }, { status: 400 });
     }
+
+    await requireAgencyAccess(req, agencyId);
 
     const agency = await db.agency.findUnique({ where: { id: agencyId } });
     if (!agency) {
@@ -85,6 +88,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ services });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('Agency analytics error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

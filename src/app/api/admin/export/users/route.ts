@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
+
     const users = await db.user.findMany({
       include: {
         _count: {
@@ -49,7 +52,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Export users error:', error);
-    return NextResponse.json({ error: 'Export failed' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

@@ -2,7 +2,7 @@
 
 import { useAppStore } from '@/store/use-app-store';
 import { t as translate, type TranslationKeys, type Language } from '@/i18n';
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useCallback } from 'react';
 
 // Simple external store for language changes outside of Zustand (pre-login)
 let currentLang: Language = 'ar';
@@ -24,7 +24,7 @@ export function setLanguage(lang: Language) {
 
 // Initialize from localStorage
 if (typeof window !== 'undefined') {
-  const stored = localStorage.getItem('queuewise-lang') as Language | null;
+  const stored = localStorage.getItem('blasti-lang') as Language | null;
   if (stored) currentLang = stored;
 }
 
@@ -40,7 +40,7 @@ export function useLanguage() {
 
   const effectiveLang = useSyncExternalStore(subscribeToLang, getSnapshot, getServerSnapshot);
 
-  const t = (key: TranslationKeys) => translate(key, effectiveLang);
+  const t = useCallback((key: TranslationKeys, params?: Record<string, string>) => translate(key, effectiveLang, params), [effectiveLang]);
 
   return { lang: effectiveLang, t };
 }

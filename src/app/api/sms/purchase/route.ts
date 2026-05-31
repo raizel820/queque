@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
+import { checkRateLimit, RateLimitError, SMS_RATE_LIMIT } from '@/lib/rate-limit';
 
 const ALLOWED_PACKS: Record<string, { quantity: number; price: number }> = {
   '20': { quantity: 20, price: 200 },
@@ -11,12 +13,20 @@ const ALLOWED_PACKS: Record<string, { quantity: number; price: number }> = {
 // POST /api/sms/purchase — Purchase an SMS pack
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { packId, userId } = body as { packId: string; userId: string };
+    const user = await requireAuth(request);
 
-    if (!packId || !userId) {
+    // Rate limit by user ID
+    checkRateLimit(user.id, SMS_RATE_LIMIT);
+
+    const body = await request.json();
+    const { packId } = body as { packId: string };
+
+    // Use session user.id instead of body userId
+    const userId = user.id;
+
+    if (!packId) {
       return NextResponse.json(
-        { error: 'packId and userId are required' },
+        { error: 'packId is required' },
         { status: 400 }
       );
     }
@@ -30,18 +40,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate user exists and is active
-    const user = await db.user.findUnique({ where: { id: userId } });
+    // Validate user is active
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
-      );
-    }
-    if (!user.isActive) {
-      return NextResponse.json(
-        { error: 'User account is not active' },
-        { status: 403 }
       );
     }
 
@@ -98,6 +101,16 @@ export async function POST(request: NextRequest) {
       purchaseId: purchase.id,
     });
   } catch (error) {
+    if (error instanceof RateLimitError) {
+      return NextResponse.json(
+        { success: false, error: error.message, retryAfter: error.retryAfter },
+        { status: 429, headers: { 'Retry-After': String(error.retryAfter) } }
+      );
+    }
+    // Check if it's an auth error first
+    const authResponse = authErrorResponse(error);
+    if (authResponse.status !== 500) return authResponse;
+
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return NextResponse.json(
         { error: 'Database error occurred' },
@@ -114,15 +127,8 @@ export async function POST(request: NextRequest) {
 // GET /api/sms/purchase — Get user's SMS purchase history
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    const user = await requireAuth(request);
+    const userId = user.id;
 
     const purchases = await db.smsPurchase.findMany({
       where: { userId },
@@ -132,9 +138,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ purchases });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return authErrorResponse(error);
   }
 }

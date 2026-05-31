@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
-    }
+    const user = await requireAuth(request);
+    const userId = user.id;
 
     // Find the user's active (WAITING or CALLED) reservation
     const reservation = await db.reservation.findFirst({
@@ -44,7 +41,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, reservation: updated });
   } catch (error) {
-    console.error('Cancel active reservation error:', error);
-    return NextResponse.json({ error: 'Failed to cancel reservation' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

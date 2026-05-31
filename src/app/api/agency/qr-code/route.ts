@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import QRCode from 'qrcode';
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication to generate QR code
+    await requireAuth(request);
+
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
 
@@ -14,7 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Encode as a URL so phone scanners can open it as a clickable link
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://queuewise.dz';
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://blasti.dz';
     const qrData = `${baseUrl}/?code=${code}`;
 
     const svgString = await QRCode.toString(qrData, {
@@ -35,6 +39,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: unknown) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
       { success: false, error: message },

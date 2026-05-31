@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { verifyPassword } from '@/lib/password'
+import { setNextAuthSessionCookie } from '@/lib/auth-cookie'
+import { checkRateLimit, getClientIp, RateLimitError, LOGIN_RATE_LIMIT } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit by IP
+    checkRateLimit(getClientIp(request), LOGIN_RATE_LIMIT)
+
     const body = await request.json()
     const { username, password, expectedRole } = body
 
@@ -121,8 +126,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, user: { ...userData, agencyId } })
+    // Set NextAuth session cookie so protected API routes work
+    const response = NextResponse.json({ success: true, user: { ...userData, agencyId } })
+    await setNextAuthSessionCookie(response, { ...userData, agencyId: agencyId || null })
+    return response
   } catch (error: unknown) {
+    if (error instanceof RateLimitError) {
+      return NextResponse.json(
+        { success: false, error: error.message, retryAfter: error.retryAfter },
+        { status: 429, headers: { 'Retry-After': String(error.retryAfter) } }
+      )
+    }
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
       { success: false, error: message },

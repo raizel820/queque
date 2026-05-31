@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
+
     const agencies = await db.agency.findMany({
       include: {
         owner: { select: { fullName: true, username: true, email: true, phoneNumber: true } },
@@ -64,7 +67,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Export agencies error:', error);
-    return NextResponse.json({ error: 'Export failed' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

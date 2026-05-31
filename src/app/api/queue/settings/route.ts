@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
 
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { agencyId, averageServiceTime, maxActiveReservations, isQueueOpen, updatedBy } = body
+    const { agencyId, averageServiceTime, maxActiveReservations, isQueueOpen } = body
 
     if (!agencyId) {
       return NextResponse.json(
@@ -12,6 +13,9 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Verify agency access
+    const user = await requireAgencyAccess(request, agencyId)
 
     // Check agency exists
     const agency = await db.agency.findUnique({ where: { id: agencyId } })
@@ -40,10 +44,10 @@ export async function PUT(request: NextRequest) {
       data: updateData,
     })
 
-    // Create audit log
+    // Create audit log — use session user.id
     await db.auditLog.create({
       data: {
-        userId: updatedBy,
+        userId: user.id,
         action: 'SETTINGS_UPDATE',
         entityType: 'AGENCY',
         entityId: agencyId,
@@ -60,10 +64,6 @@ export async function PUT(request: NextRequest) {
       agency: updatedAgency,
     })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

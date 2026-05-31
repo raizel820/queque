@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, requireAuth, requireResourceOwnership, authErrorResponse } from '@/lib/auth-guard';
 
 // ─── GET: List reviews for an agency ────────────────────────────────────────
 export async function GET(request: NextRequest) {
@@ -12,6 +13,8 @@ export async function GET(request: NextRequest) {
     if (!agencyId) {
       return NextResponse.json({ error: 'agencyId is required' }, { status: 400 });
     }
+
+    await requireAgencyAccess(request, agencyId);
 
     const skip = (page - 1) * limit;
 
@@ -77,6 +80,8 @@ export async function GET(request: NextRequest) {
       hasMore: skip + limit < totalReviews,
     });
   } catch (error: unknown) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('[REVIEWS GET] Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -87,15 +92,22 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { agencyId, userId, rating, comment } = body;
+    const { agencyId, rating, comment } = body;
 
-    if (!agencyId || !userId) {
-      return NextResponse.json({ error: 'agencyId and userId are required' }, { status: 400 });
+    if (!agencyId) {
+      return NextResponse.json({ error: 'agencyId is required' }, { status: 400 });
     }
 
     if (!rating || rating < 1 || rating > 5) {
       return NextResponse.json({ error: 'Rating must be between 1 and 5' }, { status: 400 });
     }
+
+    // Derive userId from session, never trust client-provided userId
+    const user = await requireAuth(request);
+    const userId = user.id;
+
+    // Verify agency access for this review
+    await requireAgencyAccess(request, agencyId);
 
     // Check if user already reviewed this agency
     const existing = await db.review.findUnique({
@@ -149,6 +161,8 @@ export async function POST(request: NextRequest) {
       updated: !!existing,
     });
   } catch (error: unknown) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('[REVIEWS POST] Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });
@@ -159,10 +173,10 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
-    const { reviewId, userId } = body;
+    const { reviewId } = body;
 
-    if (!reviewId || !userId) {
-      return NextResponse.json({ error: 'reviewId and userId are required' }, { status: 400 });
+    if (!reviewId) {
+      return NextResponse.json({ error: 'reviewId is required' }, { status: 400 });
     }
 
     const review = await db.review.findUnique({ where: { id: reviewId } });
@@ -170,14 +184,15 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Review not found' }, { status: 404 });
     }
 
-    if (review.userId !== userId) {
-      return NextResponse.json({ error: 'You can only delete your own reviews' }, { status: 403 });
-    }
+    // Use session-derived user to verify ownership instead of trusting client userId
+    await requireResourceOwnership(request, review.userId);
 
     await db.review.delete({ where: { id: reviewId } });
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('[REVIEWS DELETE] Error:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({ error: message }, { status: 500 });

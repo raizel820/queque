@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const role = searchParams.get('role') || '';
@@ -73,17 +76,15 @@ export async function GET(request: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return authErrorResponse(error);
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
+    const admin = await requireAdmin(request);
+
     const body = await request.json();
     const { userId, action } = body;
 
@@ -127,7 +128,7 @@ export async function PATCH(request: NextRequest) {
 
       await db.auditLog.create({
         data: {
-          userId,
+          userId: admin.id,
           action: 'USER_SUSPEND',
           entityType: 'USER',
           entityId: userId,
@@ -155,7 +156,7 @@ export async function PATCH(request: NextRequest) {
 
       await db.auditLog.create({
         data: {
-          userId,
+          userId: admin.id,
           action: 'USER_ACTIVATE',
           entityType: 'USER',
           entityId: userId,
@@ -170,17 +171,15 @@ export async function PATCH(request: NextRequest) {
       { success: false, error: 'Invalid action. Use "suspend" or "activate".' },
       { status: 400 }
     );
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return authErrorResponse(error);
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
+    const admin = await requireAdmin(request);
+
     const body = await request.json();
     const { userId } = body;
 
@@ -245,6 +244,7 @@ export async function DELETE(request: NextRequest) {
 
     await db.auditLog.create({
       data: {
+        userId: admin.id,
         action: 'USER_DELETE',
         entityType: 'USER',
         entityId: userId,
@@ -253,11 +253,7 @@ export async function DELETE(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, message: 'User deleted successfully' });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+  } catch (error) {
+    return authErrorResponse(error);
   }
 }

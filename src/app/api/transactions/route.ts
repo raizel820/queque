@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,6 +31,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Verify agency access
+    await requireAgencyAccess(request, agencyId)
+
     // Check agency exists
     const agency = await db.agency.findUnique({ where: { id: agencyId } })
     if (!agency) {
@@ -59,16 +63,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, transaction }, { status: 201 })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await requireAuth(request)
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const limit = parseInt(searchParams.get('limit') || '20', 10)
@@ -77,6 +78,36 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {}
     if (status) {
       where.status = status
+    }
+
+    // SUPER_ADMIN can see all transactions; agency users see only their agency's
+    if (user.role !== 'SUPER_ADMIN') {
+      // For agency owners/staff, filter to their agency's transactions
+      const ownedAgency = await db.agency.findFirst({
+        where: { ownerId: user.id },
+        select: { id: true },
+      })
+      if (ownedAgency) {
+        where.agencyId = ownedAgency.id
+      } else {
+        // Staff members
+        const staffRecord = await db.agencyStaff.findFirst({
+          where: { userId: user.id, isActive: true },
+          select: { agencyId: true },
+        })
+        if (staffRecord) {
+          where.agencyId = staffRecord.agencyId
+        } else {
+          // Customer or user with no agency — return empty
+          return NextResponse.json({
+            success: true,
+            transactions: [],
+            total: 0,
+            limit,
+            offset,
+          })
+        }
+      }
     }
 
     const [transactions, total] = await Promise.all([
@@ -116,10 +147,6 @@ export async function GET(request: NextRequest) {
       offset,
     })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

@@ -1,8 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request)
+
     const now = new Date()
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
@@ -164,8 +167,7 @@ export async function GET() {
       peakHours: hourlyDistribution.map((count, hour) => ({ hour, count })),
       customerGrowth: Object.entries(dailyCustomerGrowth).map(([date, total]) => ({ date, total })),
     })
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500 })
+  } catch (error) {
+    return authErrorResponse(error)
   }
 }

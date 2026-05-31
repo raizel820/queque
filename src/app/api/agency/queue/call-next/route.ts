@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getNextCustomerToCall } from '@/lib/queue-scheduler';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { realtime } from '@/lib/realtime';
+import { checkRateLimit, RateLimitError, QUEUE_RATE_LIMIT } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,6 +12,11 @@ export async function POST(req: NextRequest) {
     if (!agencyId) {
       return NextResponse.json({ error: 'agencyId required' }, { status: 400 });
     }
+
+    const user = await requireAgencyAccess(req, agencyId);
+
+    // Rate limit by user ID
+    checkRateLimit(user.id, QUEUE_RATE_LIMIT);
 
     // Check agency has an active subscription
     const agencyCheck = await db.agency.findUnique({ where: { id: agencyId } });
@@ -72,6 +80,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No customers waiting' }, { status: 404 });
     }
 
+    // Emit realtime events
+    const calledUserId = (nextReservation as { userId?: string }).userId;
+    if (calledUserId) {
+      await realtime.turnCalled(calledUserId, {
+        reservationId: nextReservation.id,
+        displayNumber: nextReservation.displayNumber,
+        agencyId,
+        message: 'Your turn has been called!',
+      });
+    }
+    await realtime.queueUpdated(agencyId, {
+      action: 'call-next',
+      reservationId: nextReservation.id,
+      displayNumber: nextReservation.displayNumber,
+      calledUserId,
+    });
+    await realtime.agencyStatsUpdated(agencyId, {
+      action: 'queue-changed',
+      agencyId,
+    });
+
     return NextResponse.json({
       success: true,
       reservation: {
@@ -82,6 +111,14 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error: unknown) {
+    if (error instanceof RateLimitError) {
+      return NextResponse.json(
+        { success: false, error: error.message, retryAfter: error.retryAfter },
+        { status: 429, headers: { 'Retry-After': String(error.retryAfter) } }
+      );
+    }
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('[CALL-NEXT] Error calling next customer:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireResourceOwnership, authErrorResponse } from '@/lib/auth-guard';
 
 export async function POST(
   request: NextRequest,
@@ -8,7 +9,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { rating, feedback, userId, notes } = body;
+    const { rating, feedback, notes } = body;
 
     // Validate rating
     if (!rating || rating < 1 || rating > 5) {
@@ -29,11 +30,8 @@ export async function POST(
       return NextResponse.json({ error: 'Can only rate completed reservations' }, { status: 400 });
     }
 
-    // Verify user owns the reservation
-    const requestingUserId = userId || reservation.userId;
-    if (reservation.userId !== requestingUserId) {
-      return NextResponse.json({ error: 'You can only rate your own reservations' }, { status: 403 });
-    }
+    // Verify user owns the reservation (strictly, no agency override for rating)
+    await requireResourceOwnership(request, reservation.userId);
 
     // Check not already rated
     if (reservation.rating) {
@@ -78,7 +76,6 @@ export async function POST(
       ratedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Rate reservation error:', error);
-    return NextResponse.json({ error: 'Failed to rate reservation' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

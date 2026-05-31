@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await requireAdmin(req);
+
     const { id } = await params;
     const body = await req.json();
-    const { action, reason, reviewedBy } = body;
+    const { action, reason } = body;
 
     const transaction = await db.transaction.findUnique({ where: { id } });
     if (!transaction) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
@@ -22,20 +25,11 @@ export async function POST(
 
     const newStatus = action === 'approve' ? 'APPROVED' : 'REJECTED';
 
-    // Validate reviewedBy is a real user ID if provided
-    let validReviewedBy: string | null = null;
-    if (reviewedBy) {
-      const reviewer = await db.user.findUnique({ where: { id: reviewedBy } });
-      if (reviewer) {
-        validReviewedBy = reviewedBy;
-      }
-    }
-
     const updated = await db.transaction.update({
       where: { id },
       data: {
         status: newStatus,
-        reviewedBy: validReviewedBy,
+        reviewedBy: admin.id,
         reviewedAt: new Date(),
         rejectionReason: action === 'reject' ? reason : null,
       },
@@ -72,7 +66,7 @@ export async function POST(
 
     await db.auditLog.create({
       data: {
-        userId: validReviewedBy,
+        userId: admin.id,
         action: action === 'approve' ? 'PAYMENT_APPROVE' : 'PAYMENT_REJECT',
         entityType: 'TRANSACTION',
         entityId: id,
@@ -82,8 +76,6 @@ export async function POST(
 
     return NextResponse.json({ success: true, transaction: updated });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/transactions/[id]] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

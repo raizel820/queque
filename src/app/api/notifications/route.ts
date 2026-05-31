@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await requireAuth(request)
+    const userId = user.id
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
     const unreadOnly = searchParams.get('unreadOnly') === 'true'
     const type = searchParams.get('type') // QUEUE, GENERAL, etc.
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      )
-    }
 
     const where: Record<string, unknown> = { userId }
 
@@ -48,29 +43,26 @@ export async function GET(request: NextRequest) {
       unreadCount,
     })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth(request)
     const body = await request.json()
-    const { userId, type, title, message, entityId } = body
+    const { type, title, message, entityId } = body
 
-    if (!userId || !title) {
+    if (!title) {
       return NextResponse.json(
-        { success: false, error: 'userId and title are required' },
+        { success: false, error: 'title is required' },
         { status: 400 }
       )
     }
 
     const notification = await db.notification.create({
       data: {
-        userId,
+        userId: user.id,
         type: type || 'SYSTEM',
         title,
         message: message || '',
@@ -81,23 +73,20 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, notification }, { status: 201 })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
+    const user = await requireAuth(request)
     const body = await request.json()
-    const { notificationIds, userId, markAll } = body
+    const { notificationIds, markAll } = body
 
-    if (markAll && userId) {
-      // Mark all notifications as read for a user
+    if (markAll) {
+      // Mark all notifications as read for the authenticated user
       const result = await db.notification.updateMany({
-        where: { userId, isRead: false },
+        where: { userId: user.id, isRead: false },
         data: { isRead: true },
       })
       return NextResponse.json({
@@ -107,9 +96,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (notificationIds && Array.isArray(notificationIds) && notificationIds.length > 0) {
-      // Mark specific notifications as read
+      // Mark specific notifications as read — only if they belong to this user
       const result = await db.notification.updateMany({
-        where: { id: { in: notificationIds }, isRead: false },
+        where: { id: { in: notificationIds }, userId: user.id, isRead: false },
         data: { isRead: true },
       })
       return NextResponse.json({
@@ -119,14 +108,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: false, error: 'Provide either { userId, markAll: true } or { notificationIds: string[] }' },
+      { success: false, error: 'Provide either { markAll: true } or { notificationIds: string[] }' },
       { status: 400 }
     )
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

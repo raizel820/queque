@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
+import { setNextAuthSessionCookie } from '@/lib/auth-cookie'
+import { realtime } from '@/lib/realtime'
+import { checkRateLimit, getClientIp, RateLimitError, AUTH_RATE_LIMIT } from '@/lib/rate-limit'
 
 const VALID_ROLES = ['CUSTOMER', 'AGENCY_OWNER']
-const ADMIN_SECRET = 'QUEUEWISE_ADMIN_2024'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit by IP
+    checkRateLimit(getClientIp(request), AUTH_RATE_LIMIT)
+
     const body = await request.json()
-    const { username, fullName, password, phoneNumber, role, agencyCode, adminCode, avatarUrl } = body
+    const { username, fullName, password, phoneNumber, role, agencyCode, avatarUrl } = body
 
     // Validate required fields
     if (!username || !fullName || !password) {
@@ -127,7 +132,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    // Set NextAuth session cookie so protected API routes work
+    const response = NextResponse.json({
       success: true,
       user: {
         ...user,
@@ -138,7 +144,25 @@ export async function POST(request: NextRequest) {
       },
       isNewUser: true,
     }, { status: 201 })
+    await setNextAuthSessionCookie(response, { ...user, agencyId: agencyId || null })
+
+    // Emit realtime event for admin dashboard
+    await realtime.adminUserCreated({
+      userId: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role,
+      createdAt: user.createdAt,
+    })
+
+    return response
   } catch (error: unknown) {
+    if (error instanceof RateLimitError) {
+      return NextResponse.json(
+        { success: false, error: error.message, retryAfter: error.retryAfter },
+        { status: 429, headers: { 'Retry-After': String(error.retryAfter) } }
+      )
+    }
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
       { success: false, error: message },

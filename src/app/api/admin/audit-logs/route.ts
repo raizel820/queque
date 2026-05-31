@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard'
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request)
+
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '50', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
@@ -41,11 +44,7 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
     })
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return authErrorResponse(error)
   }
 }

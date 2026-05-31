@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireResourceOwnership, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function POST(
   request: NextRequest,
@@ -8,7 +9,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { userId, positions } = body;
+    const { positions } = body;
 
     if (!positions || positions < 1 || positions > 10) {
       return NextResponse.json(
@@ -33,9 +34,11 @@ export async function POST(
       );
     }
 
-    // Verify ownership (skip for walk-ins which have no userId)
-    if (userId && reservation.userId && reservation.userId !== userId) {
-      return NextResponse.json({ success: false, error: 'Not authorized' }, { status: 403 });
+    // Verify ownership or agency access
+    try {
+      await requireResourceOwnership(request, reservation.userId);
+    } catch {
+      await requireAgencyAccess(request, reservation.agencyId);
     }
 
     // Find reservations with higher queueNumbers in the same agency to swap with
@@ -114,7 +117,7 @@ export async function POST(
       // Audit log
       await tx.auditLog.create({
         data: {
-          userId: userId || undefined,
+          userId: reservation.userId || undefined,
           action: 'QUEUE_POSTPONE',
           entityType: 'RESERVATION',
           entityId: id,
@@ -132,7 +135,6 @@ export async function POST(
 
     return NextResponse.json({ success: true, reservation: updated });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
 
 // GET - Fetch user profile (used for notification prefs, phone, etc.)
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.nextUrl.searchParams.get('userId');
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
-    }
+    const user = await requireAuth(request);
 
-    const user = await db.user.findUnique({
-      where: { id: userId },
+    const profile = await db.user.findUnique({
+      where: { id: user.id },
       select: {
         id: true,
         username: true,
@@ -29,26 +27,22 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (!user) {
+    if (!profile) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, ...user });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ success: true, ...profile });
+  } catch (error) {
+    return authErrorResponse(error);
   }
 }
 
 // PATCH - Update user profile (phone, notification prefs, reminder minutes, SMS toggle, etc.)
 export async function PATCH(request: NextRequest) {
   try {
+    const user = await requireAuth(request);
     const body = await request.json();
-    const { userId, phoneNumber, notificationPreferences, reminderMinutes, smsNotificationsEnabled, avatarUrl, fullName, language } = body;
-
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
-    }
+    const { phoneNumber, notificationPreferences, reminderMinutes, smsNotificationsEnabled, avatarUrl, fullName, language } = body;
 
     const updateData: Record<string, unknown> = {};
     if (phoneNumber !== undefined) {
@@ -80,8 +74,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
 
-    const user = await db.user.update({
-      where: { id: userId },
+    const updated = await db.user.update({
+      where: { id: user.id },
       data: updateData,
       select: {
         id: true,
@@ -100,9 +94,8 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, ...user });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ success: true, ...updated });
+  } catch (error) {
+    return authErrorResponse(error);
   }
 }

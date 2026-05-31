@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,6 +10,8 @@ export async function GET(request: NextRequest) {
     if (!agencyId) {
       return NextResponse.json({ error: 'agencyId is required' }, { status: 400 });
     }
+
+    await requireAgencyAccess(request, agencyId);
 
     // Query completed reservations from last 30 days
     const thirtyDaysAgo = new Date();
@@ -44,6 +47,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ peakHours });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('Peak hours API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

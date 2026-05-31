@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      )
-    }
+    const user = await requireAuth(request)
+    const userId = user.id
 
     // Query 1: Fetch user's active reservations with agency/service info (1 query)
     const reservations = await db.reservation.findMany({
@@ -110,12 +104,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, reservations: enriched })
   } catch (error: unknown) {
-    const message = process.env.NODE_ENV === 'development' && error instanceof Error
-      ? error.message
-      : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { reservationIds } = body as { reservationIds?: string[] };
+    const { reservationIds, agencyId } = body as { reservationIds?: string[]; agencyId?: string };
 
     if (!Array.isArray(reservationIds) || reservationIds.length === 0) {
       return NextResponse.json(
@@ -20,9 +21,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify agency access: fetch one reservation to get agencyId if not provided
+    let resolvedAgencyId = agencyId;
+    if (!resolvedAgencyId) {
+      const firstRes = await db.reservation.findFirst({
+        where: { id: { in: reservationIds } },
+        select: { agencyId: true },
+      });
+      if (firstRes) {
+        resolvedAgencyId = firstRes.agencyId;
+      }
+    }
+
+    if (resolvedAgencyId) {
+      await requireAgencyAccess(request, resolvedAgencyId);
+    } else {
+      return NextResponse.json(
+        { error: 'Could not determine agency for these reservations' },
+        { status: 400 }
+      );
+    }
+
     const results = await db.reservation.updateMany({
       where: {
         id: { in: reservationIds },
+        agencyId: resolvedAgencyId,
         status: { in: ['WAITING', 'CALLED'] },
       },
       data: {
@@ -36,10 +59,6 @@ export async function POST(request: NextRequest) {
       updatedCount: results.count,
     });
   } catch (error) {
-    console.error('Batch complete error:', error);
-    return NextResponse.json(
-      { error: 'Failed to complete reservations' },
-      { status: 500 }
-    );
+    return authErrorResponse(error);
   }
 }

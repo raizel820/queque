@@ -285,7 +285,7 @@ export function CustomerNotifications() {
           setTransitioningIds(new Set());
         }, 400);
         toast.success(t('markAllReadSuccess'));
-        window.dispatchEvent(new CustomEvent('queuewise:notifications-read'));
+        window.dispatchEvent(new CustomEvent('blasti:notifications-read'));
       }
     } catch {
       toast.error(t('error'));
@@ -306,7 +306,7 @@ export function CustomerNotifications() {
           setTransitioningIds(new Set());
         }, 400);
         toast.success(t('markReadSuccess'));
-        window.dispatchEvent(new CustomEvent('queuewise:notifications-read'));
+        window.dispatchEvent(new CustomEvent('blasti:notifications-read'));
       }
     } catch {
       toast.error(t('error'));
@@ -320,7 +320,7 @@ export function CustomerNotifications() {
       if (res.ok) {
         setNotifications((prev) => prev.filter((n) => n.id !== id));
         toast.success(t('notificationDeleted') || t('success'));
-        window.dispatchEvent(new CustomEvent('queuewise:notifications-read'));
+        window.dispatchEvent(new CustomEvent('blasti:notifications-read'));
       }
     } catch {
       toast.error(t('error'));

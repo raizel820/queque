@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,6 +10,8 @@ export async function POST(request: NextRequest) {
     if (!agencyId) {
       return NextResponse.json({ success: false, error: 'agencyId is required' }, { status: 400 });
     }
+
+    await requireAgencyAccess(request, agencyId);
 
     if (!customerName || !customerName.trim()) {
       return NextResponse.json({ success: false, error: 'Customer name is required' }, { status: 400 });
@@ -131,6 +134,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, reservation }, { status: 201 });
   } catch (error: unknown) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     if (message === 'FULL') {
       return NextResponse.json({ success: false, error: 'Queue is full' }, { status: 400 });

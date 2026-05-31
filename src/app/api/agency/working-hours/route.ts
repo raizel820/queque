@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -11,6 +12,8 @@ export async function PATCH(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    await requireAgencyAccess(request, agencyId)
 
     // Validate time format
     const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/
@@ -42,6 +45,8 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(agency)
   } catch (error: unknown) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json({ error: message }, { status: 500 })
   }

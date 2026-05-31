@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { scryptSync } from 'crypto';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await requireAdmin(request);
+
     const { id } = await params;
     const newPassword = 'password123';
 
@@ -20,7 +23,7 @@ export async function POST(
     }
 
     // Hash the new password (same method as register)
-    const salt = process.env.PASSWORD_SALT || 'queuewise-salt-2024';
+    const salt = process.env.PASSWORD_SALT || 'blasti-salt-2024';
     const passwordHash = scryptSync(newPassword, salt, 64).toString('hex');
 
     // Update password
@@ -32,11 +35,11 @@ export async function POST(
     // Create audit log
     await db.auditLog.create({
       data: {
-        userId: user.id,
+        userId: admin.id,
         action: 'SETTINGS_UPDATE',
         entityType: 'USER',
         entityId: user.id,
-        details: JSON.stringify({ action: 'password_reset' }),
+        details: JSON.stringify({ action: 'password_reset', targetUser: user.username }),
       },
     });
 
@@ -46,7 +49,6 @@ export async function POST(
       username: user.username,
     });
   } catch (error) {
-    console.error('Reset password error:', error);
-    return NextResponse.json({ error: 'Failed to reset password' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

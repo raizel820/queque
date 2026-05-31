@@ -103,7 +103,8 @@ export async function GET() {
       const position = reservation.queueNumber;
       const estimatedMinutes = Math.max(1, Math.round(reservation.agency.averageServiceTime || 10));
 
-      const smsMessage = getSmsTemplate('turnApproaching', lang, {
+      const smsMessage = await getSmsTemplate('turnApproaching', lang, {
+        customerName: user.fullName,
         ticketNumber: reservation.displayNumber,
         agencyName,
         position,

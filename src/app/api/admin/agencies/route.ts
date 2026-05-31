@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard'
 
 export async function POST(request: NextRequest) {
   try {
+    const admin = await requireAdmin(request)
+
     const body = await request.json()
     const { name, nameAr, nameFr, category, city, phone, email, ownerId } = body
 
@@ -29,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     await db.auditLog.create({
       data: {
-        userId: ownerId,
+        userId: admin.id,
         action: 'AGENCY_CREATE',
         entityType: 'AGENCY',
         entityId: agency.id,
@@ -38,17 +41,15 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ success: true, agency }, { status: 201 })
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return authErrorResponse(error)
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request)
+
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
@@ -122,11 +123,7 @@ export async function GET(request: NextRequest) {
       limit,
       offset,
     })
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return authErrorResponse(error)
   }
 }

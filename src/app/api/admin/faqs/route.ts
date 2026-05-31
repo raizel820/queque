@@ -1,23 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
 // GET all FAQs (including inactive)
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
+
     const faqs = await db.fAQ.findMany({
       orderBy: { order: 'asc' },
     });
     return NextResponse.json({ faqs });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/faqs GET] Error:', message);
-    return NextResponse.json({ error: 'Operation failed' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }
 
 // POST create new FAQ
 export async function POST(req: NextRequest) {
   try {
+    await requireAdmin(req);
+
     const body = await req.json();
     const { question, questionFr, questionAr, answer, answerFr, answerAr, category, order, isActive } = body;
 
@@ -41,15 +44,15 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ faq }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/faqs POST] Error:', message);
-    return NextResponse.json({ error: 'Operation failed' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }
 
 // PUT update FAQ
 export async function PUT(req: NextRequest) {
   try {
+    await requireAdmin(req);
+
     const body = await req.json();
     const { id, question, questionFr, questionAr, answer, answerFr, answerAr, category, order, isActive } = body;
 
@@ -79,15 +82,15 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ faq });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/faqs PUT] Error:', message);
-    return NextResponse.json({ error: 'Operation failed' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }
 
 // DELETE FAQ
 export async function DELETE(req: NextRequest) {
   try {
+    await requireAdmin(req);
+
     const body = await req.json();
     const { id } = body;
 
@@ -103,8 +106,6 @@ export async function DELETE(req: NextRequest) {
     await db.fAQ.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/faqs DELETE] Error:', message);
-    return NextResponse.json({ error: 'Operation failed' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

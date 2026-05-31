@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getTodayStart, getTodayEnd } from '@/lib/date-utils';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(req: NextRequest) {
   try {
@@ -8,6 +9,8 @@ export async function GET(req: NextRequest) {
     if (!agencyId) {
       return NextResponse.json({ error: 'agencyId required' }, { status: 400 });
     }
+
+    await requireAgencyAccess(req, agencyId);
 
     const agency = await db.agency.findUnique({ where: { id: agencyId } });
     if (!agency) {
@@ -25,7 +28,6 @@ export async function GET(req: NextRequest) {
       cancelledCount,
       queueSettings,
       ratingAgg,
-      totalRated,
       totalAllTime,
       completedAllTime,
       noShowAllTime,
@@ -50,10 +52,6 @@ export async function GET(req: NextRequest) {
         where: { agencyId, rating: { not: null } },
         _avg: { rating: true },
         _count: { rating: true },
-      }),
-      // total rated today
-      db.reservation.count({
-        where: { agencyId, rating: { not: null }, completedAt: { gte: todayStart, lte: todayEnd } },
       }),
       // all-time totals
       db.reservation.count({ where: { agencyId } }),
@@ -144,6 +142,8 @@ export async function GET(req: NextRequest) {
       subscriptionStatus: agency.subscriptionStatus,
     });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('Agency stats error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

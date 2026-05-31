@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireResourceOwnership, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { realtime } from '@/lib/realtime';
 
 export async function POST(
   request: NextRequest,
@@ -7,20 +9,18 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const body = await request.json();
-    const { userId } = body;
-
-    if (!userId) {
-      return NextResponse.json({ success: false, error: 'userId is required' }, { status: 400 });
-    }
 
     const reservation = await db.reservation.findUnique({ where: { id } });
     if (!reservation) {
       return NextResponse.json({ success: false, error: 'Reservation not found' }, { status: 404 });
     }
 
-    if (reservation.userId !== userId) {
-      return NextResponse.json({ success: false, error: 'This reservation does not belong to you' }, { status: 403 });
+    // Verify ownership or agency access
+    try {
+      await requireResourceOwnership(request, reservation.userId);
+    } catch {
+      // If not the owner, check agency access
+      await requireAgencyAccess(request, reservation.agencyId);
     }
 
     if (reservation.status !== 'WAITING') {
@@ -38,7 +38,7 @@ export async function POST(
 
       await tx.notification.create({
         data: {
-          userId,
+          userId: reservation.userId,
           type: 'RESERVATION_CANCELLED',
           title: 'Reservation Cancelled',
           message: `Your reservation ${reservation.displayNumber} has been cancelled.`,
@@ -47,7 +47,7 @@ export async function POST(
 
       await tx.auditLog.create({
         data: {
-          userId,
+          userId: reservation.userId,
           action: 'RESERVATION_CANCEL',
           entityType: 'RESERVATION',
           entityId: id,
@@ -56,9 +56,26 @@ export async function POST(
       });
     });
 
+    // Emit realtime events
+    if (reservation.userId) {
+      await realtime.reservationCancelled(reservation.userId, {
+        reservationId: id,
+        displayNumber: reservation.displayNumber,
+        agencyId: reservation.agencyId,
+      });
+    }
+    await realtime.queueUpdated(reservation.agencyId, {
+      action: 'cancel',
+      reservationId: id,
+      displayNumber: reservation.displayNumber,
+    });
+    await realtime.agencyStatsUpdated(reservation.agencyId, {
+      action: 'queue-changed',
+      agencyId: reservation.agencyId,
+    });
+
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

@@ -1,17 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, resolveUserAgencyId, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(req: NextRequest) {
   try {
-    const agencyId = req.nextUrl.searchParams.get('agencyId');
+    const agencyIdParam = req.nextUrl.searchParams.get('agencyId');
 
-    let agency;
-    if (agencyId) {
-      agency = await db.agency.findUnique({ where: { id: agencyId } });
+    let agencyId: string | null;
+    if (agencyIdParam) {
+      await requireAgencyAccess(req, agencyIdParam);
+      agencyId = agencyIdParam;
     } else {
-      agency = await db.agency.findFirst({ where: { isActive: true } });
+      const user = await requireAuth(req);
+      agencyId = user.agencyId || await resolveUserAgencyId(user);
     }
 
+    if (!agencyId) return NextResponse.json({ currentPlan: 'BASIC', status: 'INACTIVE' });
+
+    const agency = await db.agency.findUnique({ where: { id: agencyId } });
     if (!agency) return NextResponse.json({ currentPlan: 'BASIC', status: 'INACTIVE' });
 
     const transactions = await db.transaction.findMany({
@@ -33,6 +39,8 @@ export async function GET(req: NextRequest) {
       })),
     });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('Subscription error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

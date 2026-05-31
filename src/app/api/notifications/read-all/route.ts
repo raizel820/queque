@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId } = body;
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    const user = await requireAuth(request);
 
     const result = await db.notification.updateMany({
-      where: { userId, isRead: false },
+      where: { userId: user.id, isRead: false },
       data: { isRead: true },
     });
 
@@ -23,10 +16,6 @@ export async function PUT(request: NextRequest) {
       markedCount: result.count,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    );
+    return authErrorResponse(error);
   }
 }

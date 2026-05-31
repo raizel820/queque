@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { hashPassword } from '@/lib/password';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 // POST - Create a new staff account (user + agency link)
 export async function POST(req: NextRequest) {
@@ -11,6 +12,8 @@ export async function POST(req: NextRequest) {
     if (!agencyId || !username || !fullName || !password || !staffRole) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
+
+    await requireAgencyAccess(req, agencyId);
 
     // Validate username length
     if (username.trim().length < 3) {
@@ -90,6 +93,8 @@ export async function POST(req: NextRequest) {
       initialPassword: password,
     }, { status: 201 });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[agency/staff/create] Error:', message);
     return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });

@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await requireAuth(request)
+    const userId = user.id
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
     const limit = parseInt(searchParams.get('limit') || '20', 10)
     const offset = parseInt(searchParams.get('offset') || '0', 10)
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      )
-    }
 
     const completedStatuses = ['COMPLETED', 'CANCELLED', 'NO_SHOW', 'SERVED'] as string[];
 
@@ -87,10 +82,6 @@ export async function GET(request: NextRequest) {
       offset,
     })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

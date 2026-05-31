@@ -137,6 +137,7 @@ export type AlgerianProviderId = keyof typeof ALGERIAN_PROVIDERS;
 // ─── SMS Message Templates (multilingual) ────────────────────────────────────
 
 interface SmsTemplateVars {
+  customerName: string;
   ticketNumber: string;
   agencyName: string;
   position: number;
@@ -146,35 +147,69 @@ interface SmsTemplateVars {
 const SMS_TEMPLATES = {
   turnApproaching: {
     ar: (v: SmsTemplateVars) =>
-      `🔄 DALTI: اقترب دورك! تذكرتك ${v.ticketNumber} في ${v.agencyName}. المركز: ${v.position}. الانتظار المتوقع: ${v.estimatedMinutes} دقيقة.`,
+      `🔄 BLASTI: ${v.customerName}، اقترب دورك! تذكرتك ${v.ticketNumber} في ${v.agencyName}. المركز: ${v.position}. الانتظار المتوقع: ${v.estimatedMinutes} دقيقة.`,
     fr: (v: SmsTemplateVars) =>
-      `🔄 DALTI: Votre tour approche! Billet ${v.ticketNumber} a ${v.agencyName}. Position: ${v.position}. Attente estimee: ${v.estimatedMinutes} min.`,
+      `🔄 BLASTI: ${v.customerName}, votre tour approche! Billet ${v.ticketNumber} a ${v.agencyName}. Position: ${v.position}. Attente estimee: ${v.estimatedMinutes} min.`,
     en: (v: SmsTemplateVars) =>
-      `🔄 DALTI: Your turn is approaching! Ticket ${v.ticketNumber} at ${v.agencyName}. Position: ${v.position}. Est. wait: ${v.estimatedMinutes} min.`,
+      `🔄 BLASTI: Dear ${v.customerName}, your turn is approaching! Ticket ${v.ticketNumber} at ${v.agencyName}. Position: ${v.position}. Est. wait: ${v.estimatedMinutes} min.`,
   },
   yourTurn: {
     ar: (v: SmsTemplateVars) =>
-      `🎫 DALTI: دورك الآن! تذكرتك ${v.ticketNumber} في ${v.agencyName}. يرجى التوجه فوراً.`,
+      `🎫 BLASTI: ${v.customerName}، دورك الآن! تذكرتك ${v.ticketNumber} في ${v.agencyName}. يرجى التوجه فوراً.`,
     fr: (v: SmsTemplateVars) =>
-      `🎫 DALTI: C'est votre tour! Billet ${v.ticketNumber} a ${v.agencyName}. Veuillez vous presenter.`,
+      `🎫 BLASTI: ${v.customerName}, c'est votre tour! Billet ${v.ticketNumber} a ${v.agencyName}. Veuillez vous presenter.`,
     en: (v: SmsTemplateVars) =>
-      `🎫 DALTI: It's your turn! Ticket ${v.ticketNumber} at ${v.agencyName}. Please proceed now.`,
+      `🎫 BLASTI: Dear ${v.customerName}, it's your turn! Ticket ${v.ticketNumber} at ${v.agencyName}. Please proceed now.`,
   },
   noShowWarning: {
     ar: (v: SmsTemplateVars) =>
-      `⚠️ DALTI: تم تخطي تذكرتك ${v.ticketNumber} في ${v.agencyName} بسبب عدم الحضور. يمكنك استعادة مركزك من التطبيق.`,
+      `⚠️ BLASTI: ${v.customerName}، تم تخطي تذكرتك ${v.ticketNumber} في ${v.agencyName} بسبب عدم الحضور. يمكنك استعادة مركزك من التطبيق.`,
     fr: (v: SmsTemplateVars) =>
-      `⚠️ DALTI: Votre billet ${v.ticketNumber} a ${v.agencyName} a ete saute (absence). Vous pouvez recuperer votre position.`,
+      `⚠️ BLASTI: ${v.customerName}, votre billet ${v.ticketNumber} a ${v.agencyName} a ete saute (absence). Vous pouvez recuperer votre position.`,
     en: (v: SmsTemplateVars) =>
-      `⚠️ DALTI: Your ticket ${v.ticketNumber} at ${v.agencyName} was skipped (no-show). You can reclaim your position.`,
+      `⚠️ BLASTI: Dear ${v.customerName}, your ticket ${v.ticketNumber} at ${v.agencyName} was skipped (no-show). You can reclaim your position.`,
   },
 };
 
-export function getSmsTemplate(
-  type: keyof typeof SMS_TEMPLATES,
+/**
+ * Apply template variable substitution
+ * Replaces {varName} placeholders with actual values
+ */
+function applyTemplateVars(template: string, vars: Record<string, string | number>): string {
+  let result = template;
+  Object.entries(vars).forEach(([key, value]) => {
+    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+  });
+  return result;
+}
+
+/**
+ * Get SMS template - uses custom template from DB settings if available,
+ * otherwise falls back to built-in multilingual templates
+ */
+export async function getSmsTemplate(
+  type: 'turnApproaching' | 'yourTurn' | 'noShowWarning',
   lang: string,
   vars: SmsTemplateVars
-): string {
+): Promise<string> {
+  // Try to get custom template from settings
+  try {
+    const settings = await getSmsSettings();
+    const customTemplateField = type === 'turnApproaching'
+      ? settings.templateTurnApproaching
+      : type === 'yourTurn'
+      ? settings.templateYourTurn
+      : settings.templateNoShow;
+
+    // If custom template is set, use it with variable substitution
+    if (customTemplateField && customTemplateField.trim()) {
+      return applyTemplateVars(customTemplateField, vars);
+    }
+  } catch {
+    // Fall through to default templates
+  }
+
+  // Fallback to built-in multilingual templates
   const template = SMS_TEMPLATES[type];
   const langKey = lang === 'ar' ? 'ar' : lang === 'fr' ? 'fr' : 'en';
   return template[langKey as 'ar' | 'fr' | 'en'](vars);
@@ -193,7 +228,7 @@ export async function getSmsSettings() {
         provider: 'winsms',
         apiUrl: ALGERIAN_PROVIDERS.winsms.defaultApiUrl,
         apiKey: '',
-        senderName: 'DALTI',
+        senderName: 'BLASTI',
         enabled: false,
         smsPerReminder: 1,
         maxSmsPerDay: 5,
@@ -587,7 +622,7 @@ export async function sendSms(phoneNumber: string, message: string, userId?: str
   // Validate API configuration
   const apiUrl = settings.apiUrl || process.env.SMS_API_URL;
   const apiKey = settings.apiKey || process.env.SMS_API_KEY;
-  const senderName = settings.senderName || 'DALTI';
+  const senderName = settings.senderName || 'BLASTI';
 
   if (!apiUrl || !apiKey) {
     const log = await db.smsLog.create({
@@ -676,7 +711,7 @@ export async function sendSms(phoneNumber: string, message: string, userId?: str
  */
 export async function testSms(phoneNumber: string): Promise<SendSmsResult> {
   const now = new Date().toLocaleString('ar-DZ', { timeZone: 'Africa/Algiers' });
-  const testMessage = `[DALTI] ${now} - رسالة اختبار. Test SMS. If you receive this, your SMS gateway is working correctly.`;
+  const testMessage = `[BLASTI] ${now} - رسالة اختبار. Test SMS. If you receive this, your SMS gateway is working correctly.`;
   return sendSms(phoneNumber, testMessage);
 }
 

@@ -140,7 +140,7 @@ export function CustomerHome() {
     fetchAgencies();
     // Load recent searches from localStorage
     try {
-      const stored = localStorage.getItem('queuewise-recent-searches');
+      const stored = localStorage.getItem('blasti-recent-searches');
       if (stored) setRecentSearches(JSON.parse(stored));
     } catch { /* silent */ }
   }, []);
@@ -222,18 +222,18 @@ export function CustomerHome() {
     if (!term.trim()) return;
     const updated = [term, ...recentSearches.filter((s) => s.toLowerCase() !== term.toLowerCase())].slice(0, 5);
     setRecentSearches(updated);
-    try { localStorage.setItem('queuewise-recent-searches', JSON.stringify(updated)); } catch { /* silent */ }
+    try { localStorage.setItem('blasti-recent-searches', JSON.stringify(updated)); } catch { /* silent */ }
   };
 
   const removeRecentSearch = (term: string) => {
     const updated = recentSearches.filter((s) => s !== term);
     setRecentSearches(updated);
-    try { localStorage.setItem('queuewise-recent-searches', JSON.stringify(updated)); } catch { /* silent */ }
+    try { localStorage.setItem('blasti-recent-searches', JSON.stringify(updated)); } catch { /* silent */ }
   };
 
   const clearAllRecentSearches = () => {
     setRecentSearches([]);
-    try { localStorage.removeItem('queuewise-recent-searches'); } catch { /* silent */ }
+    try { localStorage.removeItem('blasti-recent-searches'); } catch { /* silent */ }
   };
 
   const handleSearchSelect = (term: string) => {

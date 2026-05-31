@@ -173,10 +173,10 @@ export function CustomerQueue() {
             peopleAhead: (r.peopleAhead as number) || 0,
             estimatedWait: (r.estimatedWait as number) || 0,
             currentServingNumber: (r.currentServingNumber as string) || '0',
-            agencyName: agency?.name || 'Agency',
+            agencyName: agency?.name || t('defaultAgency'),
             agencyNameAr: agency?.nameAr,
             agencyNameFr: agency?.nameFr,
-            serviceName: service?.name || 'Service',
+            serviceName: service?.name || t('defaultService'),
             serviceNameAr: service?.nameAr,
             serviceNameFr: service?.nameFr,
             joinedAt: r.joinedAt,
@@ -208,8 +208,8 @@ export function CustomerQueue() {
                 if (Notification.permission === 'granted') {
                   new Notification(t('yourTurn') || 'Your Turn!', {
                     body: t('turnNotifBody') || 'Please proceed to the service counter.',
-                    icon: '/favicon.ico',
-                    tag: 'queuewise-turn',
+                    icon: '/logo.png',
+                    tag: 'blasti-turn',
                     requireInteraction: true,
                   });
                 }
@@ -243,8 +243,8 @@ export function CustomerQueue() {
             if (Notification.permission === 'granted') {
               new Notification(t('yourTurn') || 'Your Turn!', {
                 body: t('turnNotifBody') || 'Please proceed to the service counter.',
-                icon: '/favicon.ico',
-                tag: 'queuewise-turn',
+                icon: '/logo.png',
+                tag: 'blasti-turn',
                 requireInteraction: true,
               });
             }
@@ -285,7 +285,7 @@ export function CustomerQueue() {
   // Load feedback submitted IDs from localStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('queuewise_feedback_submitted');
+      const stored = localStorage.getItem('blasti_feedback_submitted');
       if (stored) {
         setFeedbackSubmittedIds(new Set(JSON.parse(stored)));
       }
@@ -507,7 +507,7 @@ export function CustomerQueue() {
         setFeedbackSubmittedIds((prev) => {
           const next = new Set(prev);
           next.add(resId);
-          try { localStorage.setItem('queuewise_feedback_submitted', JSON.stringify([...next])); } catch { /* ignore */ }
+          try { localStorage.setItem('blasti_feedback_submitted', JSON.stringify([...next])); } catch { /* ignore */ }
           return next;
         });
         setRatingDialogOpen(false);
@@ -539,7 +539,7 @@ export function CustomerQueue() {
       .replace('{service}', serviceName)
       .replace('{number}', res.queueNumber);
     if (navigator.share) {
-      navigator.share({ title: 'DALTI', text: shareText }).catch(() => {});
+      navigator.share({ title: 'BLASTI', text: shareText }).catch(() => {});
     } else {
       navigator.clipboard.writeText(shareText).then(() => {
         toast.success(t('copied') || 'Copied to clipboard');

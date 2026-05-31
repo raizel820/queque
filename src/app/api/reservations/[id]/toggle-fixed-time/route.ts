@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireResourceOwnership, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function POST(
   request: NextRequest,
@@ -8,7 +9,7 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { userId, fixedTimeEnabled } = body;
+    const { fixedTimeEnabled } = body;
 
     if (fixedTimeEnabled === undefined) {
       return NextResponse.json(
@@ -30,9 +31,11 @@ export async function POST(
       );
     }
 
-    // Verify ownership
-    if (userId && reservation.userId && reservation.userId !== userId) {
-      return NextResponse.json({ success: false, error: 'Not authorized' }, { status: 403 });
+    // Verify ownership or agency access
+    try {
+      await requireResourceOwnership(request, reservation.userId);
+    } catch {
+      await requireAgencyAccess(request, reservation.agencyId);
     }
 
     // If enabling fixed time but no preferred time set
@@ -65,7 +68,7 @@ export async function POST(
     // Audit log
     await db.auditLog.create({
       data: {
-        userId: userId || undefined,
+        userId: reservation.userId || undefined,
         action: fixedTimeEnabled ? 'FIXED_TIME_ENABLE' : 'FIXED_TIME_DISABLE',
         entityType: 'RESERVATION',
         entityId: id,
@@ -75,7 +78,6 @@ export async function POST(
 
     return NextResponse.json({ success: true, reservation: updated });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

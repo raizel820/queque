@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,6 +10,8 @@ export async function GET(request: NextRequest) {
     if (!agencyId) {
       return NextResponse.json({ error: 'Agency ID required' }, { status: 400 });
     }
+
+    await requireAgencyAccess(request, agencyId);
 
     const reservations = await db.reservation.findMany({
       where: { agencyId },
@@ -60,10 +63,12 @@ export async function GET(request: NextRequest) {
     return new NextResponse(csvContent, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="queuewise-reservations-${new Date().toISOString().split('T')[0]}.csv"`,
+        'Content-Disposition': `attachment; filename="blasti-reservations-${new Date().toISOString().split('T')[0]}.csv"`,
       },
     });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     console.error('Agency export CSV error:', error);
     return NextResponse.json({ error: 'Export failed' }, { status: 500 });
   }

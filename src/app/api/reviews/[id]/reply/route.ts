@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 // POST: Add a reply to a review
 export async function POST(
@@ -17,6 +18,9 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    // Verify the user has access to this agency
+    await requireAgencyAccess(request, agencyId);
 
     // Find the review
     const review = await db.review.findUnique({ where: { id } });
@@ -52,11 +56,6 @@ export async function POST(
 
     return NextResponse.json({ success: true, review: updated });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Reply to review error:', message);
-    return NextResponse.json(
-      { error: 'Failed to submit reply' },
-      { status: 500 }
-    );
+    return authErrorResponse(error);
   }
 }

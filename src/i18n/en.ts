@@ -2,7 +2,7 @@ import type { TranslationKeys } from './ar';
 
 const en: Record<TranslationKeys, string> = {
   // ─── App ─────────────────────────────────
-  appName: "DALTI",
+  appName: "BLASTI",
   appTagline: "Smart Queue Management for Businesses in Algeria",
 
   // ─── Common ──────────────────────────────
@@ -86,7 +86,7 @@ const en: Record<TranslationKeys, string> = {
   language: "Language",
 
   // ─── Customer ────────────────────────────
-  welcomeTitle: "Welcome to DALTI",
+  welcomeTitle: "Welcome to BLASTI",
   welcomeSubtitle: "Join queues remotely, no need to wait in line!",
   searchAgency: "Search for an agency...",
   searchByCategory: "Search by category",
@@ -166,12 +166,7 @@ const en: Record<TranslationKeys, string> = {
   callNext: "Call Next",
   markCompleted: "Completed",
   markNoShow: "No Show",
-  completeService: "Complete",
   cancelRes: "Cancel",
-  calledAt: "Called at",
-  noCustomerBeingServed: "No customer being served",
-  nextUp: "Next up",
-  waitingQueue: "Waiting Queue",
   markCancelled: "Mark Cancelled",
   pauseQueue: "Pause",
   resumeQueue: "Resume",
@@ -320,7 +315,7 @@ const en: Record<TranslationKeys, string> = {
   testimonial2: "The platform is very easy to use. Even elderly people can use it easily.",
   testimonial2Name: "Fatima Z.",
   testimonial2Role: "Customer",
-  testimonial3: "DALTI helped me organize the clinic queue better. Customers are very satisfied.",
+  testimonial3: "BLASTI helped me organize the clinic queue better. Customers are very satisfied.",
   testimonial3Name: "Dr. Mohamed",
   testimonial3Role: "Clinic Owner",
   trustedBy: "Trusted By",
@@ -903,6 +898,23 @@ const en: Record<TranslationKeys, string> = {
   platformSettings: "Platform Settings",
   maxSmsPerDay: "Max SMS per Day",
 
+  // ─── SMS Templates ─────
+  smsTemplates: "SMS Text Templates",
+  smsTemplatesDesc: "Customize the SMS messages sent to customers. Leave blank to use default templates.",
+  smsAvailableVars: "Available Variables",
+  varCustomerName: "Customer name",
+  varTicketNumber: "Ticket number",
+  varAgencyName: "Agency name",
+  varPosition: "Queue position",
+  varEstimatedMinutes: "Est. wait (min)",
+  smsTemplateTurnApproaching: "Turn Approaching Template",
+  smsTemplateYourTurn: "Your Turn Template",
+  smsTemplateNoShow: "No-Show Warning Template",
+  smsTemplateCustom: "Custom / Additional Template",
+  smsTemplateCustomDesc: "Use this for any additional custom notification template.",
+  resetToDefault: "Reset to Default",
+  optional: "Optional",
+
   // ─── Task 13-b: Queue Position Sharing ─────
   sharePositionNew: "Share Position",
   shareText: "I'm in queue at",
@@ -935,7 +947,8 @@ const en: Record<TranslationKeys, string> = {
   receiptUploadedSuccess: "Receipt uploaded successfully",
 
   // ─── Onboarding Wizard ──────────
-  welcomeTo: "Welcome to DALTI",
+  welcomeTo: "Welcome to BLASTI",
+  welcomeToBlasti: "Welcome to BLASTI!",
   setupAccount: "Let's set up your account",
   chooseLanguage: "Choose your preferred language",
   setupNotifications: "Notification preferences",
@@ -986,7 +999,7 @@ const en: Record<TranslationKeys, string> = {
   electronicPayment: 'Electronic Payment (E-Wallet)',
   paymentInstructions: 'Payment Instructions',
   paymentInstructionsDesc: 'Follow these steps to complete your payment',
-  ccpInstructions: 'Send payment to CCP account: 0000 0000 0000 0000 — Key: 00 — Recipient: DALTI',
+  ccpInstructions: 'Send payment to CCP account: 0000 0000 0000 0000 — Key: 00 — Recipient: BLASTI',
   bankInstructions: 'Transfer to account: 0000 0000 0000 0000 — RIB: 00 000 00000 000 0000 000 — Bank: BNA',
   eWalletInstructions: 'Send to e-wallet number: 0XXX XXX XXX via BaridiMob or CCP',
   faq: 'Frequently Asked Questions',
@@ -1232,6 +1245,52 @@ const en: Record<TranslationKeys, string> = {
   noPreferredTime: 'No preferred time set',
   selectTime: 'Select Time',
   enableFixedTime: 'Enable fixed time',
+
+  // ─── Task 4c: Hardcoded English Fixes ─────
+  previousDays: 'Previous days',
+  unknownAgency: 'Unknown Agency',
+  systemLabel: 'System',
+  notAvailable: 'N/A',
+  defaultUser: 'User',
+  defaultAgency: 'Agency',
+  defaultService: 'Service',
+
+  // ─── Category 2: Missing keys with English fallbacks ─────
+  agencyQrCode: 'Agency QR Code',
+  analyticsDesc: 'Platform analytics and usage statistics',
+  called: 'Called',
+  capacityDesc: 'Queue capacity settings and limits',
+  closingTime: 'Closing Time',
+  current: 'Current',
+  generalSettingsDesc: 'General agency settings',
+  manageAgencies: 'Manage Agencies',
+  noCustomersWaiting: 'No customers waiting',
+  of: 'of',
+  page: 'page',
+  past: 'Past',
+  previous: 'Previous',
+  pullToRefresh: 'Pull to refresh',
+  queueActivity: 'Queue Activity',
+  rateExperienceDesc: 'Rate your experience with this agency',
+  recentlyAdded: 'Recently Added',
+  servicesDesc: 'Manage available services',
+  showing: 'Showing',
+  sortByName: 'Sort by Name',
+  sortByRating: 'Sort by Rating',
+  upcoming: 'Upcoming',
+  // ─── Payment/Gateway Settings ─────────────────────────
+  gatewaySettings: 'Payment Gateway',
+  gatewaySettingsDesc: 'Configure payment methods and gateways',
+  ccpEnabled: 'Enable CCP',
+  bankEnabled: 'Enable Bank Transfer',
+  electronicEnabled: 'Enable E-Wallet',
+  ccpAccount: 'CCP Account Number',
+  ccpKey: 'CCP Key',
+  bankName: 'Bank Name',
+  bankAccount: 'Bank Account Number',
+  bankRib: 'Bank RIB',
+  ewalletNumber: 'E-Wallet Number',
+  paymentSaved: 'Payment settings saved',
 };
 
 export default en;

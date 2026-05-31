@@ -172,11 +172,11 @@ function CustomerBottomNav() {
     const handleNotificationsRead = () => {
       fetchUnread();
     };
-    window.addEventListener('queuewise:notifications-read', handleNotificationsRead);
+    window.addEventListener('blasti:notifications-read', handleNotificationsRead);
     
     return () => {
       clearInterval(interval);
-      window.removeEventListener('queuewise:notifications-read', handleNotificationsRead);
+      window.removeEventListener('blasti:notifications-read', handleNotificationsRead);
     };
   }, [user?.id]);
 
@@ -382,10 +382,10 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-16 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg overflow-hidden">
-            <img src="/dalti-icon.svg" alt={t('appName')} className="h-full w-full" />
+          <div className="h-12 w-12 rounded-xl overflow-hidden">
+            <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
           </div>
-          <span className="font-extrabold text-lg tracking-tight" style={{ color: '#059669' }}>{t('appName')}</span>
+          <span className="font-bold text-gradient">BLASTI</span>
         </div>
         <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -578,10 +578,10 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 h-16 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg overflow-hidden">
-            <img src="/dalti-icon.svg" alt={t('appName')} className="h-full w-full" />
+          <div className="h-12 w-12 rounded-xl overflow-hidden">
+            <img src="/logo.png" alt="BLASTI" className="h-full w-full object-contain" />
           </div>
-          <span className="font-extrabold text-lg tracking-tight" style={{ color: '#059669' }}>{t('appName')} Admin</span>
+          <span className="font-bold text-gradient">BLASTI Admin</span>
         </div>
         <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8" onClick={onClose}>
           <X className="h-4 w-4" />
@@ -692,8 +692,8 @@ export default function Home() {
   // Listen for onboarding trigger from register form
   useEffect(() => {
     const handleShowOnboarding = () => setShowOnboarding(true);
-    window.addEventListener('queuewise:show-onboarding', handleShowOnboarding);
-    return () => window.removeEventListener('queuewise:show-onboarding', handleShowOnboarding);
+    window.addEventListener('blasti:show-onboarding', handleShowOnboarding);
+    return () => window.removeEventListener('blasti:show-onboarding', handleShowOnboarding);
   }, []);
 
   // Fetch global announcements
@@ -716,7 +716,7 @@ export default function Home() {
   // Load dismissed announcements from localStorage
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('queuewise-dismissed-announcements');
+      const stored = localStorage.getItem('blasti-dismissed-announcements');
       if (stored) {
         const parsed = JSON.parse(stored);
         // Use setTimeout to avoid setState-in-effect lint warning
@@ -729,7 +729,7 @@ export default function Home() {
     setDismissedIds(prev => {
       const next = new Set(prev);
       next.add(id);
-      localStorage.setItem('queuewise-dismissed-announcements', JSON.stringify([...next]));
+      localStorage.setItem('blasti-dismissed-announcements', JSON.stringify([...next]));
       return next;
     });
   };
@@ -737,28 +737,28 @@ export default function Home() {
   // Dynamic document title based on current view
   useEffect(() => {
     const titles: Record<string, string> = {
-      'landing': t('appName') + ' - Smart Queue Management',
-      'login': t('login') + ' - ' + t('appName'),
-      'register': t('register') + ' - ' + t('appName'),
-      'customer-home': t('home') + ' - ' + t('appName'),
-      'customer-queue': t('myQueue') + ' - ' + t('appName'),
-      'customer-history': t('history') + ' - ' + t('appName'),
-      'customer-profile': t('profile') + ' - ' + t('appName'),
-      'customer-notifications': t('notifications') + ' - ' + t('appName'),
-      'customer-favorites': t('favorites') + ' - ' + t('appName'),
-      'agency-dashboard': t('dashboard') + ' - ' + t('appName'),
-      'agency-settings': t('settings') + ' - ' + t('appName'),
-      'agency-profile': t('profile') + ' - ' + t('appName'),
-      'agency-subscription': t('subscription') + ' - ' + t('appName'),
-      'admin-dashboard': t('dashboard') + ' - ' + t('appName'),
-      'admin-transactions': t('transactions') + ' - ' + t('appName'),
-      'admin-agencies': t('agencies') + ' - ' + t('appName'),
-      'admin-audit': t('auditLogs') + ' - ' + t('appName'),
-      'admin-users': t('userManagement') + ' - ' + t('appName'),
-      'admin-analytics': t('analytics') + ' - ' + t('appName'),
-    'admin-settings': t('platformSettings') + ' - ' + t('appName'),
+      'landing': 'BLASTI - Smart Queue Management',
+      'login': t('login') + ' - BLASTI',
+      'register': t('register') + ' - BLASTI',
+      'customer-home': t('home') + ' - BLASTI',
+      'customer-queue': t('myQueue') + ' - BLASTI',
+      'customer-history': t('history') + ' - BLASTI',
+      'customer-profile': t('profile') + ' - BLASTI',
+      'customer-notifications': t('notifications') + ' - BLASTI',
+      'customer-favorites': t('favorites') + ' - BLASTI',
+      'agency-dashboard': t('dashboard') + ' - BLASTI',
+      'agency-settings': t('settings') + ' - BLASTI',
+      'agency-profile': t('profile') + ' - BLASTI',
+      'agency-subscription': t('subscription') + ' - BLASTI',
+      'admin-dashboard': t('dashboard') + ' - BLASTI',
+      'admin-transactions': t('transactions') + ' - BLASTI',
+      'admin-agencies': t('agencies') + ' - BLASTI',
+      'admin-audit': t('auditLogs') + ' - BLASTI',
+      'admin-users': t('userManagement') + ' - BLASTI',
+      'admin-analytics': t('analytics') + ' - BLASTI',
+    'admin-settings': t('platformSettings') + ' - BLASTI',
     };
-    document.title = titles[currentView] || t('appName');
+    document.title = titles[currentView] || 'BLASTI';
   }, [currentView, t]);
 
   // Scroll to top on view change
@@ -773,7 +773,7 @@ export default function Home() {
 
   // Initialize direction from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem('queuewise-lang') as Language | null;
+    const stored = localStorage.getItem('blasti-lang') as Language | null;
     if (stored) {
       updateDocumentDirection(stored);
     } else {

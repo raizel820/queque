@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, resolveUserAgencyId, authErrorResponse } from '@/lib/auth-guard';
 
 // PATCH - Update a staff member (fullName, isActive, role)
 export async function PATCH(
@@ -8,6 +9,12 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+    const user = await requireAuth(req);
+    const agencyId = user.agencyId || await resolveUserAgencyId(user);
+    if (!agencyId) {
+      return NextResponse.json({ error: 'No agency found' }, { status: 403 });
+    }
+
     const body = await req.json();
     const { fullName, isActive, role } = body;
 
@@ -23,6 +30,11 @@ export async function PATCH(
 
     if (!staffMember) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 404 });
+    }
+
+    // Verify the staff member belongs to the user's agency
+    if (staffMember.agencyId !== agencyId) {
+      return NextResponse.json({ error: 'Staff member does not belong to your agency' }, { status: 403 });
     }
 
     // Cannot modify the owner
@@ -71,6 +83,8 @@ export async function PATCH(
 
     return NextResponse.json({ staff: updated, success: true });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[agency/staff/[id] PATCH] Error:', message);
     return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
@@ -84,6 +98,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const user = await requireAuth(req);
+    const agencyId = user.agencyId || await resolveUserAgencyId(user);
+    if (!agencyId) {
+      return NextResponse.json({ error: 'No agency found' }, { status: 403 });
+    }
 
     // Find the staff member
     const staffMember = await db.agencyStaff.findUnique({
@@ -92,6 +111,11 @@ export async function DELETE(
 
     if (!staffMember) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 404 });
+    }
+
+    // Verify the staff member belongs to the user's agency
+    if (staffMember.agencyId !== agencyId) {
+      return NextResponse.json({ error: 'Staff member does not belong to your agency' }, { status: 403 });
     }
 
     // Cannot remove the owner
@@ -105,15 +129,15 @@ export async function DELETE(
     });
 
     // Deactivate the user account if they are AGENCY_STAFF
-    const user = await db.user.findUnique({
+    const staffUser = await db.user.findUnique({
       where: { id: staffMember.userId },
     });
 
-    if (user && user.role === 'AGENCY_STAFF') {
+    if (staffUser && staffUser.role === 'AGENCY_STAFF') {
       // Check if this user has any other staff links
       const otherLinks = await db.agencyStaff.count({
         where: {
-          userId: user.id,
+          userId: staffUser.id,
           id: { not: id },
         },
       });
@@ -121,7 +145,7 @@ export async function DELETE(
       if (otherLinks === 0) {
         // No other agencies, deactivate the user
         await db.user.update({
-          where: { id: user.id },
+          where: { id: staffUser.id },
           data: { isActive: false },
         });
       }
@@ -129,6 +153,8 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[agency/staff/[id] DELETE] Error:', message);
     return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });

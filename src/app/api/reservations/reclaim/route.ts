@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, requireResourceOwnership, authErrorResponse } from '@/lib/auth-guard';
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await requireAuth(req);
     const { reservationId } = await req.json();
 
     if (!reservationId) {
@@ -38,6 +40,9 @@ export async function POST(req: NextRequest) {
         { status: 404 }
       );
     }
+
+    // Verify ownership (customer can only reclaim their own reservation)
+    await requireResourceOwnership(req, reservation.userId);
 
     // Check if the reservation was skipped for no-show
     // Use safe access since skippedForNoShow may not exist in Prisma Client on all deployments
@@ -103,7 +108,7 @@ export async function POST(req: NextRequest) {
       // Audit log
       await tx.auditLog.create({
         data: {
-          userId: reservation.userId,
+          userId: user.id,
           action: 'RECLAIM_POSITION',
           entityType: 'RESERVATION',
           entityId: reservation.id,
@@ -117,10 +122,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (_error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (error) {
+    return authErrorResponse(error);
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,6 +11,8 @@ export async function GET(req: NextRequest) {
     if (!agencyId) {
       return NextResponse.json({ error: 'agencyId required' }, { status: 400 });
     }
+
+    await requireAgencyAccess(req, agencyId);
 
     const reservations = await db.reservation.findMany({
       where: {
@@ -25,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     // Calculate position for each reservation
     const waitingReservations = reservations.filter(r => r.status === 'WAITING');
-    const entries = reservations.map((res, idx) => ({
+    const entries = reservations.map((res) => ({
       id: res.id,
       queueNumber: res.displayNumber,
       customerName: res.isWalkIn ? (res.walkInCustomerName || 'Walk-in') : (res.user?.fullName || res.user?.username || 'Unknown'),
@@ -44,6 +47,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ entries });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[agency/queue] Error:', message);
     return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });

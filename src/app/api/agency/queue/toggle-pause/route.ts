@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,6 +9,8 @@ export async function POST(req: NextRequest) {
     if (!agencyId) {
       return NextResponse.json({ error: 'agencyId required' }, { status: 400 });
     }
+
+    await requireAgencyAccess(req, agencyId);
 
     // Check agency has an active subscription
     const agencyCheck = await db.agency.findUnique({ where: { id: agencyId } });
@@ -48,6 +51,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, isPaused: newPausedState });
   } catch (error) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[agency/queue/toggle-pause] Error:', message);
     return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });

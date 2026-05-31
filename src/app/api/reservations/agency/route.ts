@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,6 +16,9 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Verify the user has access to this agency
+    await requireAgencyAccess(request, agencyId)
 
     const where: Record<string, unknown> = { agencyId }
     if (status) {
@@ -58,10 +62,6 @@ export async function GET(request: NextRequest) {
       offset,
     })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +13,8 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    await requireAgencyAccess(request, agencyId);
 
     // Fetch recent reservations with user info, limited to last 10
     const reservations = await db.reservation.findMany({
@@ -75,6 +78,8 @@ export async function GET(request: NextRequest) {
       events,
     });
   } catch (error: unknown) {
+    const authResp = authErrorResponse(error);
+    if (authResp) return authResp;
     const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
       { success: false, error: message },

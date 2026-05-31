@@ -1,8 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request)
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -81,11 +84,7 @@ export async function GET() {
         recentReservations,
       },
     })
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return authErrorResponse(error)
   }
 }

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { agencyId, serviceId, calledBy } = body
+    const { agencyId, serviceId } = body
 
     if (!agencyId || !serviceId) {
       return NextResponse.json(
@@ -12,6 +13,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Verify agency access
+    const user = await requireAgencyAccess(request, agencyId)
 
     // Check agency has an active subscription
     const agencyCheck = await db.agency.findUnique({ where: { id: agencyId } })
@@ -100,18 +104,10 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create audit log - validate calledBy is a real user ID
-    let auditUserId: string | null = null;
-    if (calledBy) {
-      const caller = await db.user.findUnique({ where: { id: calledBy } });
-      if (caller) {
-        auditUserId = calledBy;
-      }
-    }
-
+    // Create audit log — use session user.id as calledBy
     await db.auditLog.create({
       data: {
-        userId: auditUserId,
+        userId: user.id,
         action: 'QUEUE_CALL',
         entityType: 'RESERVATION',
         entityId: nextReservation.id,
@@ -129,11 +125,6 @@ export async function POST(request: NextRequest) {
       reservation: updatedReservation,
     })
   } catch (error: unknown) {
-    console.error('[QUEUE CALL-NEXT] Error:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: 'Failed to call next customer', details: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

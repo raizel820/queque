@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
 
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { agencyId, pausedBy } = body
+    const { agencyId } = body
 
     if (!agencyId) {
       return NextResponse.json(
@@ -12,6 +13,9 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Verify agency access
+    const user = await requireAgencyAccess(request, agencyId)
 
     // Get or create queue settings
     const queueSettings = await db.queueSettings.findFirst({
@@ -35,10 +39,10 @@ export async function PUT(request: NextRequest) {
       },
     })
 
-    // Create audit log
+    // Create audit log — use session user.id
     await db.auditLog.create({
       data: {
-        userId: pausedBy,
+        userId: user.id,
         action: 'SETTINGS_UPDATE',
         entityType: 'AGENCY',
         entityId: agencyId,
@@ -51,10 +55,6 @@ export async function PUT(request: NextRequest) {
       queueSettings: updatedSettings,
     })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

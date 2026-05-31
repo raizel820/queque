@@ -1,35 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { userId } = await request.json()
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      )
-    }
-
-    // Check user exists
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      select: { id: true, role: true },
-    })
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      )
-    }
+    const user = await requireAuth(request)
+    const userId = user.id
 
     // Prevent admin self-deletion
     if (user.role === 'SUPER_ADMIN') {
       return NextResponse.json(
         { success: false, error: 'Admin accounts cannot be deleted' },
         { status: 403 }
+      )
+    }
+
+    // Check user exists
+    const dbUser = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true },
+    })
+
+    if (!dbUser) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
       )
     }
 
@@ -47,7 +42,7 @@ export async function DELETE(request: NextRequest) {
       await tx.reservation.deleteMany({ where: { userId } })
 
       // If agency owner, find and clean up the entire agency
-      if (user.role === 'AGENCY_OWNER') {
+      if (dbUser.role === 'AGENCY_OWNER') {
         const ownedAgency = await tx.agency.findFirst({
           where: { ownerId: userId },
           select: { id: true },
@@ -66,7 +61,7 @@ export async function DELETE(request: NextRequest) {
       }
 
       // Remove staff association for agency staff
-      if (user.role === 'AGENCY_STAFF') {
+      if (dbUser.role === 'AGENCY_STAFF') {
         await tx.agencyStaff.deleteMany({ where: { userId } })
       }
 
@@ -76,11 +71,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Account deleted successfully' })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    console.error('Delete account error:', error)
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

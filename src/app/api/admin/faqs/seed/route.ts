@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 
 const SEED_FAQS = [
   {
@@ -8,7 +9,7 @@ const SEED_FAQS = [
     questionAr: 'كم يستغرق التفعيل؟',
     answer: 'Your account is typically activated within 1-2 business days after payment verification.',
     answerFr: 'Votre compte est généralement activé sous 1-2 jours ouvrables après vérification du paiement.',
-    answerAr: 'يتم تفعيل حسابك عادة خلال 1-2 أيام عمل بعد التحقق من الدفع.',
+    answerAr: 'يتم تفعيل حسابك عادة خلال 1-2 يوم عمل بعد التحقق من الدفع.',
     category: 'SUBSCRIPTION',
     order: 0,
   },
@@ -54,8 +55,10 @@ const SEED_FAQS = [
   },
 ];
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    await requireAdmin(request);
+
     // Check if FAQs already exist
     const existingCount = await db.fAQ.count();
     if (existingCount > 0) {
@@ -68,8 +71,6 @@ export async function POST() {
 
     return NextResponse.json({ message: 'FAQs seeded successfully', count: created.length });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[admin/faqs/seed POST] Error:', message);
-    return NextResponse.json({ error: 'Operation failed' }, { status: 500 });
+    return authErrorResponse(error);
   }
 }

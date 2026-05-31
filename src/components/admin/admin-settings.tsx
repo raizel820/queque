@@ -35,6 +35,9 @@ import {
   Info,
   CheckCircle2,
   XCircle,
+  CreditCard,
+  Building2,
+  Wallet,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -51,6 +54,10 @@ interface SmsSettingsData {
   smsPerReminder: number;
   maxSmsPerDay: number;
   testPhoneNumber: string | null;
+  templateTurnApproaching: string;
+  templateYourTurn: string;
+  templateNoShow: string;
+  templateCustom: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -125,10 +132,17 @@ export function AdminSettings() {
   const [testLoading, setTestLoading] = useState(false);
   const [validating, setValidating] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [paymentSettings, setPaymentSettings] = useState<{
+    ccpEnabled: boolean; bankEnabled: boolean; electronicEnabled: boolean;
+    ccpAccount: string; ccpKey: string; bankName: string;
+    bankAccount: string; bankRib: string; ewalletNumber: string;
+  }>({ ccpEnabled: false, bankEnabled: false, electronicEnabled: false, ccpAccount: '', ccpKey: '', bankName: '', bankAccount: '', bankRib: '', ewalletNumber: '' });
+  const [savingPayment, setSavingPayment] = useState(false);
 
   // ── Fetch on mount ──
   useEffect(() => {
     fetchSettings();
+    fetchPaymentSettings();
   }, []);
 
   // ── Data fetching ──
@@ -160,7 +174,7 @@ export function AdminSettings() {
     setSaving(true);
     try {
       // Don't send masked API key — keep old value on server
-      const apiKeyToSend = smsSettings.apiKey.includes('****') ? undefined : smsSettings.apiKey;
+      const apiKeyToSend = smsSettings.apiKey.includes('••••') ? undefined : smsSettings.apiKey;
       const res = await fetch('/api/admin/sms-settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -173,6 +187,10 @@ export function AdminSettings() {
           smsPerReminder: smsSettings.smsPerReminder,
           maxSmsPerDay: smsSettings.maxSmsPerDay,
           testPhoneNumber: smsSettings.testPhoneNumber,
+          templateTurnApproaching: smsSettings.templateTurnApproaching,
+          templateYourTurn: smsSettings.templateYourTurn,
+          templateNoShow: smsSettings.templateNoShow,
+          templateCustom: smsSettings.templateCustom,
         }),
       });
       if (res.ok) {
@@ -236,6 +254,51 @@ export function AdminSettings() {
     }
   };
 
+  // ── Payment settings ──
+  const fetchPaymentSettings = async () => {
+    try {
+      const res = await fetch('/api/admin/payment-settings');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings) {
+          setPaymentSettings({
+            ccpEnabled: data.settings.ccpEnabled || false,
+            bankEnabled: data.settings.bankEnabled || false,
+            electronicEnabled: data.settings.electronicEnabled || false,
+            ccpAccount: data.settings.ccpAccount || '',
+            ccpKey: data.settings.ccpKey || '',
+            bankName: data.settings.bankName || '',
+            bankAccount: data.settings.bankAccount || '',
+            bankRib: data.settings.bankRib || '',
+            ewalletNumber: data.settings.ewalletNumber || '',
+          });
+        }
+      }
+    } catch {
+      // silent fail
+    }
+  };
+
+  const savePaymentSettings = async () => {
+    setSavingPayment(true);
+    try {
+      const res = await fetch('/api/admin/payment-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentSettings),
+      });
+      if (res.ok) {
+        toast.success(t('paymentSaved'));
+      } else {
+        toast.error(t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setSavingPayment(false);
+    }
+  };
+
   const handleProviderChange = (providerId: string) => {
     if (!smsSettings) return;
     const provider = smsProviders.find((p) => p.id === providerId);
@@ -284,7 +347,7 @@ export function AdminSettings() {
     );
   };
 
-  const isApiKeySpecified = smsSettings?.apiKey && !smsSettings.apiKey.includes('****');
+  const isApiKeySpecified = smsSettings?.apiKey && !smsSettings.apiKey.includes('••••');
 
   // ── Loading skeleton ──
   if (loading) {
@@ -470,7 +533,7 @@ export function AdminSettings() {
                       onChange={(e) =>
                         setSmsSettings({ ...smsSettings, senderName: e.target.value })
                       }
-                      placeholder="DALTI"
+                      placeholder="BLASTI"
                       className="h-9 text-sm"
                       aria-label={t('smsSenderName')}
                     />
@@ -534,7 +597,7 @@ export function AdminSettings() {
                         )}
                       </Button>
                     </div>
-                    {smsSettings.apiKey.includes('****') && (
+                    {smsSettings.apiKey.includes('••••') && (
                       <p className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <Info className="h-3 w-3 flex-shrink-0" />
                         Leave blank to keep the existing key, or enter a new one to update
@@ -942,6 +1005,274 @@ export function AdminSettings() {
                 </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ─── SMS Text Templates ─── */}
+      <motion.div {...fadeUp} transition={{ delay: 0.35 }}>
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-200 to-violet-300 dark:from-violet-900/40 dark:to-violet-800/40 flex items-center justify-center shadow-sm">
+                  <FileText className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                </div>
+                {t('smsTemplates') || 'SMS Text Templates'}
+              </CardTitle>
+              <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                {t('optional') || 'Optional'}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t('smsTemplatesDesc') || 'Customize the SMS messages sent to customers. Leave blank to use default templates.'}
+            </p>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-4">
+            {smsSettings ? (
+              <>
+                {/* Available Variables */}
+                <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-900/10 border border-violet-200/50 dark:border-violet-800/30">
+                  <p className="text-xs font-semibold text-violet-700 dark:text-violet-400 mb-2 flex items-center gap-1.5">
+                    <Info className="h-3.5 w-3.5" />
+                    {t('smsAvailableVars') || 'Available Variables'}
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                    {[
+                      { var: '{customerName}', desc: t('varCustomerName') || 'Customer full name' },
+                      { var: '{ticketNumber}', desc: t('varTicketNumber') || 'Queue ticket number' },
+                      { var: '{agencyName}', desc: t('varAgencyName') || 'Agency/business name' },
+                      { var: '{position}', desc: t('varPosition') || 'Position in queue' },
+                      { var: '{estimatedMinutes}', desc: t('varEstimatedMinutes') || 'Estimated wait (min)' },
+                    ].map((v) => (
+                      <div key={v.var} className="flex items-center gap-1.5 p-1.5 rounded-lg bg-white dark:bg-gray-900/50">
+                        <code className="text-[10px] font-mono font-bold text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 px-1.5 py-0.5 rounded">{v.var}</code>
+                        <span className="text-[10px] text-muted-foreground truncate">{v.desc}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Turn Approaching Template */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <span className="h-5 w-5 rounded bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-[10px]">🔄</span>
+                    {t('smsTemplateTurnApproaching') || 'Turn Approaching Template'}
+                  </Label>
+                  <textarea
+                    value={smsSettings.templateTurnApproaching || ''}
+                    onChange={(e) => setSmsSettings({ ...smsSettings, templateTurnApproaching: e.target.value })}
+                    className="w-full min-h-[70px] px-3 py-2 rounded-lg border border-border bg-background text-sm resize-y focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-colors"
+                    placeholder="🔄 BLASTI: Dear {customerName}, your turn is approaching! Ticket {ticketNumber} at {agencyName}. Position: {position}. Est. wait: {estimatedMinutes} min."
+                    dir="ltr"
+                  />
+                </div>
+
+                {/* Your Turn Template */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <span className="h-5 w-5 rounded bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-[10px]">🎫</span>
+                    {t('smsTemplateYourTurn') || 'Your Turn Template'}
+                  </Label>
+                  <textarea
+                    value={smsSettings.templateYourTurn || ''}
+                    onChange={(e) => setSmsSettings({ ...smsSettings, templateYourTurn: e.target.value })}
+                    className="w-full min-h-[70px] px-3 py-2 rounded-lg border border-border bg-background text-sm resize-y focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-colors"
+                    placeholder="🎫 BLASTI: Dear {customerName}, it's your turn now! Ticket {ticketNumber} at {agencyName}. Please proceed."
+                    dir="ltr"
+                  />
+                </div>
+
+                {/* No-Show Warning Template */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <span className="h-5 w-5 rounded bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-[10px]">⚠️</span>
+                    {t('smsTemplateNoShow') || 'No-Show Warning Template'}
+                  </Label>
+                  <textarea
+                    value={smsSettings.templateNoShow || ''}
+                    onChange={(e) => setSmsSettings({ ...smsSettings, templateNoShow: e.target.value })}
+                    className="w-full min-h-[70px] px-3 py-2 rounded-lg border border-border bg-background text-sm resize-y focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-colors"
+                    placeholder="⚠️ BLASTI: Dear {customerName}, your ticket {ticketNumber} at {agencyName} was skipped due to no-show. You can reclaim your position."
+                    dir="ltr"
+                  />
+                </div>
+
+                {/* Custom / Additional Template */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <span className="h-5 w-5 rounded bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-[10px]">✉️</span>
+                    {t('smsTemplateCustom') || 'Custom / Additional Template'}
+                  </Label>
+                  <textarea
+                    value={smsSettings.templateCustom || ''}
+                    onChange={(e) => setSmsSettings({ ...smsSettings, templateCustom: e.target.value })}
+                    className="w-full min-h-[70px] px-3 py-2 rounded-lg border border-border bg-background text-sm resize-y focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-colors"
+                    placeholder="Enter any custom SMS template using the variables above. This can be used for special notifications."
+                    dir="ltr"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    {t('smsTemplateCustomDesc') || 'Use this for any additional custom notification template.'}
+                  </p>
+                </div>
+
+                {/* Save button for templates */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl h-9 px-4 text-sm gap-1.5"
+                  >
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {t('save')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (!smsSettings) return;
+                      setSmsSettings({
+                        ...smsSettings,
+                        templateTurnApproaching: '',
+                        templateYourTurn: '',
+                        templateNoShow: '',
+                        templateCustom: '',
+                      });
+                    }}
+                    className="rounded-xl h-9 px-4 text-sm gap-1.5"
+                  >
+                    {t('resetToDefault') || 'Reset to Default'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">{t('noData')}</p>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* ─── Gateway/Payment Settings ─── */}
+      <motion.div {...fadeUp} transition={{ delay: 0.4 }}>
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-emerald-600" />
+              {t('gatewaySettings')}
+            </CardTitle>
+            <p className="text-[11px] text-muted-foreground">{t('gatewaySettingsDesc')}</p>
+          </CardHeader>
+          <CardContent className="pt-0 space-y-5">
+            {/* CCP Section */}
+            <div className="space-y-3 p-3 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/30">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium flex items-center gap-2">
+                  <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                  {t('ccpEnabled')}
+                </Label>
+                <Switch
+                  checked={paymentSettings.ccpEnabled}
+                  onCheckedChange={(v) => setPaymentSettings({ ...paymentSettings, ccpEnabled: v })}
+                />
+              </div>
+              {paymentSettings.ccpEnabled && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">{t('ccpAccount')}</Label>
+                    <Input
+                      value={paymentSettings.ccpAccount}
+                      onChange={(e) => setPaymentSettings({ ...paymentSettings, ccpAccount: e.target.value })}
+                      placeholder="0000000000"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">{t('ccpKey')}</Label>
+                    <Input
+                      value={paymentSettings.ccpKey}
+                      onChange={(e) => setPaymentSettings({ ...paymentSettings, ccpKey: e.target.value })}
+                      placeholder="00"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bank Section */}
+            <div className="space-y-3 p-3 rounded-xl bg-green-50/50 dark:bg-green-900/10 border border-green-100 dark:border-green-800/30">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium flex items-center gap-2">
+                  <Building2 className="h-3.5 w-3.5 text-green-600" />
+                  {t('bankEnabled')}
+                </Label>
+                <Switch
+                  checked={paymentSettings.bankEnabled}
+                  onCheckedChange={(v) => setPaymentSettings({ ...paymentSettings, bankEnabled: v })}
+                />
+              </div>
+              {paymentSettings.bankEnabled && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">{t('bankName')}</Label>
+                    <Input
+                      value={paymentSettings.bankName}
+                      onChange={(e) => setPaymentSettings({ ...paymentSettings, bankName: e.target.value })}
+                      placeholder="BNA"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">{t('bankAccount')}</Label>
+                    <Input
+                      value={paymentSettings.bankAccount}
+                      onChange={(e) => setPaymentSettings({ ...paymentSettings, bankAccount: e.target.value })}
+                      placeholder="0000000000"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">{t('bankRib')}</Label>
+                    <Input
+                      value={paymentSettings.bankRib}
+                      onChange={(e) => setPaymentSettings({ ...paymentSettings, bankRib: e.target.value })}
+                      placeholder="00000000000000000000"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* E-Wallet Section */}
+            <div className="space-y-3 p-3 rounded-xl bg-purple-50/50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/30">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-medium flex items-center gap-2">
+                  <Wallet className="h-3.5 w-3.5 text-purple-600" />
+                  {t('electronicEnabled')}
+                </Label>
+                <Switch
+                  checked={paymentSettings.electronicEnabled}
+                  onCheckedChange={(v) => setPaymentSettings({ ...paymentSettings, electronicEnabled: v })}
+                />
+              </div>
+              {paymentSettings.electronicEnabled && (
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">{t('ewalletNumber')}</Label>
+                  <Input
+                    value={paymentSettings.ewalletNumber}
+                    onChange={(e) => setPaymentSettings({ ...paymentSettings, ewalletNumber: e.target.value })}
+                    placeholder="05XX XXX XXX"
+                    className="h-8 text-xs"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Save button */}
+            <Button onClick={savePaymentSettings} disabled={savingPayment} className="w-full h-9 text-xs bg-emerald-600 hover:bg-emerald-700">
+              {savingPayment ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Save className="h-3.5 w-3.5 mr-2" />}
+              {t('save')}
+            </Button>
           </CardContent>
         </Card>
       </motion.div>

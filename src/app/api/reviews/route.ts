@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
 
 // POST: Create a new review
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth(request);
     const body = await request.json();
-    const { userId, agencyId, rating, comment, reservationId } = body;
+    const { agencyId, rating, comment, reservationId } = body;
 
     // Validate required fields
-    if (!userId || !agencyId || !rating) {
+    if (!agencyId || !rating) {
       return NextResponse.json(
-        { error: 'userId, agencyId, and rating are required' },
+        { error: 'agencyId and rating are required' },
         { status: 400 }
       );
     }
+
+    // Use session user.id instead of body userId
+    const userId = user.id;
 
     // Validate rating range
     if (rating < 1 || rating > 5) {
@@ -23,11 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check that user exists and is a CUSTOMER
-    const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+    // Check that user is a CUSTOMER
     if (user.role !== 'CUSTOMER') {
       return NextResponse.json(
         { error: 'Only customers can submit reviews' },
@@ -117,17 +118,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, review }, { status: 201 });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    const stack = error instanceof Error ? error.stack : '';
-    console.error('Create review error:', message, stack);
-    return NextResponse.json(
-      { error: 'Failed to create review', detail: message },
-      { status: 500 }
-    );
+    return authErrorResponse(error);
   }
 }
 
-// GET: Get reviews for an agency
+// GET: Get reviews for an agency (public endpoint)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

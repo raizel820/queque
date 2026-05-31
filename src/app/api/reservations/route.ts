@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
+import { realtime } from '@/lib/realtime'
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth(request)
+    // Use session user.id instead of body userId
+    const userId = user.id
+
     const body = await request.json()
-    const { userId, agencyId, serviceId, reservedDate, preferredTime, fixedTimeEnabled } = body
+    const { agencyId, serviceId, reservedDate, preferredTime, fixedTimeEnabled } = body
 
     // Validate required fields
-    if (!userId || !agencyId) {
+    if (!agencyId) {
       return NextResponse.json(
-        { success: false, error: 'userId and agencyId are required' },
+        { success: false, error: 'agencyId is required' },
         { status: 400 }
       )
     }
@@ -37,14 +43,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Check user exists and is a customer
-    const user = await db.user.findUnique({ where: { id: userId } })
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      )
-    }
-
     if (user.role !== 'CUSTOMER') {
       return NextResponse.json(
         { success: false, error: 'Only customers can join queues' },
@@ -259,12 +257,39 @@ export async function POST(request: NextRequest) {
       return res;
     });
 
+    // Emit realtime events
+    await realtime.queueUpdated(agencyId, {
+      action: 'new-reservation',
+      reservationId: reservation.id,
+      displayNumber: reservation.displayNumber,
+      userId,
+    })
+    await realtime.agencyStatsUpdated(agencyId, {
+      action: 'queue-changed',
+      agencyId,
+    })
+    await realtime.positionChanged(userId, {
+      reservationId: reservation.id,
+      displayNumber: reservation.displayNumber,
+      position: reservation.queueNumber,
+      estimatedWait: reservation.estimatedWait,
+      agencyId,
+    })
+
     return NextResponse.json({ success: true, reservation }, { status: 201 })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    if (error instanceof Error && error.message === 'DUPLICATE') {
+      return NextResponse.json(
+        { success: false, error: 'You already have an active reservation for this service' },
+        { status: 409 }
+      )
+    }
+    if (error instanceof Error && error.message === 'FULL') {
+      return NextResponse.json(
+        { success: false, error: 'Queue is full. Please try again later' },
+        { status: 400 }
+      )
+    }
+    return authErrorResponse(error)
   }
 }
