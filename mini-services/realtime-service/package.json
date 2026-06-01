@@ -1,0 +1,11 @@
+{
+  "name": "blasti-realtime-service",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node index.cjs"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.1"
+  }
+}
