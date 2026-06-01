@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireRole, authErrorResponse } from '@/lib/auth-guard'
+import { adminCreateAgencySchema, validateBody } from '@/lib/validations'
+import { enforceRateLimit, AGENCY_LISTING_RATE_LIMIT, RateLimitError, IpBlockedError, recordFailedRequest, recordSuccessfulRequest } from '@/lib/rate-limit'
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit public agency listing
+    const clientIp = enforceRateLimit(request, AGENCY_LISTING_RATE_LIMIT)
+
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search') || ''
     const category = searchParams.get('category') || ''
@@ -100,6 +106,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    recordSuccessfulRequest(clientIp)
+
     return NextResponse.json({
       success: true,
       agencies: formattedAgencies,
@@ -108,6 +116,13 @@ export async function GET(request: NextRequest) {
       offset,
     })
   } catch (error: unknown) {
+    if (error instanceof RateLimitError || error instanceof IpBlockedError) {
+      recordFailedRequest(enforceRateLimit.length > 0 ? getClientIp(request) : 'unknown')
+      return NextResponse.json(
+        { success: false, error: error.message, retryAfter: (error as RateLimitError | IpBlockedError).retryAfter },
+        { status: 429, headers: { 'Retry-After': String((error as RateLimitError | IpBlockedError).retryAfter) } }
+      )
+    }
     console.error('[AGENCIES] Error fetching agencies:', error);
     const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
@@ -119,63 +134,66 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { name, nameFr, nameAr, customCode, category, address, phone, email, ownerId } = body
+    // SECURITY: Only SUPER_ADMIN or AGENCY_OWNER can create agencies
+    const user = await requireRole(request, 'SUPER_ADMIN', 'AGENCY_OWNER')
 
-    // Validate required fields
-    if (!name || !customCode || !category || !ownerId) {
-      return NextResponse.json(
-        { success: false, error: 'name, customCode, category, and ownerId are required' },
-        { status: 400 }
-      )
-    }
+    const body = await request.json()
+
+    // Validate input with Zod
+    const validation = validateBody(adminCreateAgencySchema, body)
+    if (validation.error) return validation.error
+
+    const { name, nameAr, nameFr, customCode, category, address, phone, ownerId } = validation.data
+
+    // SECURITY: Derive ownerId from session (not trust client)
+    // - SUPER_ADMIN can specify any ownerId
+    // - AGENCY_OWNER creating for themselves: always use their own ID
+    const resolvedOwnerId = user.role === 'SUPER_ADMIN' ? (ownerId || user.id) : user.id
 
     // Check for duplicate customCode
-    const existingCode = await db.agency.findUnique({
-      where: { customCode },
-    })
-    if (existingCode) {
-      return NextResponse.json(
-        { success: false, error: 'Agency code already taken' },
-        { status: 409 }
-      )
+    if (customCode) {
+      const existingCode = await db.agency.findUnique({
+        where: { customCode },
+      })
+      if (existingCode) {
+        return NextResponse.json(
+          { success: false, error: 'Agency code already taken' },
+          { status: 409 }
+        )
+      }
     }
 
     // Create agency with queue settings
     const agency = await db.agency.create({
       data: {
         name,
-        nameFr,
         nameAr,
-        customCode,
-        category,
+        nameFr,
+        customCode: customCode || name.slice(0, 3).toUpperCase(),
+        category: category || 'other',
         address,
         phone,
-        email,
-        ownerId,
+        email: body.email,
+        ownerId: resolvedOwnerId,
         queueSettings: {
           create: {},
         },
       },
     })
 
-    // Create audit log
+    // Create audit log — use session user.id, not client-provided ownerId
     await db.auditLog.create({
       data: {
-        userId: ownerId,
+        userId: user.id,
         action: 'AGENCY_CREATE',
         entityType: 'AGENCY',
         entityId: agency.id,
-        details: JSON.stringify({ name, customCode, category }),
+        details: JSON.stringify({ name, customCode, category, ownerId: resolvedOwnerId }),
       },
     })
 
     return NextResponse.json({ success: true, agency }, { status: 201 })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

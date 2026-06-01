@@ -27,6 +27,11 @@ import { AgencyProfile } from '@/components/agency/agency-profile';
 import { AgencySubscription } from '@/components/agency/agency-subscription';
 import { AgencyReviews } from '@/components/agency/agency-reviews';
 import { AgencyEmployees } from '@/components/agency/agency-employees';
+import { AgencyBranches } from '@/components/agency/agency-branches';
+
+// Kiosk Views
+import { KioskLanding } from '@/components/kiosk/kiosk-landing';
+import { KioskMode } from '@/components/kiosk/kiosk-mode';
 
 // Admin Views
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
@@ -68,6 +73,8 @@ import {
   Loader2,
   UserCog,
   Settings2,
+  GitBranch,
+  Monitor,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Toaster } from 'sonner';
@@ -125,6 +132,8 @@ function ViewRouter() {
       return <AgencyReviews />;
     case 'agency-employees':
       return <AgencyEmployees />;
+    case 'agency-branches':
+      return <AgencyBranches />;
     case 'admin-dashboard':
       return <AdminDashboard />;
     case 'admin-transactions':
@@ -139,6 +148,8 @@ function ViewRouter() {
       return <AdminAnalytics />;
     case 'admin-settings':
       return <AdminSettings />;
+    case 'kiosk':
+      return <KioskLanding />;
     default:
       return <LandingPage />;
   }
@@ -371,6 +382,7 @@ function AgencySidebar({ open, onClose }: { open: boolean; onClose: () => void }
   const navItems = [
     { view: 'agency-dashboard' as const, icon: LayoutDashboard, label: t('dashboard') },
     { view: 'agency-employees' as const, icon: UserCog, label: t('employeeManagement') },
+    { view: 'agency-branches' as const, icon: GitBranch, label: t('branchesCounters') },
     { view: 'agency-reviews' as const, icon: Star, label: t('reviewsPage') },
     { view: 'agency-settings' as const, icon: Settings, label: t('settings') },
     { view: 'agency-profile' as const, icon: Building2, label: t('agencyProfile') },
@@ -696,6 +708,19 @@ export default function Home() {
     return () => window.removeEventListener('blasti:show-onboarding', handleShowOnboarding);
   }, []);
 
+  // Show onboarding for first-time logins (check localStorage key: blasti-show-onboarding)
+  useEffect(() => {
+    if (user?.id && !onboarded) {
+      try {
+        const dismissed = localStorage.getItem('blasti-show-onboarding');
+        if (dismissed !== 'true') {
+          // Use setTimeout to avoid synchronous state update during render
+          setTimeout(() => setShowOnboarding(true), 800);
+        }
+      } catch { /* silent */ }
+    }
+  }, [user?.id, onboarded]);
+
   // Fetch global announcements
   useEffect(() => {
     if (!user?.id) return;
@@ -779,18 +804,44 @@ export default function Home() {
     } else {
       updateDocumentDirection('ar');
     }
-  }, []);
 
-  // Handle QR code deep link: ?code=CLINIC01
+    // Validate persisted session — if user exists in store but session is expired, clear it
+    if (isAuthenticated && user) {
+      fetch('/api/auth/session').then(res => {
+        if (!res.ok || res.status === 401) {
+          // Session expired — clear persisted state
+          logout();
+        }
+      }).catch(() => {
+        // Network error — don't clear (might be offline)
+      });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle deep links: ?code=CLINIC01, ?kiosk=true&code=AGENCY_CODE, ?mode=kiosk
+  const [kioskFullMode, setKioskFullMode] = useState(false);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
-    if (code) {
+    const kiosk = params.get('kiosk');
+    const mode = params.get('mode');
+    if (mode === 'kiosk') {
+      // Full kiosk mode - standalone self-service terminal
+      // Use microtask to avoid synchronous setState in effect
+      queueMicrotask(() => {
+        setKioskFullMode(true);
+        setView('kiosk');
+      });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (kiosk === 'true' && code) {
       setPendingAgencyCode(code);
-      // Clean up URL without reload
+      setView('kiosk');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (code) {
+      setPendingAgencyCode(code);
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [setPendingAgencyCode]);
+  }, [setPendingAgencyCode, setView]);
 
   // When user is authenticated as customer and has pending agency code, navigate to customer-home
   // The customer-home component will pick up the code and auto-fetch agency detail
@@ -807,6 +858,27 @@ export default function Home() {
 
   // Auth pages render full-screen with their own layouts
   const isAuthPage = currentView === 'landing' || currentView === 'login' || currentView === 'register';
+
+  // Kiosk mode renders full-screen without any chrome
+  const isKioskMode = currentView === 'kiosk';
+
+  if (isKioskMode) {
+    return (
+      <>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={kioskFullMode ? 'kiosk-full' : 'kiosk'}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {kioskFullMode ? <KioskMode /> : <KioskLanding />}
+          </motion.div>
+        </AnimatePresence>
+      </>
+    );
+  }
 
   // Safety: if not authenticated but on a protected view, redirect to landing
   // This handles stale Zustand persisted state after page reload
@@ -984,10 +1056,13 @@ export default function Home() {
               // silent
             }
             setOnboarded(true);
+            try { localStorage.setItem('blasti-show-onboarding', 'true'); } catch { /* silent */ }
             setShowOnboarding(false);
           }}
           onSkip={() => {
             setShowOnboarding(false);
+            setOnboarded(true);
+            try { localStorage.setItem('blasti-show-onboarding', 'true'); } catch { /* silent */ }
             toast.info(t('onboardingSkipped'));
           }}
         />

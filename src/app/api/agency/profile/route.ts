@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAuth, resolveUserAgencyId, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, updateAgencyProfileSchema } from '@/lib/validations';
+import { emitAgencyEvent } from '@/lib/realtime-emit';
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,18 +45,18 @@ export async function GET(req: NextRequest) {
       workingHoursEnd: agency.workingHoursEnd,
     });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/profile GET] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
+    const validation = validateBody(updateAgencyProfileSchema, body);
+    if (validation.error) return validation.error;
+
     const { agencyId: agencyIdParam } = body;
+    const validatedData = validation.data;
 
     let agencyId: string | null;
     if (agencyIdParam) {
@@ -75,23 +77,26 @@ export async function PATCH(req: NextRequest) {
     await db.agency.update({
       where: { id: targetAgency.id },
       data: {
-        ...(body.name !== undefined && { name: body.name }),
-        ...(body.nameAr !== undefined && { nameAr: body.nameAr }),
-        ...(body.nameFr !== undefined && { nameFr: body.nameFr }),
-        ...(body.address !== undefined && { address: body.address }),
-        ...(body.category !== undefined && { category: body.category }),
-        ...(body.phone !== undefined && { phone: body.phone }),
-        ...(body.email !== undefined && { email: body.email }),
-        ...(body.workingHoursStart !== undefined && { workingHoursStart: body.workingHoursStart }),
-        ...(body.workingHoursEnd !== undefined && { workingHoursEnd: body.workingHoursEnd }),
+        ...(validatedData.name !== undefined && { name: validatedData.name }),
+        ...(validatedData.nameAr !== undefined && { nameAr: validatedData.nameAr }),
+        ...(validatedData.nameFr !== undefined && { nameFr: validatedData.nameFr }),
+        ...(validatedData.description !== undefined && { description: validatedData.description }),
+        ...(validatedData.descriptionAr !== undefined && { descriptionAr: validatedData.descriptionAr }),
+        ...(validatedData.descriptionFr !== undefined && { descriptionFr: validatedData.descriptionFr }),
+        ...(validatedData.address !== undefined && { address: validatedData.address }),
+        ...(validatedData.phone !== undefined && { phone: validatedData.phone }),
+        ...(validatedData.category !== undefined && { category: validatedData.category }),
+        ...(validatedData.website !== undefined && { website: validatedData.website }),
       },
     });
+
+    // Emit realtime event (fire-and-forget)
+    emitAgencyEvent('agency:updated', targetAgency.id, {
+      action: 'profile-updated',
+    })
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/profile PATCH] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

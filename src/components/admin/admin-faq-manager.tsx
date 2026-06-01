@@ -484,20 +484,20 @@ export function AdminFaqManager() {
               {translationTab === 'en' && (
                 <div className="space-y-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">{t('faqQuestion')} (English)</Label>
+                    <Label className="text-xs font-medium">{t('faqQuestion')} {t('inEnglish')}</Label>
                     <Input
                       value={form.question}
                       onChange={(e) => setForm({ ...form, question: e.target.value })}
-                      placeholder="Enter question in English"
+                      placeholder={t('faqQuestionEnPlaceholder')}
                       className="text-sm"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">{t('faqAnswer')} (English)</Label>
+                    <Label className="text-xs font-medium">{t('faqAnswer')} {t('inEnglish')}</Label>
                     <Textarea
                       value={form.answer}
                       onChange={(e) => setForm({ ...form, answer: e.target.value })}
-                      placeholder="Enter answer in English"
+                      placeholder={t('faqAnswerEnPlaceholder')}
                       className="text-sm min-h-[80px]"
                     />
                   </div>

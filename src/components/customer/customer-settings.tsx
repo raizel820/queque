@@ -367,7 +367,7 @@ export function CustomerSettings() {
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="05XX XXX XXX"
+                    placeholder={t('phonePlaceholder')}
                     className="h-11"
                     dir="ltr"
                   />
@@ -560,7 +560,7 @@ export function CustomerSettings() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ar">العربية</SelectItem>
-                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="en">{t('languageEnglish')}</SelectItem>
                 <SelectItem value="fr">Français</SelectItem>
               </SelectContent>
             </Select>

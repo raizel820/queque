@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAuth, requireResourceOwnership, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+import { emitReservationEvent, emitQueueEvent } from '@/lib/realtime-emit';
+
+const reclaimSchema = z.object({
+  reservationId: z.string().min(1, 'Reservation ID is required'),
+});
 
 export async function POST(req: NextRequest) {
   try {
     const user = await requireAuth(req);
-    const { reservationId } = await req.json();
+    const body = await req.json();
+    const validation = validateBody(reclaimSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!reservationId) {
-      return NextResponse.json(
-        { error: 'reservationId is required' },
-        { status: 400 }
-      );
-    }
+    const { reservationId } = validation.data;
 
     const reservation = await db.reservation.findUnique({
       where: { id: reservationId },
@@ -120,6 +124,18 @@ export async function POST(req: NextRequest) {
         },
       });
     });
+
+    // Emit realtime events (fire-and-forget)
+    emitReservationEvent('reservation:updated', reservation.agencyId, reservation.userId, {
+      reservationId: reservation.id,
+      displayNumber: reservation.displayNumber,
+      action: 'reclaimed',
+    })
+    emitQueueEvent('queue:updated', reservation.agencyId, {
+      reservationId: reservation.id,
+      displayNumber: reservation.displayNumber,
+      action: 'reclaimed',
+    })
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -28,12 +28,20 @@ const PUBLIC_GET_ROUTES = [
   '/api/stats',          // Public: basic platform stats
   '/api/queue/status',   // Public: read-only queue status
   '/api/payment-settings', // Public: payment method info (CCP, bank, e-wallet)
+  '/api/kiosk/agency',   // Public (kiosk): load agency info by code
+  '/api/kiosk/status',   // Public (kiosk): check queue status
 ]
 
 // Routes that are fully public (any method — no auth needed)
 const PUBLIC_FULL_ROUTES = [
   '/api/auth/',          // NextAuth's own routes
   '/api/cron/',          // Cron endpoints (called by scheduler)
+]
+
+// Public POST routes (no auth needed — kiosks don't have user accounts)
+// Rate limiting on the route handlers themselves provides abuse protection
+const PUBLIC_POST_ROUTES = [
+  '/api/kiosk/join',     // Public (kiosk): join queue as walk-in customer
 ]
 
 export async function proxy(request: NextRequest) {
@@ -59,6 +67,16 @@ export async function proxy(request: NextRequest) {
       return pathname === route || pathname.startsWith(route + '/')
     })
     if (isGetPublic) {
+      return NextResponse.next()
+    }
+  }
+
+  // Allow public POST routes (e.g., kiosk join — no user accounts)
+  if (request.method === 'POST') {
+    const isPostPublic = PUBLIC_POST_ROUTES.some(route => {
+      return pathname === route || pathname.startsWith(route + '/')
+    })
+    if (isPostPublic) {
       return NextResponse.next()
     }
   }

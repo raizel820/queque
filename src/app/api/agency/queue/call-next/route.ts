@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getNextCustomerToCall } from '@/lib/queue-scheduler';
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
-import { realtime } from '@/lib/realtime';
 import { checkRateLimit, RateLimitError, QUEUE_RATE_LIMIT } from '@/lib/rate-limit';
+import { emitQueueEvent, emitNotificationEvent, emitKioskEvent } from '@/lib/realtime-emit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -80,26 +80,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No customers waiting' }, { status: 404 });
     }
 
-    // Emit realtime events
-    const calledUserId = (nextReservation as { userId?: string }).userId;
-    if (calledUserId) {
-      await realtime.turnCalled(calledUserId, {
-        reservationId: nextReservation.id,
-        displayNumber: nextReservation.displayNumber,
-        agencyId,
-        message: 'Your turn has been called!',
-      });
-    }
-    await realtime.queueUpdated(agencyId, {
-      action: 'call-next',
+    // Emit realtime events (non-blocking — fire and forget)
+    emitQueueEvent('queue:called', agencyId, {
       reservationId: nextReservation.id,
       displayNumber: nextReservation.displayNumber,
-      calledUserId,
-    });
-    await realtime.agencyStatsUpdated(agencyId, {
-      action: 'queue-changed',
-      agencyId,
-    });
+      customerName: (nextReservation as { user?: { fullName: string }; walkInCustomerName?: string }).walkInCustomerName || (nextReservation as { user?: { fullName: string } }).user?.fullName || '',
+      isWalkIn: !!(nextReservation as { isWalkIn?: boolean }).isWalkIn,
+      serviceId: nextReservation.serviceId,
+    })
+    if (nextReservation.userId) {
+      emitNotificationEvent('notification:your-turn', nextReservation.userId, {
+        ticketNumber: nextReservation.displayNumber,
+        agencyId,
+      })
+    }
+    emitKioskEvent(agencyId, {
+      nowServing: nextReservation.displayNumber,
+      action: 'called',
+    })
 
     return NextResponse.json({
       success: true,
@@ -117,14 +115,7 @@ export async function POST(req: NextRequest) {
         { status: 429, headers: { 'Retry-After': String(error.retryAfter) } }
       );
     }
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('[CALL-NEXT] Error calling next customer:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json(
-      { error: 'Failed to call next customer', details: message },
-      { status: 500 }
-    );
+    return authErrorResponse(error)
   }
 }
 

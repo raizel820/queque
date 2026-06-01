@@ -144,8 +144,9 @@ export const adminCreateAgencySchema = z.object({
   description: z.string().max(500).optional(),
   address: z.string().max(200).optional(),
   phone: z.string().max(20).optional(),
+  email: z.string().optional(),
   category: z.string().optional(),
-  ownerId: z.string().min(1, 'Owner ID is required'),
+  ownerId: z.string().optional(), // Optional: derived from session for non-SUPER_ADMIN
   customCode: z.string().min(2).max(10).optional(),
 })
 
@@ -219,6 +220,52 @@ export const faqSchema = z.object({
   category: z.string().optional(),
   isActive: z.boolean().optional().default(true),
   order: z.number().int().min(0).optional(),
+})
+
+// ─── Branch ──────────────────────────────────────────────────────────────────
+
+export const createBranchSchema = z.object({
+  name: z.string().min(1, 'Branch name is required').max(100),
+  nameAr: z.string().optional(),
+  nameFr: z.string().optional(),
+  address: z.string().max(200).optional(),
+  phone: z.string().max(20).optional(),
+  isMain: z.boolean().optional().default(false),
+})
+
+export const updateBranchSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  nameAr: z.string().optional(),
+  nameFr: z.string().optional(),
+  address: z.string().max(200).optional(),
+  phone: z.string().max(20).optional(),
+  isActive: z.boolean().optional(),
+  isMain: z.boolean().optional(),
+})
+
+// ─── Counter ─────────────────────────────────────────────────────────────────
+
+export const createCounterSchema = z.object({
+  number: z.number().int().min(1),
+  name: z.string().min(1, 'Counter name is required').max(50),
+  nameAr: z.string().optional(),
+  nameFr: z.string().optional(),
+})
+
+export const updateCounterSchema = z.object({
+  name: z.string().min(1).max(50).optional(),
+  nameAr: z.string().optional(),
+  nameFr: z.string().optional(),
+  isActive: z.boolean().optional(),
+  staffId: z.string().nullable().optional(),
+})
+
+// ─── Kiosk ──────────────────────────────────────────────────────────────────
+
+export const kioskJoinSchema = z.object({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+  serviceId: z.string().min(1, 'Service ID is required'),
+  customerName: z.string().max(100).optional(),
 })
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

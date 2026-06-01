@@ -848,7 +848,7 @@ export function CustomerProfile() {
             <div className="flex gap-2">
               <Input
                 type="tel"
-                placeholder="05XX XXX XXX"
+                placeholder={t('phonePlaceholder')}
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 className="h-11"
@@ -1119,7 +1119,7 @@ export function CustomerProfile() {
               <SelectContent>
                 <SelectItem value="ar">العربية</SelectItem>
                 <SelectItem value="fr">Français</SelectItem>
-                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="en">{t('languageEnglish')}</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
@@ -1229,7 +1229,7 @@ export function CustomerProfile() {
                   </div>
                 </div>
                 <Monitor className="h-4 w-4 mx-auto mb-1 text-gray-500" />
-                <span className="text-[10px] font-medium">{t('systemTheme') || 'System'}</span>
+                <span className="text-[10px] font-medium">{t('systemTheme')}</span>
                 {theme === 'system' && (
                   <motion.div
                     initial={{ scale: 0 }}

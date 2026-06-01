@@ -14,10 +14,13 @@ model User {
   email                   String?        @unique
   phoneNumber             String?        @unique
   passwordHash            String
+  /// VALID VALUES: 'SUPER_ADMIN' | 'AGENCY_OWNER' | 'AGENCY_STAFF' | 'CUSTOMER' (see src/lib/enums.ts UserRole)
   role                    String         @default("CUSTOMER")
+  /// VALID VALUES: 'ar' | 'en' | 'fr' (see src/lib/enums.ts UserLanguage)
   language                String         @default("ar")
   avatarUrl               String?
   freeSmsCount            Int            @default(10)
+  /// JSON object. VALID KEYS: 'queue_called' | 'turn_approaching' | 'completed' (each boolean)
   notificationPreferences String         @default("{\"queue_called\":true,\"turn_approaching\":true,\"completed\":true}")
   reminderMinutes         Int            @default(10)
   smsNotificationsEnabled Boolean        @default(true)
@@ -41,6 +44,7 @@ model Agency {
   nameFr                String?
   nameAr                String?
   customCode            String          @unique
+  /// VALID VALUES: 'CLINIC' | 'AGENCY' | 'LAW_FIRM' | 'LABORATORY' | 'GOVERNMENT' | 'OTHER' (see src/lib/enums.ts AgencyCategory)
   category              String
   address               String?
   city                  String          @default("M'Sila")
@@ -57,16 +61,20 @@ model Agency {
   maxActiveReservations Int             @default(50)
   autoPauseWhenFull     Boolean         @default(false)
   isSponsored           Boolean         @default(false)
+  /// VALID VALUES: 'BASIC' | 'PREMIUM' | 'ENTERPRISE' (see src/lib/enums.ts SubscriptionTier)
   subscriptionTier      String          @default("BASIC")
+  /// VALID VALUES: 'ACTIVE' | 'INACTIVE' | 'TRIAL' | 'EXPIRED' | 'PENDING' (see src/lib/enums.ts SubscriptionStatus)
   subscriptionStatus    String          @default("INACTIVE")
   workingHoursStart     String          @default("08:00")
   workingHoursEnd       String          @default("17:00")
   isQueueOpen           Boolean         @default(true)
   isActive              Boolean         @default(true)
+  kioskModeEnabled      Boolean         @default(false)
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
   ownerId               String
   owner                 User            @relation(fields: [ownerId], references: [id])
+  branches              Branch[]
   staff                 AgencyStaff[]
   announcements         Announcement[]
   favorites             Favorite[]
@@ -78,14 +86,19 @@ model Agency {
 }
 
 model AgencyStaff {
-  id       String   @id @default(cuid())
-  userId   String
-  agencyId String
-  role     String   @default("STAFF")
-  isActive Boolean  @default(true)
-  joinedAt DateTime @default(now())
-  agency   Agency   @relation(fields: [agencyId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+  id          String   @id @default(cuid())
+  userId      String
+  agencyId    String
+  branchId    String?
+  /// VALID VALUES: 'STAFF' | 'MANAGER' | 'OWNER' (see src/lib/enums.ts StaffRole)
+  role        String   @default("STAFF")
+  permissions String   @default("{\"canManageQueue\":true,\"canManageServices\":false,\"canManageStaff\":false,\"canViewAnalytics\":true,\"canManageBranches\":false,\"canManageWorkingHours\":false,\"canExportData\":false,\"canManageProfile\":false}")
+  isActive    Boolean  @default(true)
+  joinedAt    DateTime @default(now())
+  agency      Agency   @relation(fields: [agencyId], references: [id])
+  branch      Branch?  @relation(fields: [branchId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+  counters    Counter[]
 
   @@unique([userId, agencyId])
 }
@@ -126,6 +139,7 @@ model Reservation {
   serviceId           String
   queueNumber         Int
   displayNumber       String
+  /// VALID VALUES: 'WAITING' | 'CALLED' | 'SERVING' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW' (see src/lib/enums.ts ReservationStatus)
   status              String    @default("WAITING")
   estimatedWait       Int?
   reservedDate        String?
@@ -149,6 +163,9 @@ model Reservation {
   postponeCount       Int       @default(0)
   isWalkIn            Boolean   @default(false)
   walkInCustomerName  String?
+  counterId           String?
+  counter             Counter?  @relation("ServedByCounter", fields: [counterId], references: [id])
+  currentCounter      Counter?  // Inverse of Counter.currentReservation
   agency              Agency    @relation(fields: [agencyId], references: [id])
   service             Service   @relation(fields: [serviceId], references: [id])
   user                User?     @relation(fields: [userId], references: [id])
@@ -164,9 +181,12 @@ model Transaction {
   id              String    @id @default(cuid())
   agencyId        String
   amount          Int
+  /// VALID VALUES: 'BASIC' | 'PREMIUM' | 'ENTERPRISE' (see src/lib/enums.ts TransactionPlan)
   plan            String
+  /// VALID VALUES: 'CCP' | 'BANK_TRANSFER' | 'E_WALLET' | 'CASH' (see src/lib/enums.ts PaymentMethod)
   paymentMethod   String
   receiptUrl      String?
+  /// VALID VALUES: 'PENDING' | 'APPROVED' | 'REJECTED' (see src/lib/enums.ts TransactionStatus)
   status          String    @default("PENDING")
   rejectionReason String?
   reviewedBy      String?
@@ -182,6 +202,7 @@ model SmsPurchase {
   userId        String
   quantity      Int
   price         Int
+  /// VALID VALUES: 'PENDING' | 'APPROVED' | 'REJECTED' (see src/lib/enums.ts SmsPurchaseStatus)
   status        String   @default("PENDING")
   paymentMethod String?
   receiptUrl    String?
@@ -192,6 +213,7 @@ model SmsPurchase {
 model Notification {
   id        String   @id @default(cuid())
   userId    String
+  /// VALID VALUES: 'QUEUE_CALLED' | 'QUEUE_JOINED' | 'QUEUE_COMPLETED' | 'QUEUE_CANCELLED' | 'QUEUE_POSTPONED' | 'QUEUE_TIME_TOGGLE' | 'TURN_APPROACHING' | 'NO_SHOW_WARNING' | 'RESERVATION_CANCELLED' | 'RECLAIM_SUCCESS' | 'CANCELLED' | 'SMS_PURCHASED' | 'RATING_SUBMITTED' | 'QUEUE_WAITING' | 'QUEUE_SERVING' | 'QUEUE_NO_SHOW' (see src/lib/enums.ts NotificationType)
   type      String
   title     String
   message   String   @default("")
@@ -219,6 +241,7 @@ model Announcement {
   id        String    @id @default(cuid())
   agencyId  String
   message   String
+  /// VALID VALUES: 'INFO' | 'WARNING' | 'URGENT' (see src/lib/enums.ts AnnouncementType)
   type      String    @default("INFO")
   isActive  Boolean   @default(true)
   createdAt DateTime  @default(now())
@@ -231,6 +254,7 @@ model Announcement {
 model GlobalAnnouncement {
   id        String   @id @default(cuid())
   message   String
+  /// VALID VALUES: 'INFO' | 'WARNING' | 'URGENT' (see src/lib/enums.ts AnnouncementType)
   type      String   @default("INFO")
   createdBy String
   createdAt DateTime @default(now())
@@ -240,6 +264,7 @@ model GlobalAnnouncement {
 
 model SmsSettings {
   id              String   @id @default(cuid())
+  /// VALID VALUES: 'algeria_sms' | 'algeria-sms' | 'generic' (see src/lib/enums.ts SmsProvider)
   provider        String   @default("algeria_sms")
   apiUrl          String   @default("")
   apiKey          String   @default("")
@@ -263,6 +288,7 @@ model SmsLog {
   userId        String?
   phoneNumber   String
   message       String
+  /// VALID VALUES: 'PENDING' | 'SENT' | 'FAILED' | 'DELIVERED' (see src/lib/enums.ts SmsLogStatus)
   status        String      @default("PENDING")
   provider      String      @default("")
   errorMessage  String?
@@ -274,7 +300,9 @@ model SmsLog {
 model AuditLog {
   id         String   @id @default(cuid())
   userId     String?
+  /// VALID VALUES: 'LOGIN' | 'AGENCY_CREATE' | 'AGENCY_DELETE' | 'USER_SUSPEND' | 'USER_ACTIVATE' | 'USER_DELETE' | 'SETTINGS_UPDATE' | 'QUEUE_CALL' | 'QUEUE_JOIN' | 'QUEUE_POSTPONE' | 'RESERVATION_CANCEL' | 'AUTO_SKIP_NO_SHOW' | 'RECLAIM_POSITION' | 'WALK_IN_ADDED' | 'RATING_SUBMITTED' | 'PAYMENT_APPROVE' | 'PAYMENT_REJECT' (see src/lib/enums.ts AuditLogAction)
   action     String
+  /// VALID VALUES: 'USER' | 'AGENCY' | 'RESERVATION' | 'TRANSACTION' (see src/lib/enums.ts AuditLogEntityType)
   entityType String?
   entityId   String?
   details    String?
@@ -316,6 +344,7 @@ model FAQ {
   answer      String
   answerFr    String?
   answerAr    String?
+  /// VALID VALUES: 'SUBSCRIPTION' | 'QUEUE' | 'SMS' | 'PAYMENT' | 'GENERAL' (see src/lib/enums.ts FaqCategory)
   category    String   @default("SUBSCRIPTION")
   order       Int      @default(0)
   isActive    Boolean  @default(true)
@@ -341,3 +370,43 @@ model PaymentSettings {
   createdAt         DateTime @default(now())
 }
 
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  nameAr    String?
+  nameFr    String?
+  address   String?
+  phone     String?
+  isActive  Boolean  @default(true)
+  isMain    Boolean  @default(false)
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  counters  Counter[]
+  staff     AgencyStaff[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+model Counter {
+  id                   String       @id @default(cuid())
+  number               Int
+  name                 String
+  nameAr               String?
+  nameFr               String?
+  isActive             Boolean      @default(true)
+  branchId             String
+  branch               Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  staffId              String?
+  staff                AgencyStaff? @relation(fields: [staffId], references: [id])
+  currentReservationId String?       @unique
+  currentReservation   Reservation?  @relation(fields: [currentReservationId], references: [id])
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  servedReservations Reservation[] @relation("ServedByCounter")
+
+  @@unique([branchId, number])
+  @@index([branchId])
+}

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,7 @@ import {
   ChevronDown,
   ChevronUp,
   KeyRound,
+  Lock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -55,7 +57,30 @@ interface Employee {
   role: string;
   isActive: boolean;
   createdAt: string;
+  permissions?: Record<string, boolean>;
 }
+
+interface StaffPermissions {
+  canManageQueue: boolean;
+  canManageServices: boolean;
+  canManageStaff: boolean;
+  canViewAnalytics: boolean;
+  canManageBranches: boolean;
+  canManageWorkingHours: boolean;
+  canExportData: boolean;
+  canManageProfile: boolean;
+}
+
+const DEFAULT_PERMISSIONS: StaffPermissions = {
+  canManageQueue: true,
+  canManageServices: false,
+  canManageStaff: false,
+  canViewAnalytics: true,
+  canManageBranches: false,
+  canManageWorkingHours: false,
+  canExportData: false,
+  canManageProfile: false,
+};
 
 function generatePassword(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#';
@@ -100,6 +125,12 @@ export function AgencyEmployees() {
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removeEmployee, setRemoveEmployee] = useState<Employee | null>(null);
   const [removeLoading, setRemoveLoading] = useState(false);
+
+  // Permissions dialog
+  const [permissionsOpen, setPermissionsOpen] = useState(false);
+  const [permissionsEmployee, setPermissionsEmployee] = useState<Employee | null>(null);
+  const [editPermissions, setEditPermissions] = useState<StaffPermissions>(DEFAULT_PERMISSIONS);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
 
   const fetchEmployees = useCallback(async () => {
     if (!agencyId) return;
@@ -257,6 +288,40 @@ export function AgencyEmployees() {
     setEditFullName(emp.fullName);
     setEditRole(emp.role);
     setEditOpen(true);
+  };
+
+  const openPermissions = (emp: Employee) => {
+    setPermissionsEmployee(emp);
+    setEditPermissions({
+      ...DEFAULT_PERMISSIONS,
+      ...(emp.permissions || {}),
+    });
+    setPermissionsOpen(true);
+  };
+
+  const handleSavePermissions = async () => {
+    if (!permissionsEmployee) return;
+    setPermissionsLoading(true);
+    try {
+      const res = await fetch(`/api/agency/staff/${permissionsEmployee.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permissions: editPermissions }),
+      });
+      if (res.ok) {
+        toast.success(t('permissionsUpdated'));
+        setPermissionsOpen(false);
+        setPermissionsEmployee(null);
+        fetchEmployees();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || t('error'));
+      }
+    } catch {
+      toast.error(t('error'));
+    } finally {
+      setPermissionsLoading(false);
+    }
   };
 
   const copyCredentials = () => {
@@ -472,6 +537,19 @@ export function AgencyEmployees() {
                             title={t('editStaffMember')}
                           >
                             <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        )}
+
+                        {/* Permissions */}
+                        {emp.role !== 'AGENCY_OWNER' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openPermissions(emp)}
+                            title={t('staffPermissions')}
+                          >
+                            <Lock className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         )}
 
@@ -705,6 +783,65 @@ export function AgencyEmployees() {
             >
               {removeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
               {t('confirm')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permissions Dialog */}
+      <Dialog open={permissionsOpen} onOpenChange={(open) => { setPermissionsOpen(open); if (!open) setPermissionsEmployee(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-emerald-600" />
+              {t('staffPermissions')}
+            </DialogTitle>
+            <DialogDescription>
+              {permissionsEmployee ? `${t('managePermissionsFor')} ${permissionsEmployee.fullName}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2 max-h-96 overflow-y-auto">
+            {[
+              { key: 'canManageQueue' as const, label: t('permManageQueue'), desc: t('permManageQueueDesc') },
+              { key: 'canManageServices' as const, label: t('permManageServices'), desc: t('permManageServicesDesc') },
+              { key: 'canManageStaff' as const, label: t('permManageStaff'), desc: t('permManageStaffDesc') },
+              { key: 'canViewAnalytics' as const, label: t('permViewAnalytics'), desc: t('permViewAnalyticsDesc') },
+              { key: 'canManageBranches' as const, label: t('permManageBranches'), desc: t('permManageBranchesDesc') },
+              { key: 'canManageWorkingHours' as const, label: t('permManageWorkingHours'), desc: t('permManageWorkingHoursDesc') },
+              { key: 'canExportData' as const, label: t('permExportData'), desc: t('permExportDataDesc') },
+              { key: 'canManageProfile' as const, label: t('permManageProfile'), desc: t('permManageProfileDesc') },
+            ].map((perm) => (
+              <div
+                key={perm.key}
+                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{perm.label}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{perm.desc}</p>
+                </div>
+                <Switch
+                  checked={editPermissions[perm.key]}
+                  onCheckedChange={(checked) =>
+                    setEditPermissions((prev) => ({ ...prev, [perm.key]: checked }))
+                  }
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 justify-end pt-2 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setPermissionsOpen(false)}
+            >
+              {t('cancel')}
+            </Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+              onClick={handleSavePermissions}
+              disabled={permissionsLoading}
+            >
+              {permissionsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+              {t('savePermissions')}
             </Button>
           </div>
         </DialogContent>

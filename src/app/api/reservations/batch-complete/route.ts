@@ -1,25 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+
+const batchCompleteSchema = z.object({
+  reservationIds: z.array(z.string()).min(1, 'At least one reservation ID is required').max(100, 'Maximum 100 reservations per batch'),
+  agencyId: z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { reservationIds, agencyId } = body as { reservationIds?: string[]; agencyId?: string };
+    const validation = validateBody(batchCompleteSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!Array.isArray(reservationIds) || reservationIds.length === 0) {
-      return NextResponse.json(
-        { error: 'reservationIds must be a non-empty array' },
-        { status: 400 }
-      );
-    }
-
-    if (reservationIds.length > 100) {
-      return NextResponse.json(
-        { error: 'Maximum 100 reservations per batch' },
-        { status: 400 }
-      );
-    }
+    const { reservationIds, agencyId } = validation.data;
 
     // Verify agency access: fetch one reservation to get agencyId if not provided
     let resolvedAgencyId = agencyId;

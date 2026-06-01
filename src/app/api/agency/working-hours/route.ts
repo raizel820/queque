@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
+import { emitAgencyEvent } from '@/lib/realtime-emit'
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -43,11 +44,15 @@ export async function PATCH(request: NextRequest) {
       },
     })
 
+    // Emit realtime event (fire-and-forget)
+    emitAgencyEvent('agency:updated', agencyId, {
+      action: 'working-hours-updated',
+      workingHoursStart,
+      workingHoursEnd,
+    })
+
     return NextResponse.json(agency)
   } catch (error: unknown) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    return authErrorResponse(error)
   }
 }

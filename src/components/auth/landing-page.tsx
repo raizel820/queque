@@ -32,6 +32,7 @@ import {
   Share2,
   Shield,
   Globe,
+  Monitor,
 } from 'lucide-react';
 
 /* ─── Animated Counter with dramatic bounce ──────────── */
@@ -503,6 +504,24 @@ export function LandingPage() {
                 </Button>
               </motion.div>
             </div>
+
+            {/* Kiosk Mode Entry */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="mt-4"
+            >
+              <button
+                onClick={() => {
+                  setView('kiosk');
+                }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-emerald-700 dark:text-emerald-300 text-sm font-medium transition-all hover:shadow-md"
+              >
+                <Monitor className="h-4 w-4" />
+                {t('kioskMode')}
+              </button>
+            </motion.div>
           </motion.div>
 
           {/* Phone Mockup - visible on desktop */}

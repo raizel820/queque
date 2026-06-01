@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAuth, resolveUserAgencyId, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, updateStaffSchema } from '@/lib/validations';
+import { z } from 'zod';
+import { emitStaffEvent } from '@/lib/realtime-emit';
+
+// Permissions schema for fine-grained staff access control
+const staffPermissionsSchema = z.object({
+  canManageQueue: z.boolean().optional(),
+  canManageServices: z.boolean().optional(),
+  canManageStaff: z.boolean().optional(),
+  canViewAnalytics: z.boolean().optional(),
+  canManageBranches: z.boolean().optional(),
+  canManageWorkingHours: z.boolean().optional(),
+  canExportData: z.boolean().optional(),
+  canManageProfile: z.boolean().optional(),
+});
+
+const patchStaffSchema = updateStaffSchema.extend({
+  permissions: staffPermissionsSchema.optional(),
+});
 
 // PATCH - Update a staff member (fullName, isActive, role)
 export async function PATCH(
@@ -16,7 +35,10 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { fullName, isActive, role } = body;
+    const validation = validateBody(patchStaffSchema, body);
+    if (validation.error) return validation.error;
+
+    const { fullName, role, isActive, permissions } = validation.data;
 
     // Find the staff member
     const staffMember = await db.agencyStaff.findUnique({
@@ -71,6 +93,19 @@ export async function PATCH(
       });
     }
 
+    // Update permissions if provided
+    if (permissions !== undefined) {
+      // Merge with existing permissions
+      const currentPerms = staffMember.permissions
+        ? JSON.parse(staffMember.permissions as string)
+        : {};
+      const mergedPerms = { ...currentPerms, ...permissions };
+      await db.agencyStaff.update({
+        where: { id },
+        data: { permissions: JSON.stringify(mergedPerms) },
+      });
+    }
+
     // Fetch updated staff member
     const updated = await db.agencyStaff.findUnique({
       where: { id },
@@ -81,13 +116,18 @@ export async function PATCH(
       },
     });
 
+    // Emit realtime event (fire-and-forget)
+    emitStaffEvent('staff:updated', agencyId, {
+      action: 'staff-updated',
+      staffId: id,
+      fullName,
+      role,
+      isActive,
+    })
+
     return NextResponse.json({ staff: updated, success: true });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/staff/[id] PATCH] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
@@ -151,12 +191,15 @@ export async function DELETE(
       }
     }
 
+    // Emit realtime event (fire-and-forget)
+    emitStaffEvent('staff:updated', agencyId, {
+      action: 'staff-removed',
+      staffId: id,
+      userId: staffMember.userId,
+    })
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/staff/[id] DELETE] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

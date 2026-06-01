@@ -19,6 +19,7 @@ import {
 import { motion } from 'framer-motion';
 import type { ProfilePreferencesProps } from './profile-types';
 
+import { useLanguage } from '@/hooks/use-language';
 export function ProfilePreferences({ lang, theme, onLanguageChange, onThemeChange, t }: ProfilePreferencesProps) {
   return (
     <>
@@ -43,7 +44,7 @@ export function ProfilePreferences({ lang, theme, onLanguageChange, onThemeChang
               <SelectContent>
                 <SelectItem value="ar">العربية</SelectItem>
                 <SelectItem value="fr">Français</SelectItem>
-                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="en">{t('languageEnglish')}</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
@@ -153,7 +154,7 @@ export function ProfilePreferences({ lang, theme, onLanguageChange, onThemeChang
                   </div>
                 </div>
                 <Monitor className="h-4 w-4 mx-auto mb-1 text-gray-500" />
-                <span className="text-[10px] font-medium">{t('systemTheme') || 'System'}</span>
+                <span className="text-[10px] font-medium">{t('systemTheme')}</span>
                 {theme === 'system' && (
                   <motion.div
                     initial={{ scale: 0 }}

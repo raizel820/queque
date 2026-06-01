@@ -498,7 +498,7 @@ export function AdminSettings() {
                     >
                       {smsProviders.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.name}
+                          {p.id === 'algeria_sms' ? t('smsProviderAlgeriaSmsOption') : p.id === 'generic' ? t('smsProviderGenericOption') : p.name}
                           {p.defaultApiUrl ? ` (${p.id})` : ''}
                         </option>
                       ))}
@@ -511,7 +511,7 @@ export function AdminSettings() {
                       return (
                         <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
                           <Info className="h-3 w-3 flex-shrink-0" />
-                          {prov.description}
+                          {prov.id === 'algeria_sms' ? t('smsProviderAlgeriaSmsDesc') : prov.id === 'generic' ? t('smsProviderGenericDesc') : prov.description}
                           {!prov.senderIdSupport && (
                             <span className="text-amber-600 dark:text-amber-400">
                               {' '}⚠️ Uses phone number as sender
@@ -962,7 +962,7 @@ export function AdminSettings() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-medium text-foreground truncate">
-                          {provider.name}
+                          {provider.id === 'algeria_sms' ? t('smsProviderAlgeriaSms') : provider.id === 'generic' ? t('smsProviderGeneric') : provider.name}
                         </p>
                         {smsSettings?.provider === provider.id && (
                           <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
@@ -974,7 +974,7 @@ export function AdminSettings() {
                         )}
                       </div>
                       <p className="text-[10px] text-muted-foreground line-clamp-1">
-                        {provider.description}
+                        {provider.id === 'algeria_sms' ? t('smsProviderAlgeriaSmsDesc') : provider.id === 'generic' ? t('smsProviderGenericDesc') : provider.description}
                       </p>
                     </div>
                     {provider.docsUrl && (
@@ -996,13 +996,8 @@ export function AdminSettings() {
             <div className="flex items-start gap-2 mt-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200/50 dark:border-emerald-800/30">
               <Info className="h-4 w-4 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
               <div className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-relaxed">
-                <p className="font-medium mb-0.5">Tip</p>
-                <p className="text-muted-foreground">
-                  Select a provider above and the API URL will be auto-filled. You can also
-                  use &quot;Generic API&quot; to configure any custom SMS gateway that accepts HTTP
-                  requests. Always test your configuration with a test SMS before enabling it
-                  for customers.
-                </p>
+                <p className="font-medium mb-0.5">{t('tip')}</p>
+                <p className="text-sm text-muted-foreground">{t('smsTipDesc')}</p>
               </div>
             </div>
           </CardContent>
@@ -1261,7 +1256,7 @@ export function AdminSettings() {
                   <Input
                     value={paymentSettings.ewalletNumber}
                     onChange={(e) => setPaymentSettings({ ...paymentSettings, ewalletNumber: e.target.value })}
-                    placeholder="05XX XXX XXX"
+                    placeholder={t('phonePlaceholder')}
                     className="h-8 text-xs"
                   />
                 </div>

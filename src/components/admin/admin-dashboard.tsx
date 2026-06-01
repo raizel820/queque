@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
+import { useRealtime } from '@/hooks/use-realtime';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -393,11 +394,40 @@ export function AdminDashboard() {
   const [smsTestLoading, setSmsTestLoading] = useState(false);
   const [smsValidating, setSmsValidating] = useState(false);
 
+  const realtime = useRealtime();
+
   useEffect(() => {
     fetchDashboard();
     fetchRealAnnouncements();
     fetchSmsSettings();
   }, []);
+
+  // ─── Realtime: Join admin room for instant updates ───────────────────
+  useEffect(() => {
+    realtime.joinAdmin();
+    return () => {
+      realtime.leaveAdmin();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Realtime: Instant updates on admin events ──────────────────────
+  useEffect(() => {
+    const unsubscribers: (() => void)[] = [];
+
+    const handleAdminEvent = () => {
+      fetchDashboard();
+    };
+
+    unsubscribers.push(realtime.onQueueCalled(handleAdminEvent));
+    unsubscribers.push(realtime.onQueueJoined(handleAdminEvent));
+    unsubscribers.push(realtime.onQueueCompleted(handleAdminEvent));
+    unsubscribers.push(realtime.onAgencyUpdated(handleAdminEvent));
+    unsubscribers.push(realtime.onStaffUpdated(handleAdminEvent));
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [realtime]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchSmsSettings = async () => {
     setSmsLoading(true);
@@ -712,6 +742,11 @@ export function AdminDashboard() {
                 <ShieldCheck className="h-3 w-3 me-1" />
                 {t('superAdmin')}
               </Badge>
+              {/* Live connection indicator */}
+              <span className={`flex items-center gap-1.5 text-xs ${realtime.isConnected ? 'text-emerald-200' : 'text-amber-200'}`}>
+                <span className={`h-2 w-2 rounded-full inline-block ${realtime.isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                {realtime.isConnected ? (t('live') || 'Live') : (t('polling') || 'Polling')}
+              </span>
             </div>
           </div>
         </div>
@@ -1063,12 +1098,13 @@ export function AdminDashboard() {
           <Zap className="h-4 w-4 text-emerald-600" />
           <h2 className="text-sm font-semibold text-foreground">{t('quickActions') || 'Quick Actions'}</h2>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {[
             { icon: Building2, label: t('manageAgencies') || 'Agencies', view: 'agencies', color: 'from-emerald-500 to-emerald-600 shadow-emerald-500/20' },
             { icon: Users, label: t('manageUsers') || 'Users', view: 'users', color: 'from-teal-500 to-teal-600 shadow-teal-500/20' },
             { icon: CreditCard, label: t('pendingPayments') || 'Payments', view: 'transactions', color: 'from-amber-500 to-amber-600 shadow-amber-500/20' },
             { icon: BarChart3, label: t('analytics') || 'Analytics', view: 'analytics', color: 'from-rose-500 to-rose-600 shadow-rose-500/20' },
+            { icon: ClipboardList, label: t('auditLogsPage') || 'Audit Logs', view: 'admin-audit', color: 'from-purple-500 to-purple-600 shadow-purple-500/20' },
           ].map((action, idx) => {
             const Icon = action.icon;
             return (
@@ -1098,11 +1134,11 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-emerald-600" />
-                {t('dailyReservations')} — 7 Day Trend
+                {t('dailyReservations')} — {t('sevenDayTrend')}
               </CardTitle>
               <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
                 <TrendingUp className="h-3 w-3 me-1" />
-                {dailyActivity} today
+                {dailyActivity} {t('todayCount')}
               </Badge>
             </div>
           </CardHeader>
@@ -1185,7 +1221,7 @@ export function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <motion.button
                 whileHover={{ y: -4, scale: 1.04 }}
                 whileTap={{ scale: 0.97 }}
@@ -1229,6 +1265,17 @@ export function AdminDashboard() {
                   <CreditCard className="h-5 w-5 text-rose-600 dark:text-rose-400" />
                 </div>
                 <span className="text-xs font-semibold text-foreground">{t('viewTransactions')}</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ y: -4, scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setView('admin-audit')}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border-0 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 hover:from-purple-100 hover:to-violet-100 dark:hover:from-purple-900/30 dark:hover:to-violet-900/30 shadow-sm hover:shadow-lg hover:shadow-purple-500/5 transition-all duration-300 quick-action-card"
+              >
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-purple-200 to-purple-300 dark:from-purple-800/40 dark:to-purple-700/40 flex items-center justify-center shadow-sm">
+                  <ShieldCheck className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <span className="text-xs font-semibold text-foreground">{t('auditLogsPage')}</span>
               </motion.button>
             </div>
           </CardContent>
@@ -1316,12 +1363,12 @@ export function AdminDashboard() {
                         <>
                           <option value="winsms">WinSMS (winsms.dz)</option>
                           <option value="notifsend">NotifSend (notifsend.com)</option>
-                          <option value="algeria_sms">Algeria SMS (algeria-sms.com)</option>
+                          <option value="algeria_sms">{t('smsProviderAlgeriaSmsOption')}</option>
                           <option value="green_send">GreenSMS (greensms.ma)</option>
                           <option value="mtarget">M-Target (mtarget.dz)</option>
                           <option value="twilio">Twilio (twilio.com)</option>
                           <option value="vonage">Vonage / Nexmo (vonage.com)</option>
-                          <option value="generic">Generic API</option>
+                          <option value="generic">{t('smsProviderGenericOption')}</option>
                         </>
                       )}
                     </select>

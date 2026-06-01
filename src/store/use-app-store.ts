@@ -21,13 +21,15 @@ export type ViewName =
   | 'agency-profile'
   | 'agency-reviews'
   | 'agency-subscription'
+  | 'agency-branches'
   | 'admin-dashboard'
   | 'admin-transactions'
   | 'admin-agencies'
   | 'admin-audit'
   | 'admin-users'
   | 'admin-analytics'
-  | 'admin-settings';
+  | 'admin-settings'
+  | 'kiosk';
 
 interface UserState {
   id: string;

@@ -404,8 +404,19 @@ export function CustomerHistory() {
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="flex gap-3">
-              <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-              <Skeleton className="h-24 rounded-2xl flex-1" />
+              <div className="flex flex-col items-center">
+                <Skeleton className="h-5 w-5 rounded-full shrink-0" />
+                <Skeleton className="w-0.5 flex-1 min-h-[60px]" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-5 w-3/5 rounded-lg" />
+                <Skeleton className="h-4 w-4/5 rounded-lg" />
+                <div className="flex gap-3">
+                  <Skeleton className="h-4 w-16 rounded-lg" />
+                  <Skeleton className="h-4 w-16 rounded-lg" />
+                </div>
+                <Skeleton className="h-16 rounded-2xl" />
+              </div>
             </div>
           ))}
         </div>
@@ -413,19 +424,16 @@ export function CustomerHistory() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center py-16"
+          className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground"
         >
-          {/* CSS-only Calendar Illustration */}
-          <div className="mx-auto mb-4 w-20 h-20 relative">
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 border-2 border-emerald-200 dark:border-emerald-800" />
-            <div className="absolute top-0 start-0 end-0 h-7 rounded-t-2xl bg-gradient-to-r from-emerald-500 to-teal-500" />
-            <span className="absolute top-1 start-1/2 -translate-x-1/2 text-[10px] font-bold text-white">
-              {new Date().toLocaleDateString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { month: 'short' }).toUpperCase()}
-            </span>
-            <span className="absolute top-10 start-1/2 -translate-x-1/2 text-2xl font-bold text-foreground">{new Date().getDate()}</span>
+          <div className="relative mb-6">
+            <div className="absolute inset-0 rounded-full bg-emerald-400/20 blur-xl" />
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/60">
+              <History className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
+            </div>
           </div>
-          <p className="text-sm font-medium text-muted-foreground">{t('noData')}</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">{t('emptyHistoryMsg')}</p>
+          <h3 className="text-lg font-semibold text-foreground mb-2">{t('emptyNoHistoryTitle')}</h3>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">{t('emptyNoHistoryDesc')}</p>
         </motion.div>
       ) : (
         <AnimatePresence mode="wait">

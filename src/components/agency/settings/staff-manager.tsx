@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { EmptyState } from '@/components/shared/empty-state';
 
 export interface StaffMember {
   id: string;
@@ -287,7 +288,13 @@ export function StaffManager({ agencyId }: StaffManagerProps) {
           {[...Array(2)].map((_, i) => (<Skeleton key={i} className="h-14 rounded-xl" />))}
         </div>
       ) : staffList.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-4">{t('noData')}</p>
+        <EmptyState
+          icon={<Users className="h-9 w-9 text-emerald-400" />}
+          title={t('noStaffYet')}
+          description={t('noStaffDesc')}
+          actionLabel={t('addFirstStaff')}
+          onAction={() => setAddStaffOpen(true)}
+        />
       ) : (
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {staffList.map((staff) => {

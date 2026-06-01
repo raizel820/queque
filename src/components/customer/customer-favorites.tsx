@@ -248,10 +248,29 @@ export function CustomerFavorites() {
   if (loading) {
     return (
       <div className="px-4 py-4 pb-24 space-y-4">
-        <Skeleton className="h-8 w-32" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-32 rounded-lg" />
+          <Skeleton className="h-8 w-24 rounded-lg" />
+        </div>
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="rounded-2xl overflow-hidden shimmer-loading">
-            <Skeleton className="h-32 rounded-2xl skeleton-shimmer-enhanced" />
+          <div key={i} className="rounded-2xl overflow-hidden border border-border/50">
+            <div className="p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-11 w-11 rounded-xl shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/5 rounded" />
+                  <Skeleton className="h-3 w-4/5 rounded" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </div>
+                </div>
+                <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+              </div>
+              <div className="flex justify-end">
+                <Skeleton className="h-8 w-28 rounded-lg" />
+              </div>
+            </div>
           </div>
         ))}
       </div>

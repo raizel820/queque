@@ -1,55 +1,131 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
 
-export async function GET(request: NextRequest) {
+/**
+ * GET /api/agency/peak-hours?agencyId=XXX
+ * Returns peak-hour analysis and demand patterns for the agency
+ */
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const agencyId = searchParams.get('agencyId');
-
+    const agencyId = req.nextUrl.searchParams.get('agencyId')
     if (!agencyId) {
-      return NextResponse.json({ error: 'agencyId is required' }, { status: 400 });
+      return NextResponse.json({ error: 'agencyId required' }, { status: 400 })
     }
 
-    await requireAgencyAccess(request, agencyId);
+    await requireAgencyAccess(req, agencyId)
 
-    // Query completed reservations from last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-    const completedReservations = await db.reservation.findMany({
-      where: {
-        agencyId,
-        status: 'COMPLETED',
-        calledAt: { gte: thirtyDaysAgo },
-      },
-      select: { calledAt: true },
-    });
+    // Hourly demand distribution
+    const hourlyDemand = await db.$queryRaw<Array<{ hour: number; count: number; avgWait: number }>>`
+      SELECT 
+        CAST(strftime('%H', joinedAt) AS INTEGER) as hour,
+        COUNT(*) as count,
+        COALESCE(AVG(estimatedWait), 0) as avgWait
+      FROM Reservation
+      WHERE agencyId = ${agencyId}
+        AND joinedAt >= ${thirtyDaysAgo}
+      GROUP BY hour
+      ORDER BY hour ASC
+    `
 
-    // Group by hour of day
-    const hourCounts: Record<number, number> = {};
+    // Day of week demand
+    const weekdayDemand = await db.$queryRaw<Array<{ weekday: number; count: number; avgWait: number }>>`
+      SELECT 
+        CAST(strftime('%w', joinedAt) AS INTEGER) as weekday,
+        COUNT(*) as count,
+        COALESCE(AVG(estimatedWait), 0) as avgWait
+      FROM Reservation
+      WHERE agencyId = ${agencyId}
+        AND joinedAt >= ${thirtyDaysAgo}
+      GROUP BY weekday
+      ORDER BY weekday ASC
+    `
 
-    for (const res of completedReservations) {
-      if (res.calledAt) {
-        const hour = res.calledAt.getHours();
-        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-      }
-    }
+    // Peak hours by service
+    const servicePeakHours = await db.$queryRaw<
+      Array<{ serviceId: string; serviceName: string; peakHour: number; count: number }>
+    >`
+      SELECT 
+        r.serviceId,
+        s.name as serviceName,
+        CAST(strftime('%H', r.joinedAt) AS INTEGER) as peakHour,
+        COUNT(*) as count
+      FROM Reservation r
+      JOIN Service s ON r.serviceId = s.id
+      WHERE r.agencyId = ${agencyId}
+        AND r.joinedAt >= ${thirtyDaysAgo}
+      GROUP BY r.serviceId, s.name, peakHour
+      ORDER BY r.serviceId, count DESC
+    `
 
-    // Sort by count descending and take top 5
-    const peakHours = Object.entries(hourCounts)
-      .map(([hour, count]) => ({
-        hour: `${String(Number(hour)).padStart(2, '0')}:00`,
-        count,
-      }))
+    // Find top 3 peak hours
+    const peakHours = hourlyDemand
+      .map((h) => ({ hour: Number(h.hour), count: Number(h.count), avgWait: Number(h.avgWait) }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+      .slice(0, 3)
 
-    return NextResponse.json({ peakHours });
+    // Busiest weekday
+    const busiestDay =
+      weekdayDemand.length > 0
+        ? weekdayDemand
+            .map((d) => ({
+              weekday: Number(d.weekday),
+              count: Number(d.count),
+              avgWait: Number(d.avgWait),
+            }))
+            .sort((a, b) => b.count - a.count)[0]
+        : null
+
+    // Daily average wait time trend (past 30 days)
+    const dailyWaitTrend = await db.$queryRaw<Array<{ date: string; avgWait: number; count: number }>>`
+      SELECT 
+        DATE(joinedAt) as date,
+        COALESCE(AVG(estimatedWait), 0) as avgWait,
+        COUNT(*) as count
+      FROM Reservation
+      WHERE agencyId = ${agencyId}
+        AND joinedAt >= ${thirtyDaysAgo}
+      GROUP BY DATE(joinedAt)
+      ORDER BY date ASC
+    `
+
+    const weekdayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+    return NextResponse.json({
+      success: true,
+      analytics: {
+        peakHours,
+        busiestDay: busiestDay
+          ? { ...busiestDay, name: weekdayNames[busiestDay.weekday] }
+          : null,
+        hourlyDemand: hourlyDemand.map((h) => ({
+          hour: Number(h.hour),
+          count: Number(h.count),
+          avgWait: Math.round(Number(h.avgWait)),
+        })),
+        weekdayDemand: weekdayDemand.map((d) => ({
+          weekday: Number(d.weekday),
+          name: weekdayNames[Number(d.weekday)],
+          count: Number(d.count),
+          avgWait: Math.round(Number(d.avgWait)),
+        })),
+        servicePeakHours: servicePeakHours.map((s) => ({
+          serviceId: s.serviceId,
+          serviceName: s.serviceName,
+          peakHour: Number(s.peakHour),
+          count: Number(s.count),
+        })),
+        dailyWaitTrend: dailyWaitTrend.map((d) => ({
+          date: d.date,
+          avgWait: Math.round(Number(d.avgWait)),
+          count: Number(d.count),
+        })),
+      },
+    })
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('Peak hours API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

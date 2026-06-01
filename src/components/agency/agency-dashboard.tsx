@@ -62,7 +62,10 @@ import { useRef } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { WaitTimeChart } from '@/components/agency/wait-time-chart';
 import { RatingDistribution } from '@/components/agency/rating-distribution';
+import { NoShowAnalytics } from '@/components/agency/no-show-analytics';
+import { PeakHoursAnalytics } from '@/components/agency/peak-hours-analytics';
 import QRCode from 'qrcode';
+import { useRealtime } from '@/hooks/use-realtime';
 
 interface QueueEntry {
   id: string;
@@ -281,6 +284,7 @@ export function AgencyDashboard() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true });
   const agencyId = user?.agencyId || '';
+  const realtime = useRealtime();
 
   // Fetch agency profile for QR code
   const fetchAgencyCode = useCallback(async () => {
@@ -487,6 +491,39 @@ export function AgencyDashboard() {
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, [fetchData, fetchAnnouncements, fetchAgencyCode, agencyId]);
+
+  // ─── Realtime: Join agency room for instant updates ──────────────────
+  useEffect(() => {
+    if (!agencyId) return;
+    realtime.joinAgency(agencyId);
+    return () => {
+      realtime.leaveAgency(agencyId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agencyId]);
+
+  // ─── Realtime: Instant updates on queue events ──────────────────────
+  useEffect(() => {
+    const unsubscribers: (() => void)[] = [];
+
+    const handleQueueEvent = () => {
+      fetchData();
+    };
+
+    unsubscribers.push(realtime.onQueueCalled(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueCompleted(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueNoShow(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueCancelled(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueJoined(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueWalkIn(handleQueueEvent));
+    unsubscribers.push(realtime.onQueuePaused(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueResumed(handleQueueEvent));
+    unsubscribers.push(realtime.onQueuePositionChanged(handleQueueEvent));
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [realtime, fetchData]);
 
   const handleCreateAnnouncement = async () => {
     if (!newAnnouncement.trim() || !agencyId) return;
@@ -741,10 +778,10 @@ export function AgencyDashboard() {
               <motion.span
                 animate={{ opacity: [1, 0.3, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400"
+                className={`flex items-center gap-1.5 text-xs ${realtime.isConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}
               >
-                <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block live-pulse" />
-                {t('live')}
+                <span className={`h-2 w-2 rounded-full inline-block live-pulse ${realtime.isConnected ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                {realtime.isConnected ? t('live') : (t('polling') || 'Polling')}
               </motion.span>
             </h1>
           </div>
@@ -943,7 +980,7 @@ export function AgencyDashboard() {
 
             {/* Right side - Live Clock + Auto refresh */}
             <div className="flex flex-col items-end gap-2 flex-shrink-0 ps-4">
-              <div className="text-right">
+              <div className="text-end">
                 <p className="text-2xl sm:text-3xl font-black text-white tabular-nums" dir="ltr">
                   {new Date().toLocaleTimeString(lang === 'ar' ? 'ar-DZ' : lang === 'fr' ? 'fr-DZ' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                   <span className="clock-tick text-emerald-200">:</span>
@@ -1092,7 +1129,7 @@ export function AgencyDashboard() {
                 <BarChart3 className="h-4 w-4 text-emerald-600" />
                 {t('queueActivity') || 'Queue Activity'}
                 <Badge variant="outline" className="text-[9px] ms-auto badge-pulse bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
-                  {t('today') || 'Today'}
+                  {t('today')}
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -1166,9 +1203,14 @@ export function AgencyDashboard() {
             </CardHeader>
             <CardContent className="pt-0">
               {waitingList.length === 0 ? (
-                <div className="text-center py-6">
-                  <UserCheck className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">{t('noCustomersWaiting') || 'No customers waiting'}</p>
+                <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                  <div className="relative mb-3">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/60">
+                      <UserCheck className="h-7 w-7 text-emerald-500 dark:text-emerald-400" />
+                    </div>
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground">{t('noCustomersWaiting')}</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">{t('noQueueHint')}</p>
                 </div>
               ) : (
                 <div className="space-y-2 max-h-36 overflow-y-auto custom-scrollbar">
@@ -1291,8 +1333,8 @@ export function AgencyDashboard() {
             </CardHeader>
             <CardContent className="pt-0">
               {activityEvents.length === 0 ? (
-                <div className="text-center py-6">
-                  <Activity className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                  <Activity className="h-8 w-8 text-emerald-400 mb-2" />
                   <p className="text-sm text-muted-foreground">{t('noRecentActivity')}</p>
                 </div>
               ) : (
@@ -1366,8 +1408,8 @@ export function AgencyDashboard() {
             </CardHeader>
             <CardContent className="pt-0">
               {serviceStats.length === 0 ? (
-                <div className="text-center py-6">
-                  <Layers className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                  <Layers className="h-8 w-8 text-emerald-400 mb-2" />
                   <p className="text-sm text-muted-foreground">{t('noServiceData')}</p>
                 </div>
               ) : (
@@ -1548,8 +1590,8 @@ export function AgencyDashboard() {
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : serviceAnalytics.length === 0 ? (
-                <div className="text-center py-6">
-                  <BarChart3 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                  <BarChart3 className="h-8 w-8 text-emerald-400 mb-2" />
                   <p className="text-sm text-muted-foreground">{t('noAnalyticsForPeriod')}</p>
                 </div>
               ) : (
@@ -1616,7 +1658,10 @@ export function AgencyDashboard() {
           </CardHeader>
           <CardContent className="pt-0">
             {activityEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">{t('noRecentActivity')}</p>
+              <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+                <Activity className="h-8 w-8 text-emerald-400 mb-2" />
+                <p className="text-sm text-muted-foreground">{t('noRecentActivity')}</p>
+              </div>
             ) : (
               <div className="relative space-y-0 max-h-64 overflow-y-auto custom-scrollbar">
                 {/* Timeline line */}
@@ -1676,6 +1721,66 @@ export function AgencyDashboard() {
         </motion.div>
       </div>
 
+      {/* ═══════════════════════════════════════════
+          NO-SHOW ANALYTICS SECTION
+      ═══════════════════════════════════════════ */}
+      <Collapsible defaultOpen={false}>
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/30 rounded-t-xl transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <UserX className="h-4 w-4 text-rose-500" />
+                  {t('noShowAnalytics')}
+                  <Badge variant="secondary" className="text-[10px] px-1.5">{t('last30Days')}</Badge>
+                </CardTitle>
+                <motion.div
+                  animate={{ rotate: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </motion.div>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <NoShowAnalytics agencyId={agencyId} />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* ═══════════════════════════════════════════
+          PEAK HOURS ANALYTICS SECTION
+      ═══════════════════════════════════════════ */}
+      <Collapsible defaultOpen={false}>
+        <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
+          <CollapsibleTrigger className="w-full">
+            <CardHeader className="pb-3 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/30 rounded-t-xl transition-colors">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-orange-500" />
+                  {t('peakHours')}
+                  <Badge variant="secondary" className="text-[10px] px-1.5">{t('last30Days')}</Badge>
+                </CardTitle>
+                <motion.div
+                  animate={{ rotate: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </motion.div>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="pt-0">
+              <PeakHoursAnalytics agencyId={agencyId} />
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
       {/* Waiting List */}
       <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80 dark:border-gray-800/50 dark:backdrop-blur-sm dark:shadow-gray-900/50">
         <CardHeader className="pb-3">
@@ -1706,22 +1811,19 @@ export function AgencyDashboard() {
         </CardHeader>
         <CardContent className="pt-0">
           {waitingList.length === 0 ? (
-            <div className="text-center py-10">
+            <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
               <motion.div
                 animate={{ y: [0, -5, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
                 <div className="relative inline-block mb-3">
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.05, 0.1] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-20 w-20 rounded-full bg-emerald-200 dark:bg-emerald-800"
-                  />
-                  <Users className="h-10 w-10 text-muted-foreground mx-auto relative" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/60">
+                    <Users className="h-8 w-8 text-emerald-500 dark:text-emerald-400" />
+                  </div>
                 </div>
               </motion.div>
               <p className="text-sm font-medium text-foreground mb-1">{t('noQueue')}</p>
-              <p className="text-xs text-muted-foreground">{t('noQueueHint') || 'All customers have been served. Great job!'}</p>
+              <p className="text-xs text-muted-foreground">{t('noQueueHint')}</p>
             </div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
@@ -1850,8 +1952,8 @@ export function AgencyDashboard() {
             </div>
             {/* Announcements list */}
             {announcements.length === 0 ? (
-              <div className="text-center py-4">
-                <Megaphone className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+              <div className="flex flex-col items-center justify-center py-4 text-center text-muted-foreground">
+                <Megaphone className="h-8 w-8 text-emerald-400 mb-2 opacity-70" />
                 <p className="text-sm text-muted-foreground">{t('noAnnouncements')}</p>
               </div>
             ) : (

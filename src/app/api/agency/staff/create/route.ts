@@ -2,38 +2,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { hashPassword } from '@/lib/password';
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, createStaffSchema } from '@/lib/validations';
+import { z } from 'zod';
+import { emitStaffEvent } from '@/lib/realtime-emit';
+
+const createStaffBodySchema = createStaffSchema.extend({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+  staffRole: z.enum(['STAFF', 'MANAGER', 'AGENCY_STAFF', 'AGENCY_OWNER']).optional().default('STAFF'),
+});
 
 // POST - Create a new staff account (user + agency link)
 export async function POST(req: NextRequest) {
   try {
-    const { agencyId, username, fullName, password, staffRole } = await req.json();
+    const body = await req.json();
+    const validation = validateBody(createStaffBodySchema, body);
+    if (validation.error) return validation.error;
 
-    // Validate required fields
-    if (!agencyId || !username || !fullName || !password || !staffRole) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
-    }
+    const { agencyId, username, fullName, password, phoneNumber, staffRole } = validation.data;
 
     await requireAgencyAccess(req, agencyId);
-
-    // Validate username length
-    if (username.trim().length < 3) {
-      return NextResponse.json({ error: 'Username must be at least 3 characters' }, { status: 400 });
-    }
-
-    // Validate fullName
-    if (!fullName.trim()) {
-      return NextResponse.json({ error: 'Full name is required' }, { status: 400 });
-    }
-
-    // Validate password length
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
-    }
-
-    // Validate staffRole
-    if (!['STAFF', 'MANAGER', 'AGENCY_STAFF', 'AGENCY_OWNER'].includes(staffRole)) {
-      return NextResponse.json({ error: 'Invalid staff role' }, { status: 400 });
-    }
 
     // Map AGENCY_STAFF -> AGENCY_STAFF user role, AGENCY_OWNER -> AGENCY_OWNER user role
     const userRole = staffRole === 'AGENCY_OWNER' ? 'AGENCY_OWNER' : 'AGENCY_STAFF';
@@ -67,6 +54,7 @@ export async function POST(req: NextRequest) {
         username: username.trim(),
         fullName: fullName.trim(),
         passwordHash,
+        phoneNumber,
         role: userRole,
         language: 'ar',
         isActive: true,
@@ -88,15 +76,19 @@ export async function POST(req: NextRequest) {
     });
 
     // Return the created staff with initial password so owner can share it
+    // Emit realtime event (fire-and-forget)
+    emitStaffEvent('staff:updated', agencyId, {
+      action: 'staff-created',
+      staffId: staffLink.id,
+      userId: user.id,
+      username: user.username,
+    })
+
     return NextResponse.json({
       staff: staffLink,
       initialPassword: password,
     }, { status: 201 });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/staff/create] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

@@ -29,10 +29,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ announcements });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('Fetch announcements error:', error);
-    return NextResponse.json({ error: 'Failed to fetch announcements' }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
@@ -59,10 +56,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, announcement });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('Create announcement error:', error);
-    return NextResponse.json({ error: 'Failed to create announcement' }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
@@ -90,9 +84,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('Delete announcement error:', error);
-    return NextResponse.json({ error: 'Failed to delete announcement' }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

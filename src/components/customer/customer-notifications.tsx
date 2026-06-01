@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
+import { useRealtime } from '@/hooks/use-realtime';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -78,9 +79,9 @@ function getDateGroup(date: Date): string {
 
 function getDateGroupLabel(group: string, t: (key: string) => string): string {
   switch (group) {
-    case 'today': return t('today') || 'Today';
-    case 'yesterday': return t('yesterday') || 'Yesterday';
-    case 'earlier': return t('earlier') || 'Earlier';
+    case 'today': return t('today');
+    case 'yesterday': return t('yesterday');
+    case 'earlier': return t('earlier');
     default: return group;
   }
 }
@@ -225,6 +226,7 @@ function NotificationCard({
 export function CustomerNotifications() {
   const { user, setView } = useAppStore();
   const { t, lang } = useLanguage();
+  const realtime = useRealtime();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -263,6 +265,33 @@ export function CustomerNotifications() {
     const interval = setInterval(() => fetchNotifications(), 30000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
+
+  // ─── Realtime: Join customer room for instant updates ────────────────
+  useEffect(() => {
+    if (!user?.id) return;
+    realtime.joinCustomer(user.id);
+    return () => {
+      realtime.leaveCustomer(user.id);
+    };
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── Realtime: Instant updates on notification events ────────────────
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsubscribers: (() => void)[] = [];
+
+    const handleNotificationEvent = () => {
+      fetchNotifications();
+    };
+
+    unsubscribers.push(realtime.onNotification(handleNotificationEvent));
+    unsubscribers.push(realtime.onTurnApproaching(handleNotificationEvent));
+    unsubscribers.push(realtime.onYourTurn(handleNotificationEvent));
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [user?.id, realtime]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMarkAllRead = async () => {
     setActionLoading('all');
@@ -440,6 +469,11 @@ export function CustomerNotifications() {
         <div className="flex items-center gap-3 mb-1">
           <div className="h-1.5 w-8 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500" />
           <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text text-transparent">{t('notifications')}</h1>
+          {/* Live connection indicator */}
+          <span className={`flex items-center gap-1.5 text-xs ${realtime.isConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+            <span className={`h-2 w-2 rounded-full inline-block ${realtime.isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+            {realtime.isConnected ? (t('live') || 'Live') : (t('polling') || 'Polling')}
+          </span>
           <button
             onClick={handleRefresh}
             className="ms-auto p-1.5 rounded-lg hover:bg-muted transition-colors"

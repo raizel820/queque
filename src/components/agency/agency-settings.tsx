@@ -46,6 +46,7 @@ import {
   RefreshCw,
   CheckCircle2,
   Key,
+  MapPin,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -61,6 +62,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useAppStore } from '@/store/use-app-store';
+import { StaffPermissionsEditor, parsePermissions } from '@/components/shared/staff-permissions-editor';
+import { ArrowRight, Building2 } from 'lucide-react';
 
 interface AgencyService {
   id: string;
@@ -78,6 +81,7 @@ interface AgencySettingsData {
   workingHoursStart: string;
   workingHoursEnd: string;
   autoPauseWhenFull: boolean;
+  kioskModeEnabled: boolean;
 }
 
 interface SettingsSection {
@@ -93,6 +97,7 @@ const SECTIONS: SettingsSection[] = [
   { id: 'services', icon: Settings, titleKey: 'manageServices' },
   { id: 'capacity', icon: Gauge, titleKey: 'queueCapacity' },
   { id: 'staff', icon: Users, titleKey: 'staffManagement' },
+  { id: 'branches', icon: MapPin, titleKey: 'branchManagement' },
   { id: 'danger', icon: AlertTriangle, titleKey: 'deleteAccount', danger: true },
 ];
 
@@ -117,7 +122,7 @@ export function AgencySettings() {
   const originalSettingsRef = useRef<AgencySettingsData | null>(null);
 
   // Staff state
-  const [staffList, setStaffList] = useState<Array<{ id: string; role: string; joinedAt: string; isActive: boolean; user: { username: string; fullName: string; role: string; isActive: boolean } }>>([]);
+  const [staffList, setStaffList] = useState<Array<{ id: string; role: string; joinedAt: string; isActive: boolean; permissions?: string | Record<string, boolean> | null; user: { username: string; fullName: string; role: string; isActive: boolean } }>>([]);
   const [staffLoading, setStaffLoading] = useState(false);
   const [addStaffOpen, setAddStaffOpen] = useState(false);
   const [addStaffLoading, setAddStaffLoading] = useState(false);
@@ -139,6 +144,7 @@ export function AgencySettings() {
   const [editIsActive, setEditIsActive] = useState(true);
   const [editRole, setEditRole] = useState<'STAFF' | 'MANAGER'>('STAFF');
   const [editStaffLoading, setEditStaffLoading] = useState(false);
+  const [editPermissions, setEditPermissions] = useState<ReturnType<typeof parsePermissions> | null>(null);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -176,11 +182,14 @@ export function AgencySettings() {
     setNewStaffRole('STAFF');
   };
 
-  const openEditStaffDialog = (staff: { id: string; role: string; user: { fullName: string; isActive: boolean } }) => {
+  const openEditStaffDialog = (staff: { id: string; role: string; user: { fullName: string; isActive: boolean }; permissions?: string | Record<string, boolean> | null }) => {
     setEditingStaffId(staff.id);
     setEditFullName(staff.user.fullName);
     setEditIsActive(staff.user.isActive);
     setEditRole(staff.role === 'MANAGER' ? 'MANAGER' : 'STAFF');
+    // Parse permissions from string or object
+    const permStr = typeof staff.permissions === 'string' ? staff.permissions : staff.permissions ? JSON.stringify(staff.permissions) : null;
+    setEditPermissions(parsePermissions(permStr));
     setEditStaffOpen(true);
   };
 
@@ -195,6 +204,7 @@ export function AgencySettings() {
           fullName: editFullName.trim(),
           isActive: editIsActive,
           role: editRole,
+          permissions: editPermissions ?? undefined,
         }),
       });
       if (res.ok) {
@@ -552,6 +562,13 @@ export function AgencySettings() {
                             onCheckedChange={(v) => updateSetting('isQueueOpen', v)}
                             label={settings?.isQueueOpen ? t('queueOpen') : t('queueClosedStatus')}
                             description={settings?.isQueueOpen ? t('openNow') : t('closed')}
+                          />
+                          <Separator />
+                          <CustomToggle
+                            checked={settings?.kioskModeEnabled ?? false}
+                            onCheckedChange={(v) => updateSetting('kioskModeEnabled', v)}
+                            label={t('kioskModeEnabled')}
+                            description={t('kioskModeDesc')}
                           />
                         </div>
                       )}
@@ -1040,6 +1057,23 @@ export function AgencySettings() {
                                     />
                                   </button>
                                 </div>
+                                {/* Permissions Editor */}
+                                {editPermissions && (
+                                  <div className="mt-2">
+                                    <Separator className="mb-3" />
+                                    <p className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                                      <Shield className="h-4 w-4 text-emerald-600" />
+                                      {t('permissions') || 'Permissions'}
+                                    </p>
+                                    <div className="max-h-64 overflow-y-auto">
+                                      <StaffPermissionsEditor
+                                        permissions={editPermissions}
+                                        onChange={setEditPermissions}
+                                        staffRole={editRole}
+                                      />
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                               <DialogFooter>
                                 <Button variant="outline" onClick={() => { setEditStaffOpen(false); setEditingStaffId(null); }}>
@@ -1056,6 +1090,31 @@ export function AgencySettings() {
                               </DialogFooter>
                             </DialogContent>
                           </Dialog>
+                        </div>
+                      )}
+
+                      {/* Branches Section */}
+                      {section.id === 'branches' && (
+                        <div className="space-y-4">
+                          <p className="text-xs text-muted-foreground -mt-1 mb-2">{t('branchManagementDesc') || 'Manage your branches, counters, and staff assignments'}</p>
+                          <div className="flex flex-col items-center justify-center py-6 text-center">
+                            <div className="h-16 w-16 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
+                              <Building2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <p className="text-sm font-medium text-foreground mb-1">{t('manageBranchesCounters') || 'Manage Branches & Counters'}</p>
+                            <p className="text-xs text-muted-foreground max-w-sm mb-4">{t('branchesFullManageDesc') || 'Create branches, assign counters, and manage staff assignments from the dedicated Branches page.'}</p>
+                            <Button
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2"
+                              onClick={() => {
+                                const { setView } = useAppStore.getState();
+                                setView('agency-branches');
+                              }}
+                            >
+                              <Building2 className="h-4 w-4" />
+                              {t('goToBranches') || 'Go to Branches'}
+                              <ArrowRight className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       )}
 
@@ -1137,11 +1196,11 @@ export function AgencySettings() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>{t('serviceName')} (English)</Label>
+              <Label>{t('serviceName')} {t('inEnglish')}</Label>
               <Input
                 value={svcName}
                 onChange={(e) => setSvcName(e.target.value)}
-                placeholder="General Consultation"
+                placeholder={t('serviceNamePlaceholder')}
                 className="h-11"
               />
             </div>

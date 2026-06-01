@@ -1,21 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+import { emitQueueEvent, emitKioskEvent } from '@/lib/realtime-emit';
+
+const walkInSchema = z.object({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+  serviceId: z.string().optional(),
+  customerName: z.string().min(1, 'Customer name is required').max(100),
+});
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { agencyId, serviceId, customerName } = body;
+    const validation = validateBody(walkInSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!agencyId) {
-      return NextResponse.json({ success: false, error: 'agencyId is required' }, { status: 400 });
-    }
+    const { agencyId, serviceId, customerName } = validation.data;
 
     await requireAgencyAccess(request, agencyId);
-
-    if (!customerName || !customerName.trim()) {
-      return NextResponse.json({ success: false, error: 'Customer name is required' }, { status: 400 });
-    }
 
     // Check agency exists and queue is open
     const agency = await db.agency.findUnique({
@@ -132,14 +136,21 @@ export async function POST(request: NextRequest) {
       return res;
     });
 
+    // Emit realtime events (non-blocking — fire and forget)
+    emitQueueEvent('queue:walk-in', agencyId, {
+      reservationId: reservation.id,
+      displayNumber: reservation.displayNumber,
+      customerName: customerName.trim(),
+      serviceId: resolvedServiceId,
+      estimatedWait,
+    })
+    emitKioskEvent(agencyId, {
+      action: 'walk-in',
+      displayNumber: reservation.displayNumber,
+    })
+
     return NextResponse.json({ success: true, reservation }, { status: 201 });
   } catch (error: unknown) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    if (message === 'FULL') {
-      return NextResponse.json({ success: false, error: 'Queue is full' }, { status: 400 });
-    }
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

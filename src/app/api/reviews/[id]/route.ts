@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireResourceOwnership, requireAdmin, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, createReviewSchema } from '@/lib/validations';
 
 // PATCH: Update a review
 export async function PATCH(
@@ -10,7 +11,10 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { rating, comment } = body;
+    const validation = validateBody(createReviewSchema.partial(), body);
+    if (validation.error) return validation.error;
+
+    const { rating, comment } = validation.data;
 
     // Find the review
     const review = await db.review.findUnique({ where: { id } });
@@ -20,14 +24,6 @@ export async function PATCH(
 
     // Verify ownership via requireResourceOwnership
     await requireResourceOwnership(request, review.userId);
-
-    // Validate rating if provided
-    if (rating !== undefined && (rating < 1 || rating > 5)) {
-      return NextResponse.json(
-        { error: 'Rating must be between 1 and 5' },
-        { status: 400 }
-      );
-    }
 
     const updateData: Record<string, unknown> = {};
     if (rating !== undefined) updateData.rating = rating;

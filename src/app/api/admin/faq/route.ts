@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, faqSchema } from '@/lib/validations';
+import { z } from 'zod';
+
+const faqUpdateSchema = faqSchema.extend({
+  id: z.string().min(1, 'FAQ ID is required'),
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,11 +26,10 @@ export async function POST(req: NextRequest) {
     await requireAdmin(req);
 
     const body = await req.json();
-    const { question, answer, questionAr, answerAr, questionFr, answerFr, category, sortOrder, isActive } = body;
+    const validation = validateBody(faqSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!question || !answer) {
-      return NextResponse.json({ error: 'Question and answer are required' }, { status: 400 });
-    }
+    const { question, answer, questionAr, answerAr, questionFr, answerFr, category, order, isActive } = validation.data;
 
     const faq = await db.faq.create({
       data: {
@@ -35,7 +40,7 @@ export async function POST(req: NextRequest) {
         questionFr: questionFr || null,
         answerFr: answerFr || null,
         category: category || 'general',
-        sortOrder: sortOrder ?? 0,
+        sortOrder: order ?? 0,
         isActive: isActive ?? true,
       },
     });
@@ -51,11 +56,10 @@ export async function PUT(req: NextRequest) {
     await requireAdmin(req);
 
     const body = await req.json();
-    const { id, question, answer, questionAr, answerAr, questionFr, answerFr, category, sortOrder, isActive } = body;
+    const validation = validateBody(faqUpdateSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!id) {
-      return NextResponse.json({ error: 'FAQ ID is required' }, { status: 400 });
-    }
+    const { id, question, answer, questionAr, answerAr, questionFr, answerFr, category, order, isActive } = validation.data;
 
     const faq = await db.faq.update({
       where: { id },
@@ -67,7 +71,7 @@ export async function PUT(req: NextRequest) {
         ...(questionFr !== undefined && { questionFr }),
         ...(answerFr !== undefined && { answerFr }),
         ...(category !== undefined && { category }),
-        ...(sortOrder !== undefined && { sortOrder }),
+        ...(order !== undefined && { sortOrder: order }),
         ...(isActive !== undefined && { isActive }),
       },
     });

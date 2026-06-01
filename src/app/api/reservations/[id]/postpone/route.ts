@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireResourceOwnership, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+import { emitReservationEvent, emitQueueEvent } from '@/lib/realtime-emit';
+
+const postponeBodySchema = z.object({
+  positions: z.number().int().min(1).max(10),
+  reason: z.string().optional(),
+});
 
 export async function POST(
   request: NextRequest,
@@ -9,7 +17,10 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { positions } = body;
+    const validation = validateBody(postponeBodySchema, body);
+    if (validation.error) return validation.error;
+
+    const { positions } = validation.data;
 
     if (!positions || positions < 1 || positions > 10) {
       return NextResponse.json(
@@ -132,6 +143,21 @@ export async function POST(
 
       return result;
     });
+
+    // Emit realtime events (fire-and-forget)
+    emitReservationEvent('reservation:updated', reservation.agencyId, reservation.userId, {
+      reservationId: id,
+      displayNumber: reservation.displayNumber,
+      action: 'postponed',
+      positions,
+      newQueueNumber: updated.queueNumber,
+    })
+    emitQueueEvent('queue:position-changed', reservation.agencyId, {
+      reservationId: id,
+      displayNumber: reservation.displayNumber,
+      action: 'postponed',
+      positions,
+    })
 
     return NextResponse.json({ success: true, reservation: updated });
   } catch (error: unknown) {

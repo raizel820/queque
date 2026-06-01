@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, paymentSettingsSchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,18 +28,23 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
+    const validation = validateBody(paymentSettingsSchema, body);
+    if (validation.error) return validation.error;
+
+    const validatedData = validation.data;
+
     const updated = await db.paymentSettings.update({
       where: { id: settings.id },
       data: {
-        ...(body.ccpEnabled !== undefined && { ccpEnabled: body.ccpEnabled }),
-        ...(body.bankEnabled !== undefined && { bankEnabled: body.bankEnabled }),
-        ...(body.electronicEnabled !== undefined && { electronicEnabled: body.electronicEnabled }),
-        ...(body.ccpAccount !== undefined && { ccpAccount: body.ccpAccount }),
-        ...(body.ccpKey !== undefined && { ccpKey: body.ccpKey }),
-        ...(body.bankAccount !== undefined && { bankAccount: body.bankAccount }),
-        ...(body.bankRib !== undefined && { bankRib: body.bankRib }),
-        ...(body.bankName !== undefined && { bankName: body.bankName }),
-        ...(body.ewalletNumber !== undefined && { ewalletNumber: body.ewalletNumber }),
+        ...(validatedData.ccpEnabled !== undefined && { ccpEnabled: validatedData.ccpEnabled }),
+        ...(validatedData.bankEnabled !== undefined && { bankEnabled: validatedData.bankEnabled }),
+        ...(validatedData.electronicEnabled !== undefined && { electronicEnabled: validatedData.electronicEnabled }),
+        ...(validatedData.ccpAccount !== undefined && { ccpAccount: validatedData.ccpAccount }),
+        ...(validatedData.ccpKey !== undefined && { ccpKey: validatedData.ccpKey }),
+        ...(validatedData.bankAccount !== undefined && { bankAccount: validatedData.bankAccount }),
+        ...(validatedData.bankRib !== undefined && { bankRib: validatedData.bankRib }),
+        ...(validatedData.bankName !== undefined && { bankName: validatedData.bankName }),
+        ...(validatedData.ewalletNumber !== undefined && { ewalletNumber: validatedData.ewalletNumber }),
       },
     });
 

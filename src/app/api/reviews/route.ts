@@ -1,32 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, createReviewSchema } from '@/lib/validations';
+import { z } from 'zod';
+
+const createReviewBodySchema = createReviewSchema.extend({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+  reservationId: z.string().optional(),
+});
 
 // POST: Create a new review
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { agencyId, rating, comment, reservationId } = body;
+    const validation = validateBody(createReviewBodySchema, body);
+    if (validation.error) return validation.error;
 
-    // Validate required fields
-    if (!agencyId || !rating) {
-      return NextResponse.json(
-        { error: 'agencyId and rating are required' },
-        { status: 400 }
-      );
-    }
+    const { agencyId, rating, comment, reservationId } = validation.data;
 
     // Use session user.id instead of body userId
     const userId = user.id;
-
-    // Validate rating range
-    if (rating < 1 || rating > 5) {
-      return NextResponse.json(
-        { error: 'Rating must be between 1 and 5' },
-        { status: 400 }
-      );
-    }
 
     // Check that user is a CUSTOMER
     if (user.role !== 'CUSTOMER') {

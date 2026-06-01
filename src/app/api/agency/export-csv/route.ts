@@ -67,9 +67,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('Agency export CSV error:', error);
-    return NextResponse.json({ error: 'Export failed' }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

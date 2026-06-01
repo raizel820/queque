@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, replyToReviewSchema } from '@/lib/validations';
+import { z } from 'zod';
+
+const replyBodySchema = replyToReviewSchema.extend({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+});
 
 // POST: Add a reply to a review
 export async function POST(
@@ -10,14 +16,10 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { agencyId, text } = body;
+    const validation = validateBody(replyBodySchema, body);
+    if (validation.error) return validation.error;
 
-    if (!agencyId || !text?.trim()) {
-      return NextResponse.json(
-        { error: 'agencyId and text are required' },
-        { status: 400 }
-      );
-    }
+    const { agencyId, reply } = validation.data;
 
     // Verify the user has access to this agency
     await requireAgencyAccess(request, agencyId);
@@ -40,7 +42,7 @@ export async function POST(
     const updated = await db.review.update({
       where: { id },
       data: {
-        replyText: text.trim(),
+        replyText: reply.trim(),
         repliedAt: new Date(),
       },
       include: {

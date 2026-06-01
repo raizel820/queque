@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getUserAgencyId, verifyAgencyOwnership } from '@/lib/auth-agency';
+import { getUserAgencyId, verifyAgencyOwnership } from '@/lib/auth-guard';
 import { db } from '@/lib/db';
 
 describe('Agency Ownership Verification', () => {

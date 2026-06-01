@@ -9,8 +9,15 @@ import {
   validateGatewayConnection,
   ALGERIAN_PROVIDERS,
 } from '@/lib/sms-service';
-import { normalizeDzPhone, isValidDzPhone } from '@/lib/sms-service';
+import { normalizeDzPhone } from '@/lib/sms-service';
 import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, smsSettingsSchema } from '@/lib/validations';
+import { z } from 'zod';
+
+const smsTestSchema = z.object({
+  action: z.enum(['validate', 'test']).optional(),
+  phoneNumber: z.string().optional(),
+});
 
 // GET - Return SMS settings + usage stats + providers
 export async function GET(request: NextRequest) {
@@ -50,20 +57,21 @@ export async function PUT(req: NextRequest) {
     await requireAdmin(req);
 
     const body = await req.json();
+    const validation = validateBody(smsSettingsSchema, body);
+    if (validation.error) return validation.error;
+
     const {
       provider,
       apiUrl,
       apiKey,
       senderName,
       enabled,
-      smsPerReminder,
-      maxSmsPerDay,
-      testPhoneNumber,
       templateTurnApproaching,
       templateYourTurn,
       templateNoShow,
       templateCustom,
-    } = body;
+    } = validation.data;
+    const { smsPerReminder, maxSmsPerDay, testPhoneNumber } = body;
 
     // Validate provider
     if (provider && !ALGERIAN_PROVIDERS[provider]) {
@@ -154,7 +162,10 @@ export async function POST(req: NextRequest) {
     await requireAdmin(req);
 
     const body = await req.json();
-    const { action, phoneNumber } = body;
+    const validation = validateBody(smsTestSchema, body);
+    if (validation.error) return validation.error;
+
+    const { action, phoneNumber } = validation.data;
 
     // Support both old format (just phoneNumber) and new format (action + phoneNumber)
     if (action === 'validate') {
@@ -163,7 +174,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(result);
     }
 
-    const phone = phoneNumber || body.phoneNumber;
+    const phone = phoneNumber;
     if (!phone || !phone.trim()) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
     }

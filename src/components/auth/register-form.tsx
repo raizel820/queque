@@ -578,7 +578,7 @@ export function RegisterForm() {
                                 onChange={(e) => setPhoneNumber(e.target.value)}
                                 onFocus={() => setFocusedField('phone')}
                                 onBlur={() => setFocusedField(null)}
-                                placeholder={focusedField === 'phone' || phoneNumber ? '05XX XXX XXX' : ' '}
+                                placeholder={focusedField === 'phone' || phoneNumber ? t('phonePlaceholder') : ' '}
                                 dir="ltr"
                                 className="peer h-12 w-full bg-transparent px-3.5 text-base text-foreground outline-none placeholder:text-muted-foreground/60"
                               />

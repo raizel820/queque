@@ -80,11 +80,7 @@ export async function GET(request: NextRequest) {
       hasMore: skip + limit < totalReviews,
     });
   } catch (error: unknown) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('[REVIEWS GET] Error:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
@@ -161,11 +157,7 @@ export async function POST(request: NextRequest) {
       updated: !!existing,
     });
   } catch (error: unknown) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('[REVIEWS POST] Error:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
@@ -191,10 +183,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('[REVIEWS DELETE] Error:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

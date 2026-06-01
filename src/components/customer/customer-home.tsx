@@ -1186,10 +1186,55 @@ export function CustomerHome() {
           ))}
         </div>
       ) : filteredAgencies.length === 0 ? (
-        <div className="text-center py-16">
-          <Search className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">{t('noData')}</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center justify-center py-12 text-center"
+        >
+          <div className="relative mb-6">
+            {/* Pulsing background ring */}
+            <motion.div
+              animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.05, 0.15] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-28 w-28 rounded-full bg-emerald-200 dark:bg-emerald-800"
+            />
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/60">
+              {searchQuery.trim() ? (
+                <Search className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <Building2 className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
+              )}
+            </div>
+          </div>
+          {searchQuery.trim() ? (
+            <>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t('noSearchResultsTitle') || 'No Results'}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">
+                {t('noSearchResultsDesc') || `No agencies match "${searchQuery}". Try a different search term.`}
+              </p>
+            </>
+          ) : selectedCategory !== 'ALL' ? (
+            <>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t('emptyNoAgenciesTitle')}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">{t('emptyNoAgenciesDesc')}</p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t('emptyNoAgenciesTitle')}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">{t('emptyNoAgenciesDesc')}</p>
+            </>
+          )}
+          {(searchQuery.trim() || selectedCategory !== 'ALL') && (
+            <Button
+              variant="outline"
+              className="mt-4 gap-2 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+              onClick={() => { setSearchQuery(''); setSelectedCategory('ALL'); }}
+            >
+              <X className="h-4 w-4" />
+              {t('clearSearch')}
+            </Button>
+          )}
+        </motion.div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredAgencies.map((agency, idx) => {

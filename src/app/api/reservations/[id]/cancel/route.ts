@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireResourceOwnership, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
-import { realtime } from '@/lib/realtime';
+import { emitReservationEvent, emitQueueEvent, emitKioskEvent } from '@/lib/realtime-emit';
 
 export async function POST(
   request: NextRequest,
@@ -56,23 +56,21 @@ export async function POST(
       });
     });
 
-    // Emit realtime events
-    if (reservation.userId) {
-      await realtime.reservationCancelled(reservation.userId, {
-        reservationId: id,
-        displayNumber: reservation.displayNumber,
-        agencyId: reservation.agencyId,
-      });
-    }
-    await realtime.queueUpdated(reservation.agencyId, {
-      action: 'cancel',
+    // Emit realtime events (fire-and-forget)
+    emitReservationEvent('reservation:cancelled', reservation.agencyId, reservation.userId, {
       reservationId: id,
       displayNumber: reservation.displayNumber,
-    });
-    await realtime.agencyStatsUpdated(reservation.agencyId, {
-      action: 'queue-changed',
       agencyId: reservation.agencyId,
-    });
+    })
+    emitQueueEvent('queue:updated', reservation.agencyId, {
+      reservationId: id,
+      displayNumber: reservation.displayNumber,
+      action: 'cancelled',
+    })
+    emitKioskEvent(reservation.agencyId, {
+      action: 'reservation-cancelled',
+      displayNumber: reservation.displayNumber,
+    })
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
 
 export async function DELETE(
   request: NextRequest,
@@ -17,6 +18,9 @@ export async function DELETE(
       )
     }
 
+    // SECURITY: Verify the user has access to the agency that owns this service
+    await requireAgencyAccess(request, service.agencyId)
+
     // Soft delete
     const updatedService = await db.service.update({
       where: { id },
@@ -25,10 +29,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, service: updatedService })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

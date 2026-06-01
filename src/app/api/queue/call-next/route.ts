@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
+import { validateBody } from '@/lib/validations'
+import { z } from 'zod'
+import { emitQueueEvent, emitNotificationEvent, emitKioskEvent } from '@/lib/realtime-emit'
+
+const callNextSchema = z.object({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+  serviceId: z.string().min(1, 'Service ID is required'),
+})
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { agencyId, serviceId } = body
+    const validation = validateBody(callNextSchema, body)
+    if (validation.error) return validation.error
 
-    if (!agencyId || !serviceId) {
-      return NextResponse.json(
-        { success: false, error: 'agencyId and serviceId are required' },
-        { status: 400 }
-      )
-    }
+    const { agencyId, serviceId } = validation.data
 
     // Verify agency access
     const user = await requireAgencyAccess(request, agencyId)
@@ -118,6 +122,23 @@ export async function POST(request: NextRequest) {
           userId: nextReservation.userId,
         }),
       },
+    })
+
+    // Emit realtime events (fire-and-forget)
+    emitQueueEvent('queue:called', agencyId, {
+      reservationId: nextReservation.id,
+      displayNumber: nextReservation.displayNumber,
+      serviceId,
+      customerName: nextReservation.user.fullName,
+    })
+    emitNotificationEvent('notification:your-turn', nextReservation.userId, {
+      ticketNumber: nextReservation.displayNumber,
+      agencyName: nextReservation.agency.name,
+      serviceName: nextReservation.service.name,
+    })
+    emitKioskEvent(agencyId, {
+      action: 'call-next',
+      displayNumber: nextReservation.displayNumber,
     })
 
     return NextResponse.json({

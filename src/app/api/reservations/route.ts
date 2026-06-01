@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
-import { realtime } from '@/lib/realtime'
+import { validateBody, createReservationSchema } from '@/lib/validations'
+import { emitQueueEvent } from '@/lib/realtime-emit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,15 +11,11 @@ export async function POST(request: NextRequest) {
     const userId = user.id
 
     const body = await request.json()
-    const { agencyId, serviceId, reservedDate, preferredTime, fixedTimeEnabled } = body
+    const validation = validateBody(createReservationSchema, body)
+    if (validation.error) return validation.error
 
-    // Validate required fields
-    if (!agencyId) {
-      return NextResponse.json(
-        { success: false, error: 'agencyId is required' },
-        { status: 400 }
-      )
-    }
+    const { agencyId, serviceId, preferredTime } = validation.data
+    const { reservedDate, fixedTimeEnabled } = body
 
     // Validate date if provided
     let targetDate: string | null = null
@@ -257,23 +254,13 @@ export async function POST(request: NextRequest) {
       return res;
     });
 
-    // Emit realtime events
-    await realtime.queueUpdated(agencyId, {
-      action: 'new-reservation',
+    // Emit realtime event (non-blocking — fire and forget)
+    emitQueueEvent('queue:joined', agencyId, {
       reservationId: reservation.id,
       displayNumber: reservation.displayNumber,
       userId,
-    })
-    await realtime.agencyStatsUpdated(agencyId, {
-      action: 'queue-changed',
-      agencyId,
-    })
-    await realtime.positionChanged(userId, {
-      reservationId: reservation.id,
-      displayNumber: reservation.displayNumber,
-      position: reservation.queueNumber,
-      estimatedWait: reservation.estimatedWait,
-      agencyId,
+      serviceId: resolvedServiceId,
+      estimatedWait,
     })
 
     return NextResponse.json({ success: true, reservation }, { status: 201 })

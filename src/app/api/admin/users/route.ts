@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, adminUserActionSchema } from '@/lib/validations';
+import { z } from 'zod';
 
 export async function GET(request: NextRequest) {
   try {
@@ -86,14 +88,10 @@ export async function PATCH(request: NextRequest) {
     const admin = await requireAdmin(request);
 
     const body = await request.json();
-    const { userId, action } = body;
+    const validation = validateBody(adminUserActionSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    const { userId, action } = validation.data;
 
     const targetUser = await db.user.findUnique({ where: { id: userId } });
     if (!targetUser) {
@@ -181,14 +179,11 @@ export async function DELETE(request: NextRequest) {
     const admin = await requireAdmin(request);
 
     const body = await request.json();
-    const { userId } = body;
+    const userIdSchema = z.object({ userId: z.string().min(1, 'User ID is required') });
+    const validation = validateBody(userIdSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      );
-    }
+    const { userId } = validation.data;
 
     // Prevent deleting super admin accounts
     const targetUser = await db.user.findUnique({ where: { id: userId } });

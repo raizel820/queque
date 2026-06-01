@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { verifyPassword } from '@/lib/password'
 import { setNextAuthSessionCookie } from '@/lib/auth-cookie'
 import { checkRateLimit, getClientIp, RateLimitError, LOGIN_RATE_LIMIT } from '@/lib/rate-limit'
+import { validateBody, loginSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,15 +11,10 @@ export async function POST(request: NextRequest) {
     checkRateLimit(getClientIp(request), LOGIN_RATE_LIMIT)
 
     const body = await request.json()
-    const { username, password, expectedRole } = body
+    const validation = validateBody(loginSchema, body)
+    if (validation.error) return validation.error
 
-    // Validate required fields
-    if (!username || !password) {
-      return NextResponse.json(
-        { success: false, error: 'Username and password are required' },
-        { status: 400 }
-      )
-    }
+    const { username, password, expectedRole } = validation.data
 
     // Find user by username
     const user = await db.user.findUnique({

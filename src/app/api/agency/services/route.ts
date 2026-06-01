@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAuth, resolveUserAgencyId, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, createServiceSchema } from '@/lib/validations';
+import { emitQueueEvent } from '@/lib/realtime-emit';
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,11 +19,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ services });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/services GET] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
@@ -33,10 +31,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No active agency found' }, { status: 404 });
     }
 
-    const { name, nameAr, nameFr, prefix } = await req.json();
+    const body = await req.json();
+    const validation = validateBody(createServiceSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!name || !prefix) {
-      return NextResponse.json({ error: 'Name and prefix required' }, { status: 400 });
+    const { name, nameAr, nameFr, description, avgTime, isActive } = validation.data;
+    const { prefix } = body;
+
+    if (!prefix) {
+      return NextResponse.json({ error: 'Prefix required' }, { status: 400 });
     }
 
     const service = await db.service.create({
@@ -46,18 +49,21 @@ export async function POST(req: NextRequest) {
         nameAr: nameAr || null,
         nameFr: nameFr || null,
         prefix: prefix.toUpperCase(),
+        description: description || null,
+        avgTime: avgTime || undefined,
+        isActive: isActive ?? true,
       },
     });
 
+    // Emit realtime event (fire-and-forget)
+    emitQueueEvent('queue:settings-updated', agencyId, {
+      action: 'service-created',
+      serviceId: service.id,
+      serviceName: name,
+    })
+
     return NextResponse.json({ service, success: true });
   } catch (error: unknown) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('[agency/services POST] Error:', error);
-    if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002') {
-      return NextResponse.json({ error: 'Service name already exists' }, { status: 409 });
-    }
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

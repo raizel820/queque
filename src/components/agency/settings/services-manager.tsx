@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Plus, Trash2, Edit3, Briefcase } from 'lucide-react';
+import { EmptyState } from '@/components/shared/empty-state';
 import { toast } from 'sonner';
 
 export interface AgencyService {
@@ -122,7 +123,13 @@ export function ServicesManager({ services, onRefresh }: ServicesManagerProps) {
         </Button>
       </div>
       {services.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-4">{t('noData')}</p>
+        <EmptyState
+          icon={<Briefcase className="h-9 w-9 text-emerald-400" />}
+          title={t('noServicesYet')}
+          description={t('noServicesDesc')}
+          actionLabel={t('addFirstService')}
+          onAction={openAddServiceDialog}
+        />
       ) : (
         <div className="space-y-2 max-h-72 overflow-y-auto">
           {services.map((svc) => (
@@ -179,11 +186,11 @@ export function ServicesManager({ services, onRefresh }: ServicesManagerProps) {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>{t('serviceName')} (English)</Label>
+              <Label>{t('serviceName')} {t('inEnglish')}</Label>
               <Input
                 value={svcName}
                 onChange={(e) => setSvcName(e.target.value)}
-                placeholder="General Consultation"
+                placeholder={t('serviceNamePlaceholder')}
                 className="h-11"
               />
             </div>

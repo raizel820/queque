@@ -471,13 +471,39 @@ export function AgencyReviews() {
         <Skeleton className="h-8 w-48 rounded-lg" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <Skeleton className="h-40 rounded-2xl" />
-          <div className="lg:col-span-2 space-y-3">
-            <Skeleton className="h-10 rounded-xl" />
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-28 rounded-xl" />
+          <div className="lg:col-span-2 space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Skeleton className="h-4 w-8 rounded" />
+                <Skeleton className="h-3.5 w-3.5 rounded shrink-0" />
+                <Skeleton className="h-3 flex-1 rounded-full" />
+                <Skeleton className="h-3 w-12 rounded" />
+              </div>
             ))}
           </div>
         </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-7 w-16 rounded-lg" />
+          <Skeleton className="h-7 w-12 rounded-lg" />
+          <Skeleton className="h-7 w-12 rounded-lg" />
+        </div>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl border border-border/50 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-32 rounded" />
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Skeleton key={s} className="h-3.5 w-3.5 rounded" />
+                  ))}
+                </div>
+                <Skeleton className="h-3 w-full rounded" />
+                <Skeleton className="h-3 w-4/5 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

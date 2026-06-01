@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+
+const announcementSchema = z.object({
+  message: z.string().min(1, 'Message is required').max(500),
+  type: z.enum(['INFO', 'WARNING', 'URGENT']).optional().default('INFO'),
+});
 
 // GET - List global announcements
 export async function GET(request: NextRequest) {
@@ -23,18 +30,16 @@ export async function POST(req: NextRequest) {
   try {
     const admin = await requireAdmin(req);
 
-    const { message, type } = await req.json();
-    if (!message || !message.trim()) {
-      return NextResponse.json({ error: 'message is required' }, { status: 400 });
-    }
+    const body = await req.json();
+    const validation = validateBody(announcementSchema, body);
+    if (validation.error) return validation.error;
 
-    const validTypes = ['INFO', 'WARNING', 'URGENT'];
-    const announcementType = validTypes.includes(type) ? type : 'INFO';
+    const { message, type } = validation.data;
 
     const announcement = await db.globalAnnouncement.create({
       data: {
         message: message.trim(),
-        type: announcementType,
+        type,
         createdBy: admin.id,
       },
     });

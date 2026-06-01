@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+
+const agencyActionSchema = z.object({
+  action: z.enum(['suspend', 'activate', 'delete']),
+});
 
 export async function PATCH(
   req: NextRequest,
@@ -10,7 +16,11 @@ export async function PATCH(
     const admin = await requireAdmin(req);
 
     const { id } = await params;
-    const { action } = await req.json();
+    const body = await req.json();
+    const validation = validateBody(agencyActionSchema, body);
+    if (validation.error) return validation.error;
+
+    const { action } = validation.data;
 
     const agency = await db.agency.findUnique({ where: { id } });
     if (!agency) return NextResponse.json({ error: 'Agency not found' }, { status: 404 });

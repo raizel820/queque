@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
+import { useRealtime } from '@/hooks/use-realtime';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,6 +71,7 @@ interface Reservation {
   agencyName: string;
   agencyNameAr?: string;
   agencyNameFr?: string;
+  agencyId?: string;
   serviceName: string;
   serviceNameAr?: string;
   serviceNameFr?: string;
@@ -156,6 +158,8 @@ export function CustomerQueue() {
   const [postponePositions, setPostponePositions] = useState(1);
   const [postponeLoading, setPostponeLoading] = useState(false);
 
+  const realtime = useRealtime();
+
   const fetchReservations = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -173,6 +177,7 @@ export function CustomerQueue() {
             peopleAhead: (r.peopleAhead as number) || 0,
             estimatedWait: (r.estimatedWait as number) || 0,
             currentServingNumber: (r.currentServingNumber as string) || '0',
+            agencyId: (r.agencyId as string) || agency?.id || '',
             agencyName: agency?.name || t('defaultAgency'),
             agencyNameAr: agency?.nameAr,
             agencyNameFr: agency?.nameFr,
@@ -319,6 +324,87 @@ export function CustomerQueue() {
       return () => clearInterval(interval);
     }
   }, [fetchReservations, refreshInterval, isFastPolling]);
+
+  // ─── Realtime: Join rooms for instant updates ──────────────────────
+  useEffect(() => {
+    if (!user?.id) return;
+    realtime.joinCustomer(user.id);
+    return () => {
+      realtime.leaveCustomer(user.id);
+    };
+  }, [user?.id]);
+
+  // Join agency rooms for each active reservation
+  useEffect(() => {
+    const agencyIds = new Set(reservations.map(r => r.agencyId).filter(Boolean) as string[]);
+    agencyIds.forEach(id => realtime.joinAgency(id));
+    return () => {
+      agencyIds.forEach(id => realtime.leaveAgency(id));
+    };
+  }, [reservations]);
+
+  // ─── Realtime: Instant updates on queue events ──────────────────────
+  useEffect(() => {
+    const unsubscribers: (() => void)[] = [];
+
+    // When any queue event happens for our agency, refresh immediately
+    const handleQueueEvent = () => {
+      fetchReservations();
+    };
+
+    unsubscribers.push(realtime.onQueueCalled(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueCompleted(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueNoShow(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueCancelled(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueJoined(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueWalkIn(handleQueueEvent));
+    unsubscribers.push(realtime.onQueuePaused(handleQueueEvent));
+    unsubscribers.push(realtime.onQueueResumed(handleQueueEvent));
+    unsubscribers.push(realtime.onQueuePositionChanged(handleQueueEvent));
+
+    // Turn approaching — show a toast so the customer is aware
+    unsubscribers.push(realtime.onTurnApproaching(() => {
+      fetchReservations();
+      toast.info(t('turnApproachingNotif') || 'Your turn is approaching!', {
+        description: t('turnApproachingNotifDesc') || 'Please get ready, your turn is soon.',
+        duration: 6000,
+        icon: <Clock className="h-4 w-4 text-amber-500" />,
+      });
+    }));
+
+    // Personal "your turn" notification — highest priority
+    unsubscribers.push(realtime.onYourTurn(() => {
+      fetchReservations();
+      // Also trigger sound and notification immediately
+      if (!soundStartedRef.current) {
+        soundStartedRef.current = true;
+        if (!soundMuted) {
+          const calledRes = reservations.find(r => r.status === 'CALLED');
+          startNotificationSound(calledRes?.id || 'default');
+        }
+        setShowTurnAlert(true);
+        setConfettiKey((k) => k + 1);
+        // Browser notification
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+          if (Notification.permission === 'default') {
+            Notification.requestPermission();
+          }
+          if (Notification.permission === 'granted') {
+            new Notification(t('yourTurn') || 'Your Turn!', {
+              body: t('turnNotifBody') || 'Please proceed to the service counter.',
+              icon: '/logo.png',
+              tag: 'blasti-turn',
+              requireInteraction: true,
+            });
+          }
+        }
+      }
+    }));
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [realtime, fetchReservations, soundMuted, t, reservations]);
 
   // Auto-scroll to turn alert banner when it appears
   useEffect(() => {
@@ -767,9 +853,23 @@ export function CustomerQueue() {
       </div>
       {/* Refresh interval selector + last updated */}
       <div className="flex items-center justify-between mb-5">
-        <span className="text-[11px] text-muted-foreground">
-          {t('updatedAgo')}: <span className="font-medium text-foreground">{timeAgo}</span>
-        </span>
+        <div className="flex items-center gap-2">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
+              realtime.isConnected
+                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+            }`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${realtime.isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+            <span className="text-[10px] font-medium">{realtime.isConnected ? (t('live') || 'Live') : (t('offline') || 'Offline')}</span>
+          </motion.div>
+          <span className="text-[11px] text-muted-foreground">
+            {t('updatedAgo')}: <span className="font-medium text-foreground">{timeAgo}</span>
+          </span>
+        </div>
         <motion.div
           key={pulseKey}
           initial={{ opacity: [0.3, 1] }}

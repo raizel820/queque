@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
+import { createServiceSchema, validateBody } from '@/lib/validations'
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,13 +38,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { agencyId, name, nameFr, nameAr, prefix } = body
 
-    // Validate required fields
-    if (!agencyId || !name) {
+    // SECURITY: Verify the user has access to the specified agency
+    if (!agencyId) {
       return NextResponse.json(
-        { success: false, error: 'agencyId and name are required' },
+        { success: false, error: 'agencyId is required' },
         { status: 400 }
       )
     }
+
+    await requireAgencyAccess(request, agencyId)
+
+    // Validate input with Zod
+    const validation = validateBody(createServiceSchema, { name, nameFr, nameAr, prefix })
+    if (validation.error) return validation.error
 
     // Check agency exists
     const agency = await db.agency.findUnique({ where: { id: agencyId } })
@@ -57,19 +65,15 @@ export async function POST(request: NextRequest) {
     const service = await db.service.create({
       data: {
         agencyId,
-        name,
-        nameFr,
-        nameAr,
-        prefix: prefix || name.charAt(0).toUpperCase(),
+        name: validation.data.name,
+        nameFr: validation.data.nameFr || null,
+        nameAr: validation.data.nameAr || null,
+        prefix: prefix || validation.data.name.charAt(0).toUpperCase(),
       },
     })
 
     return NextResponse.json({ success: true, service }, { status: 201 })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

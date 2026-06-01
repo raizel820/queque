@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireResourceOwnership, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, rateReservationSchema } from '@/lib/validations';
 
 export async function POST(
   request: NextRequest,
@@ -9,12 +10,10 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { rating, feedback, notes } = body;
+    const validation = validateBody(rateReservationSchema, body);
+    if (validation.error) return validation.error;
 
-    // Validate rating
-    if (!rating || rating < 1 || rating > 5) {
-      return NextResponse.json({ error: 'Rating must be between 1 and 5' }, { status: 400 });
-    }
+    const { rating, comment } = validation.data;
 
     // Verify reservation exists
     const reservation = await db.reservation.findUnique({
@@ -47,7 +46,7 @@ export async function POST(
     });
 
     // Use raw SQL for feedback/ratedAt fields that may not exist in Prisma Client
-    const feedbackText = (feedback || notes || '').trim();
+    const feedbackText = (comment || '').trim();
     try {
       await db.$executeRaw`UPDATE Reservation SET ratedAt = datetime('now') WHERE id = ${id}`;
       if (feedbackText) {

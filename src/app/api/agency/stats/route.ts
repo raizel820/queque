@@ -142,9 +142,6 @@ export async function GET(req: NextRequest) {
       subscriptionStatus: agency.subscriptionStatus,
     });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('Agency stats error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

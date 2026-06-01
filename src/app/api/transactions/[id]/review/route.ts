@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
+import { validateBody } from '@/lib/validations'
+import { z } from 'zod'
+
+const transactionReviewSchema = z.object({
+  status: z.enum(['APPROVED', 'REJECTED']),
+  rejectionReason: z.string().max(500).optional(),
+})
 
 export async function PUT(
   request: NextRequest,
@@ -10,16 +17,10 @@ export async function PUT(
     const user = await requireAuth(request)
     const { id } = await params
     const body = await request.json()
-    const { status, rejectionReason } = body
+    const validation = validateBody(transactionReviewSchema, body)
+    if (validation.error) return validation.error
 
-    // Validate status
-    const validStatuses = ['APPROVED', 'REJECTED']
-    if (!status || !validStatuses.includes(status)) {
-      return NextResponse.json(
-        { success: false, error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
-        { status: 400 }
-      )
-    }
+    const { status, rejectionReason } = validation.data
 
     // Find transaction
     const transaction = await db.transaction.findUnique({

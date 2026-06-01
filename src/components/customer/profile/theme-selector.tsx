@@ -115,7 +115,7 @@ export function ThemeSelector({ theme, setTheme, t }: ThemeSelectorProps) {
                 </div>
               </div>
               <Monitor className="h-4 w-4 mx-auto mb-1 text-gray-500" />
-              <span className="text-[10px] font-medium">{t('systemTheme') || 'System'}</span>
+              <span className="text-[10px] font-medium">{t('systemTheme')}</span>
               {theme === 'system' && (
                 <motion.div
                   initial={{ scale: 0 }}

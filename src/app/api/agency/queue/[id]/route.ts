@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+import { emitQueueEvent, emitNotificationEvent, emitKioskEvent } from '@/lib/realtime-emit';
+
+const queueActionSchema = z.object({
+  action: z.enum(['complete', 'no_show', 'cancel']),
+});
 
 export async function PATCH(
   req: NextRequest,
@@ -8,11 +15,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { action } = await req.json();
+    const body = await req.json();
+    const validation = validateBody(queueActionSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!action || !['complete', 'no_show', 'cancel'].includes(action)) {
-      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
-    }
+    const { action } = validation.data;
 
     const reservation = await db.reservation.findUnique({ where: { id } });
     if (!reservation) {
@@ -67,12 +74,30 @@ export async function PATCH(
       },
     });
 
+    // Emit realtime events (non-blocking — fire and forget)
+    const eventType = action === 'complete' ? 'queue:completed' 
+      : action === 'no_show' ? 'queue:no-show' 
+      : 'queue:cancelled'
+
+    emitQueueEvent(eventType, reservation.agencyId, {
+      reservationId: id,
+      displayNumber: reservation.displayNumber,
+      action,
+      status,
+    })
+    if (reservation.userId) {
+      emitNotificationEvent('notification:new', reservation.userId, {
+        type: eventType,
+        ticketNumber: reservation.displayNumber,
+      })
+    }
+    emitKioskEvent(reservation.agencyId, {
+      action,
+      displayNumber: reservation.displayNumber,
+    })
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/queue/[id]] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, updateProfileSchema } from '@/lib/validations';
 
 // GET - Fetch user profile (used for notification prefs, phone, etc.)
 export async function GET(request: NextRequest) {
@@ -42,7 +43,11 @@ export async function PATCH(request: NextRequest) {
   try {
     const user = await requireAuth(request);
     const body = await request.json();
-    const { phoneNumber, notificationPreferences, reminderMinutes, smsNotificationsEnabled, avatarUrl, fullName, language } = body;
+    const validation = validateBody(updateProfileSchema, body);
+    if (validation.error) return validation.error;
+
+    const { phoneNumber, language, avatarUrl, fullName } = validation.data;
+    const { notificationPreferences, reminderMinutes, smsNotificationsEnabled } = body;
 
     const updateData: Record<string, unknown> = {};
     if (phoneNumber !== undefined) {

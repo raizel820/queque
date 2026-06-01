@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { emitStaffEvent } from '@/lib/realtime-emit';
 
 // GET - List staff members for an agency
 export async function GET(req: NextRequest) {
@@ -22,13 +23,15 @@ export async function GET(req: NextRequest) {
       orderBy: { joinedAt: 'desc' },
     });
 
-    return NextResponse.json({ staff });
+    // Parse permissions JSON for each staff member
+    const staffWithPermissions = staff.map((s) => ({
+      ...s,
+      permissions: s.permissions ? JSON.parse(s.permissions as string) : {},
+    }));
+
+    return NextResponse.json({ staff: staffWithPermissions });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/staff GET] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
@@ -79,13 +82,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Emit realtime event (fire-and-forget)
+    emitStaffEvent('staff:updated', agencyId, {
+      action: 'staff-added',
+      staffId: staff.id,
+      userId: user.id,
+      username: user.username,
+    })
+
     return NextResponse.json({ staff }, { status: 201 });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/staff POST] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
@@ -123,12 +130,15 @@ export async function DELETE(req: NextRequest) {
       where: { id: staffId },
     });
 
+    // Emit realtime event (fire-and-forget)
+    emitStaffEvent('staff:updated', agencyId, {
+      action: 'staff-removed',
+      staffId,
+      userId: staffMember.userId,
+    })
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/staff DELETE] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

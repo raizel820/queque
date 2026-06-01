@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
 import { setNextAuthSessionCookie } from '@/lib/auth-cookie'
-import { realtime } from '@/lib/realtime'
 import { checkRateLimit, getClientIp, RateLimitError, AUTH_RATE_LIMIT } from '@/lib/rate-limit'
-
-const VALID_ROLES = ['CUSTOMER', 'AGENCY_OWNER']
+import { validateBody, registerSchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,49 +11,10 @@ export async function POST(request: NextRequest) {
     checkRateLimit(getClientIp(request), AUTH_RATE_LIMIT)
 
     const body = await request.json()
-    const { username, fullName, password, phoneNumber, role, agencyCode, avatarUrl } = body
+    const validation = validateBody(registerSchema, body)
+    if (validation.error) return validation.error
 
-    // Validate required fields
-    if (!username || !fullName || !password) {
-      return NextResponse.json(
-        { success: false, error: 'Username, fullName, and password are required' },
-        { status: 400 }
-      )
-    }
-
-    // Validate username
-    if (username.length < 3) {
-      return NextResponse.json(
-        { success: false, error: 'Username must be at least 3 characters' },
-        { status: 400 }
-      )
-    }
-
-    // Validate password
-    if (password.length < 6) {
-      return NextResponse.json(
-        { success: false, error: 'Password must be at least 6 characters' },
-        { status: 400 }
-      )
-    }
-
-    // Validate role - only CUSTOMER and AGENCY_OWNER can register directly
-    // AGENCY_STAFF accounts must be created by agency owners via /api/agency/staff/create
-    // SUPER_ADMIN accounts cannot be created through registration
-    if (role && !VALID_ROLES.includes(role)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid role. Only Customer and Agency Owner can register.' },
-        { status: 400 }
-      )
-    }
-
-    // Block SUPER_ADMIN registration through this endpoint
-    if (role === 'SUPER_ADMIN') {
-      return NextResponse.json(
-        { success: false, error: 'Admin accounts cannot be created through registration' },
-        { status: 403 }
-      )
-    }
+    const { username, fullName, password, phoneNumber, role, agencyCode, avatarUrl } = validation.data
 
     // Check for duplicate username
     const existingUser = await db.user.findUnique({
@@ -145,15 +104,6 @@ export async function POST(request: NextRequest) {
       isNewUser: true,
     }, { status: 201 })
     await setNextAuthSessionCookie(response, { ...user, agencyId: agencyId || null })
-
-    // Emit realtime event for admin dashboard
-    await realtime.adminUserCreated({
-      userId: user.id,
-      username: user.username,
-      fullName: user.fullName,
-      role: user.role,
-      createdAt: user.createdAt,
-    })
 
     return response
   } catch (error: unknown) {

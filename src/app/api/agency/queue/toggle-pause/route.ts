@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+import { emitQueueEvent, emitKioskEvent } from '@/lib/realtime-emit';
+
+const agencyIdSchema = z.object({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const { agencyId } = await req.json();
+    const body = await req.json();
+    const validation = validateBody(agencyIdSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!agencyId) {
-      return NextResponse.json({ error: 'agencyId required' }, { status: 400 });
-    }
+    const { agencyId } = validation.data;
 
     await requireAgencyAccess(req, agencyId);
 
@@ -49,12 +56,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Emit realtime events (non-blocking — fire and forget)
+    emitQueueEvent(newPausedState ? 'queue:paused' : 'queue:resumed', agencyId, {
+      isPaused: newPausedState,
+    })
+    emitKioskEvent(agencyId, {
+      isPaused: newPausedState,
+      action: newPausedState ? 'paused' : 'resumed',
+    })
+
     return NextResponse.json({ success: true, isPaused: newPausedState });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/queue/toggle-pause] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

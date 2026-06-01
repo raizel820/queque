@@ -21,6 +21,7 @@ import {
   Mail,
   KeyRound,
   Trash2,
+  RefreshCw,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -61,6 +62,7 @@ export function AdminUsers() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
   const [roleFilter, setRoleFilter] = useState('');
@@ -82,6 +84,7 @@ export function AdminUsers() {
     } else {
       setLoading(true);
     }
+    setLoadError(false);
     try {
       const params = new URLSearchParams();
       if (debouncedSearch) params.set('search', debouncedSearch);
@@ -100,9 +103,12 @@ export function AdminUsers() {
         }
         setTotal(data.total ?? 0);
         setPage(targetPage);
+      } else {
+        setLoadError(true);
       }
     } catch {
-      toast.error(t('error'));
+      setLoadError(true);
+      toast.error(t('errorLoadingData'));
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -304,10 +310,39 @@ export function AdminUsers() {
             <Skeleton key={i} className="h-20 rounded-2xl" />
           ))}
         </div>
+      ) : loadError ? (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="py-16">
+            <div className="flex flex-col items-center justify-center text-center text-muted-foreground">
+              <div className="relative mb-6">
+                <div className="absolute inset-0 rounded-full bg-red-400/20 blur-xl" />
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-red-50 dark:bg-red-900/20 ring-1 ring-red-200/60 dark:ring-red-800/60">
+                  <Users className="h-9 w-9 text-red-500 dark:text-red-400" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t('errorLoadingData')}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">{t('errorRetryHint')}</p>
+              <Button
+                variant="outline"
+                className="mt-4 gap-2"
+                onClick={() => fetchUsers(1, false)}
+              >
+                <RefreshCw className="h-4 w-4" />
+                {t('tryAgain')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : users.length === 0 ? (
-        <div className="text-center py-16">
-          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">{t('noData')}</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+          <div className="relative mb-6">
+            <div className="absolute inset-0 rounded-full bg-emerald-400/20 blur-xl" />
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/60">
+              <Users className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">{t('emptyNoUsersTitle')}</h3>
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">{t('emptyNoUsersDesc')}</p>
         </div>
       ) : (
         <div className="space-y-3">

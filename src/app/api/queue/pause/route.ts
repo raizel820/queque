@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
+import { validateBody } from '@/lib/validations'
+import { z } from 'zod'
+import { emitQueueEvent, emitKioskEvent } from '@/lib/realtime-emit'
+
+const agencyIdSchema = z.object({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+})
 
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { agencyId } = body
+    const validation = validateBody(agencyIdSchema, body)
+    if (validation.error) return validation.error
 
-    if (!agencyId) {
-      return NextResponse.json(
-        { success: false, error: 'agencyId is required' },
-        { status: 400 }
-      )
-    }
+    const { agencyId } = validation.data
 
     // Verify agency access
     const user = await requireAgencyAccess(request, agencyId)
@@ -48,6 +51,14 @@ export async function PUT(request: NextRequest) {
         entityId: agencyId,
         details: JSON.stringify({ action: 'PAUSE_QUEUE' }),
       },
+    })
+
+    // Emit realtime events (fire-and-forget)
+    emitQueueEvent('queue:paused', agencyId, {
+      action: 'pause',
+    })
+    emitKioskEvent(agencyId, {
+      action: 'queue-paused',
     })
 
     return NextResponse.json({

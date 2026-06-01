@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
-import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
+import { requireAuth, authErrorResponse, AuthError } from '@/lib/auth-guard';
 import { checkRateLimit, RateLimitError, SMS_RATE_LIMIT } from '@/lib/rate-limit';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+
+const smsPurchaseSchema = z.object({
+  packId: z.enum(['20', '50', '100'], { errorMap: () => ({ message: 'Invalid pack ID. Allowed: 20, 50, 100' }) }),
+});
 
 const ALLOWED_PACKS: Record<string, { quantity: number; price: number }> = {
   '20': { quantity: 20, price: 200 },
@@ -19,26 +25,16 @@ export async function POST(request: NextRequest) {
     checkRateLimit(user.id, SMS_RATE_LIMIT);
 
     const body = await request.json();
-    const { packId } = body as { packId: string };
+    const validation = validateBody(smsPurchaseSchema, body);
+    if (validation.error) return validation.error;
+
+    const { packId } = validation.data;
+
+    // Look up pack details
+    const pack = ALLOWED_PACKS[packId];
 
     // Use session user.id instead of body userId
     const userId = user.id;
-
-    if (!packId) {
-      return NextResponse.json(
-        { error: 'packId is required' },
-        { status: 400 }
-      );
-    }
-
-    // Validate packId
-    const pack = ALLOWED_PACKS[packId];
-    if (!pack) {
-      return NextResponse.json(
-        { error: 'Invalid pack ID. Allowed: 20, 50, 100' },
-        { status: 400 }
-      );
-    }
 
     // Validate user is active
     if (!user) {
@@ -107,20 +103,16 @@ export async function POST(request: NextRequest) {
         { status: 429, headers: { 'Retry-After': String(error.retryAfter) } }
       );
     }
-    // Check if it's an auth error first
-    const authResponse = authErrorResponse(error);
-    if (authResponse.status !== 500) return authResponse;
-
+    if (error instanceof AuthError) {
+      return authErrorResponse(error);
+    }
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return NextResponse.json(
-        { error: 'Database error occurred' },
+        { success: false, error: 'Database error occurred' },
         { status: 500 }
       );
     }
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return authErrorResponse(error);
   }
 }
 

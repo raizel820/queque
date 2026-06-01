@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireResourceOwnership, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
-import { realtime } from '@/lib/realtime'
+import { validateBody, updateReservationStatusSchema } from '@/lib/validations'
+import { emitQueueEvent, emitReservationEvent, emitNotificationEvent, emitKioskEvent } from '@/lib/realtime-emit'
+import type { QueueEventType } from '@/lib/realtime-emit'
 
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   WAITING: ['CALLED', 'CANCELLED'],
@@ -16,16 +18,10 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { status } = body
+    const validation = validateBody(updateReservationStatusSchema, body)
+    if (validation.error) return validation.error
 
-    // Validate status
-    const validStatuses = ['CALLED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'SERVED']
-    if (!status || !validStatuses.includes(status)) {
-      return NextResponse.json(
-        { success: false, error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` },
-        { status: 400 }
-      )
-    }
+    const { status } = validation.data
 
     // Find reservation
     const reservation = await db.reservation.findUnique({
@@ -136,48 +132,53 @@ export async function PUT(
       },
     })
 
-    // Emit realtime events based on status change
-    if (reservation.userId) {
-      if (status === 'COMPLETED') {
-        await realtime.serviceCompleted(reservation.userId, {
-          reservationId: id,
-          displayNumber: reservation.displayNumber,
-          agencyId: reservation.agency.id,
-          agencyName: reservation.agency.name,
-        })
-      } else if (status === 'CALLED') {
-        await realtime.turnCalled(reservation.userId, {
-          reservationId: id,
-          displayNumber: reservation.displayNumber,
-          agencyId: reservation.agency.id,
-          message: 'Your turn has been called!',
-        })
-      } else if (status === 'CANCELLED') {
-        await realtime.reservationCancelled(reservation.userId, {
-          reservationId: id,
-          displayNumber: reservation.displayNumber,
-          agencyId: reservation.agency.id,
-        })
-      }
-      await realtime.positionChanged(reservation.userId, {
+    // Emit realtime events based on new status (fire-and-forget)
+    const queueEventTypeMap: Record<string, QueueEventType> = {
+      CALLED: 'queue:called',
+      COMPLETED: 'queue:completed',
+      CANCELLED: 'queue:cancelled',
+      NO_SHOW: 'queue:no-show',
+      SERVED: 'queue:updated',
+    }
+    const queueEventType = queueEventTypeMap[status]
+    if (queueEventType) {
+      emitQueueEvent(queueEventType, reservation.agencyId, {
         reservationId: id,
         displayNumber: reservation.displayNumber,
+        previousStatus: reservation.status,
         newStatus: status,
-        agencyId: reservation.agency.id,
+        serviceId: reservation.serviceId,
       })
     }
 
-    // Notify agency dashboard of queue update
-    await realtime.queueUpdated(reservation.agency.id, {
-      action: 'status-change',
+    // Emit reservation event
+    const reservationEventType = status === 'CANCELLED' ? 'reservation:cancelled' : 'reservation:updated'
+    emitReservationEvent(reservationEventType, reservation.agencyId, reservation.userId, {
       reservationId: id,
       displayNumber: reservation.displayNumber,
+      previousStatus: reservation.status,
       newStatus: status,
     })
-    await realtime.agencyStatsUpdated(reservation.agency.id, {
-      action: 'queue-changed',
-      agencyId: reservation.agency.id,
-    })
+
+    // Emit notification event for key status changes
+    if (status === 'CALLED') {
+      emitNotificationEvent('notification:your-turn', reservation.userId, {
+        ticketNumber: reservation.displayNumber,
+        agencyName: reservation.agency.name,
+      })
+    } else if (status === 'NO_SHOW') {
+      emitNotificationEvent('notification:new', reservation.userId, {
+        message: `You missed your turn for ticket ${reservation.displayNumber}`,
+      })
+    }
+
+    // Emit kiosk update for called/completed/no-show
+    if (['CALLED', 'COMPLETED', 'NO_SHOW', 'CANCELLED'].includes(status)) {
+      emitKioskEvent(reservation.agencyId, {
+        action: `reservation-${status.toLowerCase()}`,
+        displayNumber: reservation.displayNumber,
+      })
+    }
 
     return NextResponse.json({
       success: true,

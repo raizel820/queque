@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
+import { updateAgencyProfileSchema, validateBody } from '@/lib/validations'
 
 export async function GET(
   request: NextRequest,
@@ -78,6 +80,10 @@ export async function PUT(
 ) {
   try {
     const { id } = await params
+
+    // SECURITY: Verify the user has access to this agency (owner/staff/admin)
+    await requireAgencyAccess(request, id)
+
     const body = await request.json()
 
     // Check agency exists
@@ -102,20 +108,20 @@ export async function PUT(
       }
     }
 
-    // Build update data - only allow certain fields
-    const allowedFields = [
-      'name', 'nameFr', 'nameAr', 'customCode', 'category',
-      'address', 'phone', 'email', 'website', 'logoUrl',
-      'coverUrl', 'description', 'descriptionFr', 'descriptionAr',
-      'isSponsored',
-    ] as const
+    // Validate input with Zod (only allow safe fields)
+    const validation = validateBody(updateAgencyProfileSchema, body)
+    if (validation.error) return validation.error
 
+    // Build update data from validated fields only
     const updateData: Record<string, unknown> = {}
-    for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field]
+    for (const [key, value] of Object.entries(validation.data)) {
+      if (value !== undefined) {
+        updateData[key] = value
       }
     }
+
+    // Never allow updating ownerId, isActive, isSponsored via this route
+    // Those are admin-only operations via /api/admin/agencies/[id]
 
     const agency = await db.agency.update({
       where: { id },
@@ -124,10 +130,6 @@ export async function PUT(
 
     return NextResponse.json({ success: true, agency })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }

@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
+import { validateBody } from '@/lib/validations'
+import { z } from 'zod'
+import { emitQueueEvent } from '@/lib/realtime-emit'
+
+const queueSettingsBodySchema = z.object({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+  averageServiceTime: z.number().int().min(1).max(480).optional(),
+  maxActiveReservations: z.number().int().min(1).max(1000).optional(),
+  isQueueOpen: z.boolean().optional(),
+})
 
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { agencyId, averageServiceTime, maxActiveReservations, isQueueOpen } = body
+    const validation = validateBody(queueSettingsBodySchema, body)
+    if (validation.error) return validation.error
 
-    if (!agencyId) {
-      return NextResponse.json(
-        { success: false, error: 'agencyId is required' },
-        { status: 400 }
-      )
-    }
+    const { agencyId, averageServiceTime, maxActiveReservations, isQueueOpen } = validation.data
 
     // Verify agency access
     const user = await requireAgencyAccess(request, agencyId)
@@ -57,6 +63,14 @@ export async function PUT(request: NextRequest) {
           isQueueOpen,
         }),
       },
+    })
+
+    // Emit realtime event (fire-and-forget)
+    emitQueueEvent('queue:settings-updated', agencyId, {
+      action: 'settings-updated',
+      averageServiceTime,
+      maxActiveReservations,
+      isQueueOpen,
     })
 
     return NextResponse.json({

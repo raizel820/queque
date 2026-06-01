@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
+import { validateBody } from '@/lib/validations'
+import { z } from 'zod'
+import { emitNotificationEvent } from '@/lib/realtime-emit'
+
+const createNotificationSchema = z.object({
+  type: z.string().max(50).optional(),
+  title: z.string().min(1, 'Title is required').max(200),
+  message: z.string().max(1000).optional(),
+  entityId: z.string().optional(),
+})
+
+const markNotificationsSchema = z.object({
+  markAll: z.boolean().optional(),
+  notificationIds: z.array(z.string()).min(1).optional(),
+})
 
 export async function GET(request: NextRequest) {
   try {
@@ -51,14 +66,10 @@ export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request)
     const body = await request.json()
-    const { type, title, message, entityId } = body
+    const validation = validateBody(createNotificationSchema, body)
+    if (validation.error) return validation.error
 
-    if (!title) {
-      return NextResponse.json(
-        { success: false, error: 'title is required' },
-        { status: 400 }
-      )
-    }
+    const { type, title, message, entityId } = validation.data
 
     const notification = await db.notification.create({
       data: {
@@ -71,6 +82,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Emit realtime event (fire-and-forget)
+    emitNotificationEvent('notification:new', user.id, {
+      notificationId: notification.id,
+      type: notification.type,
+      title: notification.title,
+    })
+
     return NextResponse.json({ success: true, notification }, { status: 201 })
   } catch (error: unknown) {
     return authErrorResponse(error)
@@ -81,7 +99,10 @@ export async function PATCH(request: NextRequest) {
   try {
     const user = await requireAuth(request)
     const body = await request.json()
-    const { notificationIds, markAll } = body
+    const validation = validateBody(markNotificationsSchema, body)
+    if (validation.error) return validation.error
+
+    const { notificationIds, markAll } = validation.data
 
     if (markAll) {
       // Mark all notifications as read for the authenticated user

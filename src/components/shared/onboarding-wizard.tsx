@@ -159,9 +159,9 @@ export function OnboardingWizard({ open, user, onComplete, onSkip }: OnboardingP
                   </div>
                   <div className="space-y-2">
                     {[
-                      { value: 'ar', label: 'العربية', desc: 'Arabic' },
-                      { value: 'fr', label: 'Français', desc: 'French' },
-                      { value: 'en', label: 'English', desc: 'English' },
+                      { value: 'ar', label: 'العربية', desc: t('languageArabic') },
+                      { value: 'fr', label: 'Français', desc: t('languageFrench') },
+                      { value: 'en', label: t('languageEnglish'), desc: t('languageEnglish') },
                     ].map((lang) => (
                       <button
                         key={lang.value}

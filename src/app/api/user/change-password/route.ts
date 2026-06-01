@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { hashPassword, verifyPassword } from '@/lib/password';
 import { requireAuth, authErrorResponse } from '@/lib/auth-guard';
 import { checkRateLimit, RateLimitError, PASSWORD_RESET_RATE_LIMIT } from '@/lib/rate-limit';
+import { validateBody, changePasswordSchema } from '@/lib/validations';
 
 // PATCH - Change password for current user
 export async function PATCH(req: NextRequest) {
@@ -12,17 +13,11 @@ export async function PATCH(req: NextRequest) {
     // Rate limit by user ID
     checkRateLimit(user.id, PASSWORD_RESET_RATE_LIMIT);
 
-    const { currentPassword, newPassword } = await req.json();
+    const body = await req.json();
+    const validation = validateBody(changePasswordSchema, body);
+    if (validation.error) return validation.error;
 
-    // Validate required fields
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
-    }
-
-    // Validate new password length
-    if (newPassword.length < 6) {
-      return NextResponse.json({ error: 'New password must be at least 6 characters' }, { status: 400 });
-    }
+    const { currentPassword, newPassword } = validation.data;
 
     // Find user
     const dbUser = await db.user.findUnique({

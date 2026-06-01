@@ -1,11 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { normalizeDzPhone, getSmsTemplate } from '@/lib/sms-service';
 import { sendSms } from '@/lib/sms-service';
 
 const SMS_FALLBACK_MINUTES = 10;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // CRON_SECRET verification - prevents unauthorized external triggering
+  const cronSecret = process.env.CRON_SECRET
+  if (cronSecret) {
+    const authHeader = request.headers.get('Authorization')
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+  }
+
   try {
     const cutoffTime = new Date(Date.now() - SMS_FALLBACK_MINUTES * 60 * 1000);
 

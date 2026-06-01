@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
+import { validateBody } from '@/lib/validations'
+import { z } from 'zod'
+
+const favoriteBodySchema = z.object({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+})
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth(request)
-    const { agencyId } = await request.json()
+    const body = await request.json()
+    const validation = validateBody(favoriteBodySchema, body)
+    if (validation.error) return validation.error
 
-    if (!agencyId) {
-      return NextResponse.json(
-        { error: 'agencyId is required' },
-        { status: 400 }
-      )
-    }
+    const { agencyId } = validation.data
 
     const userId = user.id
 

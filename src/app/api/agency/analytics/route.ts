@@ -88,9 +88,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ services });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    console.error('Agency analytics error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

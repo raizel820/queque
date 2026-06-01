@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAuth, resolveUserAgencyId, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, updateAgencySettingsSchema } from '@/lib/validations';
+import { emitAgencyEvent } from '@/lib/realtime-emit';
 
 export async function GET(req: NextRequest) {
   try {
@@ -57,20 +59,21 @@ export async function GET(req: NextRequest) {
       workingHoursStart: agency.workingHoursStart,
       workingHoursEnd: agency.workingHoursEnd,
       autoPauseWhenFull: agency.autoPauseWhenFull ?? false,
+      kioskModeEnabled: agency.kioskModeEnabled ?? false,
     });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/settings GET] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const { agencyId: agencyIdParam, avgServiceTime, maxReservations, isQueueOpen, workingHoursStart, workingHoursEnd, autoPauseWhenFull } = body;
+    const validation = validateBody(updateAgencySettingsSchema, body);
+    if (validation.error) return validation.error;
+
+    const { agencyId: agencyIdParam, isQueueOpen, workingHoursStart, workingHoursEnd, autoPauseWhenFull, kioskModeEnabled } = body;
+    const { maxQueueSize, avgServiceTime, allowWalkIns, autoSkipEnabled, autoSkipMinutes, smsNotificationsEnabled, fixedTimeEnabled } = validation.data;
 
     let agencyId: string | null;
     if (agencyIdParam) {
@@ -94,20 +97,30 @@ export async function PATCH(req: NextRequest) {
       where: { id: targetAgency.id },
       data: {
         ...(avgServiceTime !== undefined && { averageServiceTime: avgServiceTime }),
-        ...(maxReservations !== undefined && { maxActiveReservations: maxReservations }),
+        ...(maxQueueSize !== undefined && { maxActiveReservations: maxQueueSize }),
         ...(isQueueOpen !== undefined && { isQueueOpen }),
         ...(workingHoursStart !== undefined && { workingHoursStart }),
         ...(workingHoursEnd !== undefined && { workingHoursEnd }),
         ...(autoPauseWhenFull !== undefined && { autoPauseWhenFull }),
+        ...(kioskModeEnabled !== undefined && { kioskModeEnabled }),
+        ...(allowWalkIns !== undefined && { allowWalkIns }),
+        ...(autoSkipEnabled !== undefined && { autoSkipEnabled }),
+        ...(autoSkipMinutes !== undefined && { autoSkipMinutes }),
+        ...(smsNotificationsEnabled !== undefined && { smsNotificationsEnabled }),
+        ...(fixedTimeEnabled !== undefined && { fixedTimeEnabled }),
       },
     });
 
+    // Emit realtime event (fire-and-forget)
+    emitAgencyEvent('agency:updated', targetAgency.id, {
+      action: 'settings-updated',
+      isQueueOpen,
+      autoPauseWhenFull,
+      kioskModeEnabled,
+    })
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/settings PATCH] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

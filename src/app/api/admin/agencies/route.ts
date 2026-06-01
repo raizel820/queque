@@ -1,32 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAdmin, authErrorResponse } from '@/lib/auth-guard'
+import { validateBody, adminCreateAgencySchema } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   try {
     const admin = await requireAdmin(request)
 
     const body = await request.json()
-    const { name, nameAr, nameFr, category, city, phone, email, ownerId } = body
+    const validation = validateBody(adminCreateAgencySchema, body)
+    if (validation.error) return validation.error
 
-    if (!name || !category || !ownerId) {
-      return NextResponse.json(
-        { success: false, error: 'name, category, and ownerId are required' },
-        { status: 400 }
-      )
-    }
+    const { name, nameAr, nameFr, description, address, phone, category, ownerId, customCode } = validation.data
 
     const agency = await db.agency.create({
       data: {
         name,
         nameAr: nameAr || name,
         nameFr: nameFr || name,
-        category,
-        city,
+        description,
+        address,
         phone,
-        email,
+        category,
         ownerId,
-        customCode: `AG${Date.now().toString(36).toUpperCase()}`,
+        customCode: customCode || `AG${Date.now().toString(36).toUpperCase()}`,
       },
     })
 

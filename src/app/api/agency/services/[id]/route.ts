@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAuth, resolveUserAgencyId, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, updateServiceSchema } from '@/lib/validations';
+import { emitQueueEvent } from '@/lib/realtime-emit';
 
 export async function PATCH(
   req: NextRequest,
@@ -20,7 +22,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Service not found or access denied' }, { status: 404 });
     }
 
-    const { name, nameAr, nameFr, prefix } = await req.json();
+    const body = await req.json();
+    const validation = validateBody(updateServiceSchema, body);
+    if (validation.error) return validation.error;
+
+    const { name, nameAr, nameFr, description, avgTime, isActive } = validation.data;
+    const { prefix } = body;
 
     const service = await db.service.update({
       where: { id },
@@ -28,17 +35,22 @@ export async function PATCH(
         ...(name && { name }),
         ...(nameAr !== undefined && { nameAr }),
         ...(nameFr !== undefined && { nameFr }),
+        ...(description !== undefined && { description }),
+        ...(avgTime !== undefined && { avgTime }),
+        ...(isActive !== undefined && { isActive }),
         ...(prefix && { prefix: prefix.toUpperCase() }),
       },
     });
 
+    // Emit realtime event (fire-and-forget)
+    emitQueueEvent('queue:settings-updated', agencyId, {
+      action: 'service-updated',
+      serviceId: id,
+    })
+
     return NextResponse.json({ service, success: true });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/services/[id] PATCH] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }
 
@@ -65,12 +77,14 @@ export async function DELETE(
       data: { isActive: false },
     });
 
+    // Emit realtime event (fire-and-forget)
+    emitQueueEvent('queue:settings-updated', agencyId, {
+      action: 'service-deleted',
+      serviceId: id,
+    })
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    const authResp = authErrorResponse(error);
-    if (authResp) return authResp;
-    const message = error instanceof Error ? error.message : 'Internal server error';
-    console.error('[agency/services/[id] DELETE] Error:', message);
-    return NextResponse.json({ error: 'Operation failed', details: message }, { status: 500 });
+    return authErrorResponse(error)
   }
 }

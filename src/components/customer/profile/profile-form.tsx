@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import type { TranslationKeys } from '@/i18n';
 
+import { useLanguage } from '@/hooks/use-language';
 interface ProfileFormProps {
   user: {
     id?: string;
@@ -83,7 +84,7 @@ export function ProfileForm({ user, initialPhoneNumber, onSavePhone, onChangePas
             <div className="flex gap-2">
               <Input
                 type="tel"
-                placeholder="05XX XXX XXX"
+                placeholder={t('phonePlaceholder')}
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 className="h-11"

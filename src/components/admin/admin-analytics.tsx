@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Download,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, useInView } from 'framer-motion';
@@ -90,6 +91,7 @@ export function AdminAnalytics() {
   const { t, lang } = useLanguage();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('14d');
   const [tooltip, setTooltip] = useState<{ show: boolean; x: number; y: number; value: string; label?: string }>({ show: false, x: 0, y: 0, value: '' });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,14 +103,18 @@ export function AdminAnalytics() {
 
   const fetchAnalytics = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
       const res = await fetch('/api/admin/analytics');
       if (res.ok) {
         const json = await res.json();
         setData(json);
+      } else {
+        setLoadError(true);
       }
     } catch {
-      toast.error(t('error'));
+      setLoadError(true);
+      toast.error(t('errorLoadingData'));
     } finally {
       setLoading(false);
     }
@@ -126,7 +132,7 @@ export function AdminAnalytics() {
   };
 
   const periods = [
-    { id: 'today', label: t('today') || 'Today' },
+    { id: 'today', label: t('today') },
     { id: 'week', label: t('thisWeek') || 'This Week' },
     { id: 'month', label: t('thisMonth') || 'This Month' },
     { id: 'year', label: t('thisYear') || 'This Year' },
@@ -187,14 +193,30 @@ export function AdminAnalytics() {
     );
   }
 
-  if (!data) {
+  if (!data || loadError) {
     return (
       <div className="p-4 lg:p-6">
         <h1 className="text-2xl font-bold text-foreground mb-5">{t('analytics')}</h1>
         <Card className="border-0 shadow-sm">
-          <CardContent className="py-16 text-center">
-            <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">{t('noAnalyticsData')}</p>
+          <CardContent className="py-16">
+            <div className="flex flex-col items-center justify-center text-center text-muted-foreground">
+              <div className="relative mb-6">
+                <div className="absolute inset-0 rounded-full bg-emerald-400/20 blur-xl" />
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/60">
+                  <BarChart3 className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{loadError ? t('errorLoadingData') : t('emptyNoAnalyticsTitle')}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">{loadError ? t('errorRetryHint') : t('emptyNoAnalyticsDesc')}</p>
+              <Button
+                variant="outline"
+                className="mt-4 gap-2 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+                onClick={fetchAnalytics}
+              >
+                <RefreshCw className="h-4 w-4" />
+                {t('tryAgain')}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -444,7 +466,11 @@ export function AdminAnalytics() {
             </CardHeader>
             <CardContent>
               {data.topAgencies.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">{t('noData')}</p>
+                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                  <Building2 className="h-8 w-8 text-emerald-400 mb-2" />
+                  <p className="text-sm font-medium text-muted-foreground">{t('noData')}</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">{t('emptyNoTopAgenciesDesc')}</p>
+                </div>
               ) : (
                 <div className="space-y-2.5">
                   {data.topAgencies.map((agency, idx) => {

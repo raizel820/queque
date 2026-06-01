@@ -174,11 +174,11 @@ export function SettingsServices({ settings, onRefreshSettings }: SettingsServic
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>{t('serviceName')} (English)</Label>
+              <Label>{t('serviceName')} {t('inEnglish')}</Label>
               <Input
                 value={svcName}
                 onChange={(e) => setSvcName(e.target.value)}
-                placeholder="General Consultation"
+                placeholder={t('serviceNamePlaceholder')}
                 className="h-11"
               />
             </div>

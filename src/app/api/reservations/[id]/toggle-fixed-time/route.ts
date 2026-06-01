@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireResourceOwnership, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+import { emitReservationEvent } from '@/lib/realtime-emit';
+
+const toggleFixedTimeSchema = z.object({
+  fixedTimeEnabled: z.boolean(),
+});
 
 export async function POST(
   request: NextRequest,
@@ -9,14 +16,10 @@ export async function POST(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { fixedTimeEnabled } = body;
+    const validation = validateBody(toggleFixedTimeSchema, body);
+    if (validation.error) return validation.error;
 
-    if (fixedTimeEnabled === undefined) {
-      return NextResponse.json(
-        { success: false, error: 'fixedTimeEnabled is required' },
-        { status: 400 }
-      );
-    }
+    const { fixedTimeEnabled } = validation.data;
 
     const reservation = await db.reservation.findUnique({ where: { id } });
 
@@ -75,6 +78,15 @@ export async function POST(
         details: JSON.stringify({ preferredTime: reservation.preferredTime, fixedTimeEnabled }),
       },
     });
+
+    // Emit realtime event (fire-and-forget)
+    emitReservationEvent('reservation:updated', reservation.agencyId, reservation.userId, {
+      reservationId: id,
+      displayNumber: reservation.displayNumber,
+      action: fixedTimeEnabled ? 'fixed-time-enabled' : 'fixed-time-disabled',
+      fixedTimeEnabled,
+      preferredTime: reservation.preferredTime,
+    })
 
     return NextResponse.json({ success: true, reservation: updated });
   } catch (error: unknown) {

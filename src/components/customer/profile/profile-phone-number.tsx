@@ -7,6 +7,7 @@ import { Phone, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { ProfilePhoneNumberProps } from './profile-types';
 
+import { useLanguage } from '@/hooks/use-language';
 export function ProfilePhoneNumber({ phoneNumber, savingPhone, onPhoneNumberChange, onSave, t }: ProfilePhoneNumberProps) {
   return (
     <motion.div
@@ -25,7 +26,7 @@ export function ProfilePhoneNumber({ phoneNumber, savingPhone, onPhoneNumberChan
           <div className="flex gap-2">
             <Input
               type="tel"
-              placeholder="05XX XXX XXX"
+              placeholder={t('phonePlaceholder')}
               value={phoneNumber}
               onChange={(e) => onPhoneNumberChange(e.target.value)}
               className="h-11"

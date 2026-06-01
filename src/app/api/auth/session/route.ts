@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth, authErrorResponse } from '@/lib/auth-guard'
 import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'userId is required' },
-        { status: 400 }
-      )
-    }
+    // Require authentication - only logged-in users can access session data
+    const sessionUser = await requireAuth(request)
 
     const user = await db.user.findUnique({
-      where: { id: userId },
+      where: { id: sessionUser.id },
       select: {
         id: true,
         username: true,
@@ -39,10 +33,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, user })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return authErrorResponse(error)
   }
 }
