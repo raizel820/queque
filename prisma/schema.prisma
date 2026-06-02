@@ -410,3 +410,4 @@ model Counter {
   @@unique([branchId, number])
   @@index([branchId])
 }
+
