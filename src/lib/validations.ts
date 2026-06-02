@@ -145,7 +145,7 @@ export const adminCreateAgencySchema = z.object({
   address: z.string().max(200).optional(),
   phone: z.string().max(20).optional(),
   email: z.string().optional(),
-  category: z.string().optional(),
+  category: z.string().default('OTHER'),
   ownerId: z.string().optional(), // Optional: derived from session for non-SUPER_ADMIN
   customCode: z.string().min(2).max(10).optional(),
 })

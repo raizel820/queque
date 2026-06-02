@@ -88,31 +88,33 @@ export async function PUT(
       data: updateData,
     })
 
-    // Create notification
-    const notificationType = `QUEUE_${status}` as const
-    const titleMap: Record<string, string> = {
-      CALLED: 'Your Turn!',
-      COMPLETED: 'Service Completed',
-      CANCELLED: 'Reservation Cancelled',
-      NO_SHOW: 'Missed Your Turn',
-      SERVED: 'Being Served',
-    }
-    const messageMap: Record<string, string> = {
-      CALLED: `Please proceed to ${reservation.agency.name} - ${reservation.service.name}. Your ticket: ${reservation.displayNumber}`,
-      COMPLETED: `Your visit at ${reservation.agency.name} has been completed.`,
-      CANCELLED: `Your reservation ${reservation.displayNumber} at ${reservation.agency.name} has been cancelled.`,
-      NO_SHOW: `You missed your turn for ticket ${reservation.displayNumber} at ${reservation.agency.name}.`,
-      SERVED: `You are now being served at ${reservation.agency.name} - ${reservation.service.name}.`,
-    }
+    // Create notification (only for registered users, not walk-ins)
+    if (reservation.userId) {
+      const notificationType = `QUEUE_${status}` as const
+      const titleMap: Record<string, string> = {
+        CALLED: 'Your Turn!',
+        COMPLETED: 'Service Completed',
+        CANCELLED: 'Reservation Cancelled',
+        NO_SHOW: 'Missed Your Turn',
+        SERVED: 'Being Served',
+      }
+      const messageMap: Record<string, string> = {
+        CALLED: `Please proceed to ${reservation.agency.name} - ${reservation.service.name}. Your ticket: ${reservation.displayNumber}`,
+        COMPLETED: `Your visit at ${reservation.agency.name} has been completed.`,
+        CANCELLED: `Your reservation ${reservation.displayNumber} at ${reservation.agency.name} has been cancelled.`,
+        NO_SHOW: `You missed your turn for ticket ${reservation.displayNumber} at ${reservation.agency.name}.`,
+        SERVED: `You are now being served at ${reservation.agency.name} - ${reservation.service.name}.`,
+      }
 
-    await db.notification.create({
-      data: {
-        userId: reservation.userId,
-        type: notificationType,
-        title: titleMap[status] || 'Reservation Update',
-        message: messageMap[status] || 'Your reservation status has been updated.',
-      },
-    })
+      await db.notification.create({
+        data: {
+          userId: reservation.userId,
+          type: notificationType,
+          title: titleMap[status] || 'Reservation Update',
+          message: messageMap[status] || 'Your reservation status has been updated.',
+        },
+      })
+    }
 
     // Create audit log
     await db.auditLog.create({
@@ -161,12 +163,12 @@ export async function PUT(
     })
 
     // Emit notification event for key status changes
-    if (status === 'CALLED') {
+    if (reservation.userId && status === 'CALLED') {
       emitNotificationEvent('notification:your-turn', reservation.userId, {
         ticketNumber: reservation.displayNumber,
         agencyName: reservation.agency.name,
       })
-    } else if (status === 'NO_SHOW') {
+    } else if (reservation.userId && status === 'NO_SHOW') {
       emitNotificationEvent('notification:new', reservation.userId, {
         message: `You missed your turn for ticket ${reservation.displayNumber}`,
       })

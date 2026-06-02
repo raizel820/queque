@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         answerAr: answerAr || null,
         questionFr: questionFr || null,
         answerFr: answerFr || null,
-        category: category || 'general',
+        category: category || 'GENERAL',
         sortOrder: order ?? 0,
         isActive: isActive ?? true,
       },

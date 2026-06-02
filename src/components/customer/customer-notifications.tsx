@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/shared/error-state';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Bell,
@@ -211,7 +212,7 @@ function NotificationCard({
 
           <button
             onClick={() => onDelete(notif.id)}
-            className="flex-shrink-0 p-1.5 text-muted-foreground/40 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 mt-0.5"
+            className="flex-shrink-0 min-h-[44px] min-w-[44px] p-1.5 text-muted-foreground/40 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 mt-0.5 flex items-center justify-center"
             disabled={actionLoading === notif.id}
             aria-label={t('delete') || 'Delete'}
           >
@@ -229,6 +230,7 @@ export function CustomerNotifications() {
   const realtime = useRealtime();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [allMarkedRead, setAllMarkedRead] = useState(false);
@@ -240,14 +242,23 @@ export function CustomerNotifications() {
   const fetchNotifications = useCallback(async (showRefresh = false) => {
     if (!user?.id) return;
     if (showRefresh) setRefreshing(true);
+    setFetchError(false);
     try {
       const res = await fetch(`/api/notifications?userId=${user.id}`);
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.notifications ?? []);
+      } else {
+        // Only set error on initial load (not background refresh)
+        if (!showRefresh && notifications.length === 0) {
+          setFetchError(true);
+        }
       }
     } catch {
-      // silent fail for background refreshes
+      // Only set error on initial load (not background refresh)
+      if (!showRefresh && notifications.length === 0) {
+        setFetchError(true);
+      }
     } finally {
       if (showRefresh) {
         setTimeout(() => setRefreshing(false), 500);
@@ -434,6 +445,15 @@ export function CustomerNotifications() {
     );
   }
 
+  // Show error state with retry if initial fetch failed
+  if (fetchError && notifications.length === 0) {
+    return (
+      <div className="px-4 py-4 pb-24">
+        <ErrorState onRetry={() => fetchNotifications(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="px-4 py-4 pb-24">
       {/* Gradient accent bar at top */}
@@ -476,7 +496,7 @@ export function CustomerNotifications() {
           </span>
           <button
             onClick={handleRefresh}
-            className="ms-auto p-1.5 rounded-lg hover:bg-muted transition-colors"
+            className="ms-auto min-h-[44px] min-w-[44px] p-1.5 rounded-lg hover:bg-muted transition-colors flex items-center justify-center"
             aria-label={t('refresh')}
           >
             <RefreshCw className={`h-4 w-4 text-muted-foreground ${refreshing ? 'animate-spin' : ''}`} />

@@ -69,15 +69,17 @@ export async function GET(request: NextRequest) {
           console.warn('[cron/auto-skip] Could not set skippedForNoShow, column may not exist');
         }
 
-        // Notify the customer they were skipped
-        await tx.notification.create({
-          data: {
-            userId: reservation.userId,
-            type: 'NO_SHOW_WARNING',
-            title: 'You Were Skipped',
-            message: `Your ticket ${reservation.displayNumber} at ${agencyName} was skipped because you did not respond within ${NO_SHOW_SKIP_MINUTES} minutes. You can still reclaim your position if you arrive soon.`,
-          },
-        });
+        // Notify the customer they were skipped (only for registered users)
+        if (reservation.userId) {
+          await tx.notification.create({
+            data: {
+              userId: reservation.userId,
+              type: 'NO_SHOW_WARNING',
+              title: 'You Were Skipped',
+              message: `Your ticket ${reservation.displayNumber} at ${agencyName} was skipped because you did not respond within ${NO_SHOW_SKIP_MINUTES} minutes. You can still reclaim your position if you arrive soon.`,
+            },
+          });
+        }
 
         // Create audit log
         await tx.auditLog.create({

@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody } from '@/lib/validations';
+import { z } from 'zod';
+
+const reviewTransactionSchema = z.object({
+  action: z.enum(['approve', 'reject'], { errorMap: () => ({ message: 'Action must be "approve" or "reject"' }) }),
+  reason: z.string().max(500).optional(),
+});
 
 export async function POST(
   req: NextRequest,
@@ -11,7 +18,10 @@ export async function POST(
 
     const { id } = await params;
     const body = await req.json();
-    const { action, reason } = body;
+    const validation = validateBody(reviewTransactionSchema, body);
+    if (validation.error) return validation.error;
+
+    const { action, reason } = validation.data;
 
     const transaction = await db.transaction.findUnique({ where: { id } });
     if (!transaction) return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });

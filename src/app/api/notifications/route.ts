@@ -6,9 +6,9 @@ import { z } from 'zod'
 import { emitNotificationEvent } from '@/lib/realtime-emit'
 
 const createNotificationSchema = z.object({
-  type: z.string().max(50).optional(),
+  type: z.string().max(50).default('SYSTEM'),
   title: z.string().min(1, 'Title is required').max(200),
-  message: z.string().max(1000).optional(),
+  message: z.string().max(1000).default(''),
   entityId: z.string().optional(),
 })
 
@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
     const notification = await db.notification.create({
       data: {
         userId: user.id,
-        type: type || 'SYSTEM',
+        type,
         title,
-        message: message || '',
+        message,
         isRead: false,
         entityId: entityId || null,
       },

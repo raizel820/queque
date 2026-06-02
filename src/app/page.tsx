@@ -46,6 +46,7 @@ import { AdminSettings } from '@/components/admin/admin-settings';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { OnboardingWizard } from '@/components/shared/onboarding-wizard';
+import { ErrorBoundary } from '@/components/shared/error-boundary';
 import { Button } from '@/components/ui/button';
 import {
   Home as HomeIcon,
@@ -99,60 +100,66 @@ import { Label } from '@/components/ui/label';
 function ViewRouter() {
   const { currentView } = useAppStore();
 
-  switch (currentView) {
-    case 'landing':
-      return <LandingPage />;
-    case 'login':
-      return <LoginForm />;
-    case 'register':
-      return <RegisterForm />;
-    case 'customer-home':
-      return <CustomerHome />;
-    case 'customer-queue':
-      return <CustomerQueue />;
-    case 'customer-history':
-      return <CustomerHistory />;
-    case 'customer-profile':
-      return <CustomerProfile />;
-    case 'customer-notifications':
-      return <CustomerNotifications />;
-    case 'customer-favorites':
-      return <CustomerFavorites />;
-    case 'customer-settings':
-      return <CustomerSettings />;
-    case 'agency-dashboard':
-      return <AgencyDashboard />;
-    case 'agency-settings':
-      return <AgencySettings />;
-    case 'agency-profile':
-      return <AgencyProfile />;
-    case 'agency-subscription':
-      return <AgencySubscription />;
-    case 'agency-reviews':
-      return <AgencyReviews />;
-    case 'agency-employees':
-      return <AgencyEmployees />;
-    case 'agency-branches':
-      return <AgencyBranches />;
-    case 'admin-dashboard':
-      return <AdminDashboard />;
-    case 'admin-transactions':
-      return <AdminTransactions />;
-    case 'admin-agencies':
-      return <AdminAgencies />;
-    case 'admin-audit':
-      return <AdminAuditLogs />;
-    case 'admin-users':
-      return <AdminUsers />;
-    case 'admin-analytics':
-      return <AdminAnalytics />;
-    case 'admin-settings':
-      return <AdminSettings />;
-    case 'kiosk':
-      return <KioskLanding />;
-    default:
-      return <LandingPage />;
-  }
+  return (
+    <ErrorBoundary>
+      {(() => {
+        switch (currentView) {
+          case 'landing':
+            return <LandingPage />;
+          case 'login':
+            return <LoginForm />;
+          case 'register':
+            return <RegisterForm />;
+          case 'customer-home':
+            return <CustomerHome />;
+          case 'customer-queue':
+            return <CustomerQueue />;
+          case 'customer-history':
+            return <CustomerHistory />;
+          case 'customer-profile':
+            return <CustomerProfile />;
+          case 'customer-notifications':
+            return <CustomerNotifications />;
+          case 'customer-favorites':
+            return <CustomerFavorites />;
+          case 'customer-settings':
+            return <CustomerSettings />;
+          case 'agency-dashboard':
+            return <AgencyDashboard />;
+          case 'agency-settings':
+            return <AgencySettings />;
+          case 'agency-profile':
+            return <AgencyProfile />;
+          case 'agency-subscription':
+            return <AgencySubscription />;
+          case 'agency-reviews':
+            return <AgencyReviews />;
+          case 'agency-employees':
+            return <AgencyEmployees />;
+          case 'agency-branches':
+            return <AgencyBranches />;
+          case 'admin-dashboard':
+            return <AdminDashboard />;
+          case 'admin-transactions':
+            return <AdminTransactions />;
+          case 'admin-agencies':
+            return <AdminAgencies />;
+          case 'admin-audit':
+            return <AdminAuditLogs />;
+          case 'admin-users':
+            return <AdminUsers />;
+          case 'admin-analytics':
+            return <AdminAnalytics />;
+          case 'admin-settings':
+            return <AdminSettings />;
+          case 'kiosk':
+            return <KioskLanding />;
+          default:
+            return <LandingPage />;
+        }
+      })()}
+    </ErrorBoundary>
+  );
 }
 
 // Customer Bottom Navigation — 4 tabs + More Sheet

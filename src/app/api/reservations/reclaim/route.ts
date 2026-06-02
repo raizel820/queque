@@ -95,19 +95,21 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Notify the customer
-      await tx.notification.create({
-        data: {
-          userId: reservation.userId,
-          type: 'RECLAIM_SUCCESS',
-          title: 'Position Reclaimed',
-          message: `Your ticket ${reservation.displayNumber} at ${agencyName} has been reclaimed. ${
-            newStatus === 'WAITING'
-              ? 'You have been placed back in the queue.'
-              : 'You are now being served. Please proceed to the counter.'
-          }`,
-        },
-      });
+      // Notify the customer (only for registered users, not walk-ins)
+      if (reservation.userId) {
+        await tx.notification.create({
+          data: {
+            userId: reservation.userId,
+            type: 'RECLAIM_SUCCESS',
+            title: 'Position Reclaimed',
+            message: `Your ticket ${reservation.displayNumber} at ${agencyName} has been reclaimed. ${
+              newStatus === 'WAITING'
+                ? 'You have been placed back in the queue.'
+                : 'You are now being served. Please proceed to the counter.'
+            }`,
+          },
+        });
+      }
 
       // Audit log
       await tx.auditLog.create({

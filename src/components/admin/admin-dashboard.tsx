@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/shared/error-state';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -379,6 +380,7 @@ export function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState<Set<string>>(new Set());
   const [exportLoading, setExportLoading] = useState<string | null>(null);
   const [realAnnouncements, setRealAnnouncements] = useState<Array<{ id: string; message: string; type: string; createdAt: string }>>([]);
@@ -565,14 +567,19 @@ export function AdminDashboard() {
 
   const fetchDashboard = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const res = await fetch('/api/admin/dashboard');
       if (res.ok) {
         const data = await res.json();
         setStats(data.stats ?? null);
         setActivities(data.recentActivity ?? []);
+      } else {
+        setFetchError(true);
+        toast.error(t('error'));
       }
     } catch {
+      setFetchError(true);
       toast.error(t('error'));
     } finally {
       setLoading(false);
@@ -623,6 +630,15 @@ export function AdminDashboard() {
         </div>
         <Skeleton className="h-24 rounded-2xl skeleton-shimmer" />
         <Skeleton className="h-64 rounded-2xl skeleton-shimmer" />
+      </div>
+    );
+  }
+
+  // Show error state with retry if dashboard fetch failed
+  if (fetchError && !stats) {
+    return (
+      <div className="p-4 lg:p-6">
+        <ErrorState onRetry={fetchDashboard} />
       </div>
     );
   }

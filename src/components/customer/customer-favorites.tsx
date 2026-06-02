@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/shared/error-state';
 import {
   Dialog,
   DialogContent,
@@ -55,6 +56,7 @@ export function CustomerFavorites() {
   const { t, lang } = useLanguage();
   const [favorites, setFavorites] = useState<FavoriteAgency[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [unfavoriting, setUnfavoriting] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [heartBreakingId, setHeartBreakingId] = useState<string | null>(null);
@@ -66,13 +68,18 @@ export function CustomerFavorites() {
   const fetchFavorites = async () => {
     if (!user?.id) return;
     setLoading(true);
+    setFetchError(false);
     try {
       const res = await fetch(`/api/favorites?userId=${user.id}`);
       if (res.ok) {
         const data = await res.json();
         setFavorites(data.favorites ?? []);
+      } else {
+        setFetchError(true);
+        toast.error(t('error'));
       }
     } catch {
+      setFetchError(true);
       toast.error(t('error'));
     } finally {
       setLoading(false);
@@ -297,7 +304,9 @@ export function CustomerFavorites() {
         )}
       </div>
 
-      {favorites.length === 0 ? (
+      {fetchError ? (
+        <ErrorState onRetry={fetchFavorites} />
+      ) : favorites.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -438,7 +447,7 @@ export function CustomerFavorites() {
                           <button
                             onClick={() => toggleFavorite(fav.agencyId)}
                             disabled={unfavoriting === fav.agencyId}
-                            className={`h-9 w-9 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors ${isBreaking ? 'heart-break-animation' : ''}`}
+                            className={`min-h-[44px] min-w-[44px] h-11 w-11 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors ${isBreaking ? 'heart-break-animation' : ''}`}
                           >
                             {unfavoriting === fav.agencyId ? (
                               <Loader2 className="h-4 w-4 text-red-500 animate-spin" />

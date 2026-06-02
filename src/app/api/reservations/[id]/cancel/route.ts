@@ -36,14 +36,17 @@ export async function POST(
         data: { status: 'CANCELLED', cancelledAt: new Date() },
       });
 
-      await tx.notification.create({
-        data: {
-          userId: reservation.userId,
-          type: 'RESERVATION_CANCELLED',
-          title: 'Reservation Cancelled',
-          message: `Your reservation ${reservation.displayNumber} has been cancelled.`,
-        },
-      });
+      // Only create notification if user exists (walk-ins have no userId)
+      if (reservation.userId) {
+        await tx.notification.create({
+          data: {
+            userId: reservation.userId,
+            type: 'RESERVATION_CANCELLED',
+            title: 'Reservation Cancelled',
+            message: `Your reservation ${reservation.displayNumber} has been cancelled.`,
+          },
+        });
+      }
 
       await tx.auditLog.create({
         data: {

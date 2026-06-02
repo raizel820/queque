@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/shared/error-state';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -253,6 +254,7 @@ export function AgencyDashboard() {
   const [waitingList, setWaitingList] = useState<QueueEntry[]>([]);
   const [serviceStats, setServiceStats] = useState<ServiceStat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [activityEvents, setActivityEvents] = useState<ActivityEvent[]>([]);
   const [batchMode, setBatchMode] = useState(false);
@@ -315,6 +317,7 @@ export function AgencyDashboard() {
 
   const fetchData = useCallback(async () => {
     if (!agencyId) return;
+    setFetchError(false);
     try {
       const [statsRes, listRes, servicesRes, activityRes] = await Promise.all([
         fetch(`/api/agency/stats?agencyId=${encodeURIComponent(agencyId)}`),
@@ -322,6 +325,12 @@ export function AgencyDashboard() {
         fetch(`/api/agency/services?agencyId=${encodeURIComponent(agencyId)}`),
         fetch(`/api/agency/activity?agencyId=${encodeURIComponent(agencyId)}`),
       ]);
+      // Check if all failed (network error would throw, so partial failures are ok)
+      if (!statsRes.ok && !listRes.ok && !servicesRes.ok && !activityRes.ok) {
+        setFetchError(true);
+        toast.error(t('error'));
+        return;
+      }
       if (statsRes.ok) {
         const data = await statsRes.json();
         setStats(data);
@@ -348,6 +357,7 @@ export function AgencyDashboard() {
       }
       setLastUpdated(new Date());
     } catch {
+      setFetchError(true);
       toast.error(t('error'));
     } finally {
       setLoading(false);
@@ -712,6 +722,15 @@ export function AgencyDashboard() {
           <Skeleton className="h-36 rounded-2xl skeleton-shimmer" />
         </div>
         <Skeleton className="h-44 rounded-2xl skeleton-shimmer" />
+      </div>
+    );
+  }
+
+  // Show error state with retry if all fetches failed
+  if (fetchError && !stats) {
+    return (
+      <div className="p-4 lg:p-5">
+        <ErrorState onRetry={() => { setLoading(true); setFetchError(false); fetchData(); }} />
       </div>
     );
   }

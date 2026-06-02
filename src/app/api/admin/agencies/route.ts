@@ -13,6 +13,9 @@ export async function POST(request: NextRequest) {
 
     const { name, nameAr, nameFr, description, address, phone, category, ownerId, customCode } = validation.data
 
+    // SECURITY: ownerId must always be provided — derive from admin session if missing
+    const resolvedOwnerId = ownerId || admin.id
+
     const agency = await db.agency.create({
       data: {
         name,
@@ -22,7 +25,7 @@ export async function POST(request: NextRequest) {
         address,
         phone,
         category,
-        ownerId,
+        ownerId: resolvedOwnerId,
         customCode: customCode || `AG${Date.now().toString(36).toUpperCase()}`,
       },
     })

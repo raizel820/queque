@@ -35,6 +35,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import type { TranslationKeys } from '@/i18n';
 import { RatingDialog } from '@/components/shared/rating-dialog';
+import { ErrorState } from '@/components/shared/error-state';
 
 interface HistoryItem {
   id: string;
@@ -81,6 +82,7 @@ export function CustomerHistory() {
   const { t, lang } = useLanguage();
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [filter, setFilter] = useState('ALL');
 
   // Rating dialog state
@@ -100,6 +102,7 @@ export function CustomerHistory() {
   const fetchHistory = async () => {
     if (!user?.id) return;
     setLoading(true);
+    setFetchError(false);
     try {
       const res = await fetch(`/api/reservations/history?userId=${user.id}`);
       if (res.ok) {
@@ -129,8 +132,12 @@ export function CustomerHistory() {
           };
         });
         setHistory(list);
+      } else {
+        setFetchError(true);
+        toast.error(t('error'));
       }
     } catch {
+      setFetchError(true);
       toast.error(t('error'));
     } finally {
       setLoading(false);
@@ -420,6 +427,8 @@ export function CustomerHistory() {
             </div>
           ))}
         </div>
+      ) : fetchError ? (
+        <ErrorState onRetry={fetchHistory} />
       ) : filtered.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

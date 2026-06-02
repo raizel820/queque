@@ -1,35 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireAuth, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard'
+import { validateBody } from '@/lib/validations'
+import { z } from 'zod'
+
+const createTransactionSchema = z.object({
+  agencyId: z.string().min(1, 'Agency ID is required'),
+  amount: z.number().int().positive('Amount must be a positive number'),
+  plan: z.enum(['BASIC', 'PREMIUM'], { errorMap: () => ({ message: 'Invalid plan. Must be BASIC or PREMIUM' }) }),
+  paymentMethod: z.enum(['CCP', 'BANK_TRANSFER', 'E_WALLET', 'CASH'], { errorMap: () => ({ message: 'Invalid payment method' }) }),
+  receiptUrl: z.string().optional(),
+})
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { agencyId, amount, plan, paymentMethod, receiptUrl } = body
+    const validation = validateBody(createTransactionSchema, body)
+    if (validation.error) return validation.error
 
-    // Validate required fields
-    if (!agencyId || !amount || !plan || !paymentMethod) {
-      return NextResponse.json(
-        { success: false, error: 'agencyId, amount, plan, and paymentMethod are required' },
-        { status: 400 }
-      )
-    }
-
-    const validPlans = ['BASIC', 'PREMIUM']
-    if (!validPlans.includes(plan)) {
-      return NextResponse.json(
-        { success: false, error: `Invalid plan. Must be one of: ${validPlans.join(', ')}` },
-        { status: 400 }
-      )
-    }
-
-    const validMethods = ['CCP', 'BANK_TRANSFER', 'ELECTRONIC']
-    if (!validMethods.includes(paymentMethod)) {
-      return NextResponse.json(
-        { success: false, error: `Invalid payment method. Must be one of: ${validMethods.join(', ')}` },
-        { status: 400 }
-      )
-    }
+    const { agencyId, amount, plan, paymentMethod, receiptUrl } = validation.data
 
     // Verify agency access
     await requireAgencyAccess(request, agencyId)

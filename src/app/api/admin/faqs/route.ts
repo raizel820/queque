@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
+import { validateBody, faqSchema } from '@/lib/validations';
+import { z } from 'zod';
+
+const faqUpdateSchema = faqSchema.extend({
+  id: z.string().min(1, 'FAQ ID is required'),
+});
 
 // GET all FAQs (including inactive)
 export async function GET(request: NextRequest) {
@@ -22,11 +28,10 @@ export async function POST(req: NextRequest) {
     await requireAdmin(req);
 
     const body = await req.json();
-    const { question, questionFr, questionAr, answer, answerFr, answerAr, category, order, isActive } = body;
+    const validation = validateBody(faqSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!question || !answer) {
-      return NextResponse.json({ error: 'Question and answer are required' }, { status: 400 });
-    }
+    const { question, questionFr, questionAr, answer, answerFr, answerAr, category, order, isActive } = validation.data;
 
     const faq = await db.fAQ.create({
       data: {
@@ -36,7 +41,7 @@ export async function POST(req: NextRequest) {
         answer,
         answerFr: answerFr || null,
         answerAr: answerAr || null,
-        category: category || 'SUBSCRIPTION',
+        category: category || 'GENERAL',
         order: order ?? 0,
         isActive: isActive !== undefined ? isActive : true,
       },
@@ -54,11 +59,10 @@ export async function PUT(req: NextRequest) {
     await requireAdmin(req);
 
     const body = await req.json();
-    const { id, question, questionFr, questionAr, answer, answerFr, answerAr, category, order, isActive } = body;
+    const validation = validateBody(faqUpdateSchema, body);
+    if (validation.error) return validation.error;
 
-    if (!id) {
-      return NextResponse.json({ error: 'FAQ ID is required' }, { status: 400 });
-    }
+    const { id, question, questionFr, questionAr, answer, answerFr, answerAr, category, order, isActive } = validation.data;
 
     const existing = await db.fAQ.findUnique({ where: { id } });
     if (!existing) {
@@ -94,7 +98,7 @@ export async function DELETE(req: NextRequest) {
     const body = await req.json();
     const { id } = body;
 
-    if (!id) {
+    if (!id || typeof id !== 'string') {
       return NextResponse.json({ error: 'FAQ ID is required' }, { status: 400 });
     }
 

@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/shared/error-state';
 import {
   Search,
   MapPin,
@@ -114,6 +115,7 @@ export function CustomerHome() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [agencies, setAgencies] = useState<AgencyListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [agencyCode, setAgencyCode] = useState('');
   const [selectedAgency, setSelectedAgency] = useState<AgencyDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -172,13 +174,18 @@ export function CustomerHome() {
 
   const fetchAgencies = async () => {
     setLoading(true);
+    setFetchError(false);
     try {
       const res = await fetch('/api/agencies');
       if (res.ok) {
         const data = await res.json();
         setAgencies(data.agencies ?? []);
+      } else {
+        setFetchError(true);
+        toast.error(t('error'));
       }
     } catch {
+      setFetchError(true);
       toast.error(t('error'));
     } finally {
       setLoading(false);
@@ -1185,6 +1192,8 @@ export function CustomerHome() {
             </div>
           ))}
         </div>
+      ) : fetchError ? (
+        <ErrorState onRetry={fetchAgencies} />
       ) : filteredAgencies.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

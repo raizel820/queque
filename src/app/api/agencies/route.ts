@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
         nameAr,
         nameFr,
         customCode: customCode || name.slice(0, 3).toUpperCase(),
-        category: category || 'other',
+        category: category || 'OTHER',
         address,
         phone,
         email: body.email,

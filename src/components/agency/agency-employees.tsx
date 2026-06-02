@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -48,6 +47,18 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { StaffPermissionsEditor, parsePermissions } from '@/components/shared/staff-permissions-editor';
+
+type StaffPermissions = {
+  canManageQueue: boolean;
+  canManageServices: boolean;
+  canManageStaff: boolean;
+  canViewAnalytics: boolean;
+  canManageBranches: boolean;
+  canManageWorkingHours: boolean;
+  canExportData: boolean;
+  canManageProfile: boolean;
+};
 
 interface Employee {
   id: string;
@@ -59,28 +70,6 @@ interface Employee {
   createdAt: string;
   permissions?: Record<string, boolean>;
 }
-
-interface StaffPermissions {
-  canManageQueue: boolean;
-  canManageServices: boolean;
-  canManageStaff: boolean;
-  canViewAnalytics: boolean;
-  canManageBranches: boolean;
-  canManageWorkingHours: boolean;
-  canExportData: boolean;
-  canManageProfile: boolean;
-}
-
-const DEFAULT_PERMISSIONS: StaffPermissions = {
-  canManageQueue: true,
-  canManageServices: false,
-  canManageStaff: false,
-  canViewAnalytics: true,
-  canManageBranches: false,
-  canManageWorkingHours: false,
-  canExportData: false,
-  canManageProfile: false,
-};
 
 function generatePassword(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#';
@@ -292,10 +281,8 @@ export function AgencyEmployees() {
 
   const openPermissions = (emp: Employee) => {
     setPermissionsEmployee(emp);
-    setEditPermissions({
-      ...DEFAULT_PERMISSIONS,
-      ...(emp.permissions || {}),
-    });
+    const permStr = emp.permissions ? JSON.stringify(emp.permissions) : null;
+    setEditPermissions(parsePermissions(permStr));
     setPermissionsOpen(true);
   };
 
@@ -800,33 +787,12 @@ export function AgencyEmployees() {
               {permissionsEmployee ? `${t('managePermissionsFor')} ${permissionsEmployee.fullName}` : ''}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-2 max-h-96 overflow-y-auto">
-            {[
-              { key: 'canManageQueue' as const, label: t('permManageQueue'), desc: t('permManageQueueDesc') },
-              { key: 'canManageServices' as const, label: t('permManageServices'), desc: t('permManageServicesDesc') },
-              { key: 'canManageStaff' as const, label: t('permManageStaff'), desc: t('permManageStaffDesc') },
-              { key: 'canViewAnalytics' as const, label: t('permViewAnalytics'), desc: t('permViewAnalyticsDesc') },
-              { key: 'canManageBranches' as const, label: t('permManageBranches'), desc: t('permManageBranchesDesc') },
-              { key: 'canManageWorkingHours' as const, label: t('permManageWorkingHours'), desc: t('permManageWorkingHoursDesc') },
-              { key: 'canExportData' as const, label: t('permExportData'), desc: t('permExportDataDesc') },
-              { key: 'canManageProfile' as const, label: t('permManageProfile'), desc: t('permManageProfileDesc') },
-            ].map((perm) => (
-              <div
-                key={perm.key}
-                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{perm.label}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{perm.desc}</p>
-                </div>
-                <Switch
-                  checked={editPermissions[perm.key]}
-                  onCheckedChange={(checked) =>
-                    setEditPermissions((prev) => ({ ...prev, [perm.key]: checked }))
-                  }
-                />
-              </div>
-            ))}
+          <div className="py-2 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            <StaffPermissionsEditor
+              permissions={editPermissions}
+              onChange={setEditPermissions}
+              staffRole={permissionsEmployee?.role}
+            />
           </div>
           <div className="flex gap-2 justify-end pt-2 border-t">
             <Button
