@@ -98,7 +98,7 @@ const STEPS = [
   { id: 3, label: 'confirm', labelKey: 'confirm' as const },
 ];
 
-function getPasswordStrength(password: string): { score: number; label: string; color: string; bgColor: string } {
+function getPasswordStrength(password: string): { score: number; label: string; labelKey: string; color: string; bgColor: string } {
   let score = 0;
   if (password.length >= 6) score++;
   if (password.length >= 10) score++;
@@ -106,11 +106,11 @@ function getPasswordStrength(password: string): { score: number; label: string; 
   if (/[0-9]/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
-  if (score <= 1) return { score: 20, labelKey: 'weak' as const, color: 'bg-red-500', bgColor: 'bg-red-100 dark:bg-red-900/30' };
-  if (score <= 2) return { score: 40, labelKey: 'fair' as const, color: 'bg-amber-500', bgColor: 'bg-amber-100 dark:bg-amber-900/30' };
-  if (score <= 3) return { score: 60, labelKey: 'good' as const, color: 'bg-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' };
-  if (score <= 4) return { score: 80, labelKey: 'strong' as const, color: 'bg-emerald-500', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' };
-  return { score: 100, labelKey: 'veryStrong' as const, color: 'bg-emerald-600', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' };
+  if (score <= 1) return { score: 20, label: 'Weak', labelKey: 'weak', color: 'bg-red-500', bgColor: 'bg-red-100 dark:bg-red-900/30' };
+  if (score <= 2) return { score: 40, label: 'Fair', labelKey: 'fair', color: 'bg-amber-500', bgColor: 'bg-amber-100 dark:bg-amber-900/30' };
+  if (score <= 3) return { score: 60, label: 'Good', labelKey: 'good', color: 'bg-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' };
+  if (score <= 4) return { score: 80, label: 'Strong', labelKey: 'strong', color: 'bg-emerald-500', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' };
+  return { score: 100, label: 'Very Strong', labelKey: 'veryStrong', color: 'bg-emerald-600', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' };
 }
 
 export function RegisterForm() {
@@ -139,7 +139,7 @@ export function RegisterForm() {
     accept: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
     onSuccess: (result) => {
       setAvatarPreview(getProxiedUrl(result.url));
-      toast.success(t('avatarUpdated'));
+      toast.success(t('avatarUpdated' as any));
     },
     onError: (error) => {
       toast.error(error);
@@ -447,7 +447,7 @@ export function RegisterForm() {
                               </motion.button>
                             )}
                           </div>
-                          <p className="text-[10px] text-muted-foreground mt-1.5">{t('uploadAvatar')} · {t('avatarMaxSize')}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1.5">{t('uploadAvatar' as any)} · {t('avatarMaxSize' as any)}</p>
                         </div>
 
                         {/* Role Selector */}
@@ -511,7 +511,7 @@ export function RegisterForm() {
                                   passwordStrength.score <= 60 ? 'text-amber-500' :
                                   'text-emerald-500'
                                 }`}>
-                                  {t(passwordStrength.labelKey)}
+                                  {t(passwordStrength.labelKey as any)}
                                 </span>
                               </div>
                               <div className="flex gap-1">

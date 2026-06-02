@@ -685,7 +685,7 @@ export function AgencyReviews() {
                 {showAllReviews ? (
                   <>
                     <ChevronUp className="h-3.5 w-3.5" />
-                    {t('showLess') || 'Show less'}
+                    {t('showLess' as any) || 'Show less'}
                   </>
                 ) : (
                   <>

@@ -576,7 +576,7 @@ export function AgencySettings() {
                       {/* Working Hours Section */}
                       {section.id === 'hours' && (
                         <div className="space-y-4">
-                          <p className="text-xs text-muted-foreground -mt-1 mb-2">{t('workingHoursDesc') || 'Set your business operating hours'}</p>
+                          <p className="text-xs text-muted-foreground -mt-1 mb-2">{t('workingHoursDesc' as any) || 'Set your business operating hours'}</p>
                           <Label className="text-sm flex items-center gap-2">
                             <Clock className="h-4 w-4 text-muted-foreground" />
                             {t('workingHours')}

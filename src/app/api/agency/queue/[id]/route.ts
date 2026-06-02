@@ -54,19 +54,22 @@ export async function PATCH(
       cancel: 'CANCELLED',
     };
 
-    await db.notification.create({
-      data: {
-        userId: reservation.userId,
-        type: typeMap[action],
-        title: `Reservation ${status}`,
-        message: `Your reservation ${reservation.displayNumber} has been ${status.toLowerCase()}.`,
-      },
-    });
+    // Create notification (only for registered users)
+    if (reservation.userId) {
+      await db.notification.create({
+        data: {
+          userId: reservation.userId,
+          type: typeMap[action],
+          title: `Reservation ${status}`,
+          message: `Your reservation ${reservation.displayNumber} has been ${status.toLowerCase()}.`,
+        },
+      });
+    }
 
     // Create audit log
     await db.auditLog.create({
       data: {
-        userId: reservation.userId,
+        userId: reservation.userId ?? undefined,
         action: `QUEUE_${action.toUpperCase()}`,
         entityType: 'RESERVATION',
         entityId: id,

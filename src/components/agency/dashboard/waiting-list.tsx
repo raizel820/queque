@@ -42,7 +42,7 @@ export function WaitingList({
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Users className="h-4 w-4 text-emerald-600" />
-              {t('waitingQueue')}
+              {t('waitingQueue' as any)}
               <Badge variant="secondary" className="text-xs">{waitingOnly.length}</Badge>
             </CardTitle>
             <Button variant={batchMode ? 'default' : 'outline'} size="sm" className={batchMode ? 'h-7 px-2.5 rounded-lg gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs' : 'h-7 px-2.5 rounded-lg gap-1 text-xs'} onClick={() => batchMode ? onExitBatchMode() : onSetBatchMode(true)}>

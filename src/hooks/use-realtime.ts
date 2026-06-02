@@ -46,6 +46,7 @@ export type AgencyEventData = RealtimeEventData
 export type StaffEventData = RealtimeEventData
 
 type EventHandler = (event: RealtimeEventData) => void
+type SocketHandler = (...args: unknown[]) => void
 
 // ─── Socket.IO Connection ─────────────────────────────────────────────────
 
@@ -183,97 +184,97 @@ export function useRealtime() {
   // ─── Queue Event Subscriptions ────────────────────────────────────────
 
   const onQueueCreated = useCallback((handler: EventHandler) => {
-    return subscribe('queue:created', handler)
+    return subscribe('queue:created', handler as SocketHandler)
   }, [subscribe])
 
   const onQueueUpdated = useCallback((handler: EventHandler) => {
-    return subscribe('queue:updated', handler)
+    return subscribe('queue:updated', handler as SocketHandler)
   }, [subscribe])
 
   const onQueueCalled = useCallback((handler: EventHandler) => {
-    return subscribe('queue:called', handler)
+    return subscribe('queue:called', handler as SocketHandler)
   }, [subscribe])
 
   const onQueueCompleted = useCallback((handler: EventHandler) => {
-    return subscribe('queue:completed', handler)
+    return subscribe('queue:completed', handler as SocketHandler)
   }, [subscribe])
 
   const onQueueNoShow = useCallback((handler: EventHandler) => {
-    return subscribe('queue:no-show', handler)
+    return subscribe('queue:no-show', handler as SocketHandler)
   }, [subscribe])
 
   const onQueueCancelled = useCallback((handler: EventHandler) => {
-    return subscribe('queue:cancelled', handler)
+    return subscribe('queue:cancelled', handler as SocketHandler)
   }, [subscribe])
 
   const onQueueJoined = useCallback((handler: EventHandler) => {
-    return subscribe('queue:joined', handler)
+    return subscribe('queue:joined', handler as SocketHandler)
   }, [subscribe])
 
   const onQueueWalkIn = useCallback((handler: EventHandler) => {
-    return subscribe('queue:walk-in', handler)
+    return subscribe('queue:walk-in', handler as SocketHandler)
   }, [subscribe])
 
   const onQueuePaused = useCallback((handler: EventHandler) => {
-    return subscribe('queue:paused', handler)
+    return subscribe('queue:paused', handler as SocketHandler)
   }, [subscribe])
 
   const onQueueResumed = useCallback((handler: EventHandler) => {
-    return subscribe('queue:resumed', handler)
+    return subscribe('queue:resumed', handler as SocketHandler)
   }, [subscribe])
 
   const onQueuePositionChanged = useCallback((handler: EventHandler) => {
-    return subscribe('queue:position-changed', handler)
+    return subscribe('queue:position-changed', handler as SocketHandler)
   }, [subscribe])
 
   const onQueueSettingsUpdated = useCallback((handler: EventHandler) => {
-    return subscribe('queue:settings-updated', handler)
+    return subscribe('queue:settings-updated', handler as SocketHandler)
   }, [subscribe])
 
   // ─── Reservation Event Subscriptions ─────────────────────────────────
 
   const onReservationCreated = useCallback((handler: EventHandler) => {
-    return subscribe('reservation:created', handler)
+    return subscribe('reservation:created', handler as SocketHandler)
   }, [subscribe])
 
   const onReservationUpdated = useCallback((handler: EventHandler) => {
-    return subscribe('reservation:updated', handler)
+    return subscribe('reservation:updated', handler as SocketHandler)
   }, [subscribe])
 
   const onReservationCancelled = useCallback((handler: EventHandler) => {
-    return subscribe('reservation:cancelled', handler)
+    return subscribe('reservation:cancelled', handler as SocketHandler)
   }, [subscribe])
 
   // ─── Notification Event Subscriptions ──────────────────────────────────
 
   const onNotification = useCallback((handler: EventHandler) => {
-    return subscribe('notification:new', handler)
+    return subscribe('notification:new', handler as SocketHandler)
   }, [subscribe])
 
   const onTurnApproaching = useCallback((handler: EventHandler) => {
-    return subscribe('notification:turn-approaching', handler)
+    return subscribe('notification:turn-approaching', handler as SocketHandler)
   }, [subscribe])
 
   const onYourTurn = useCallback((handler: EventHandler) => {
-    return subscribe('notification:your-turn', handler)
+    return subscribe('notification:your-turn', handler as SocketHandler)
   }, [subscribe])
 
   // ─── Kiosk Event Subscriptions ────────────────────────────────────────
 
   const onKioskUpdate = useCallback((handler: EventHandler) => {
-    return subscribe('kiosk:update', handler)
+    return subscribe('kiosk:update', handler as SocketHandler)
   }, [subscribe])
 
   // ─── Agency Event Subscriptions ──────────────────────────────────────
 
   const onAgencyUpdated = useCallback((handler: EventHandler) => {
-    return subscribe('agency:updated', handler)
+    return subscribe('agency:updated', handler as SocketHandler)
   }, [subscribe])
 
   // ─── Staff Event Subscriptions ───────────────────────────────────────
 
   const onStaffUpdated = useCallback((handler: EventHandler) => {
-    return subscribe('staff:updated', handler)
+    return subscribe('staff:updated', handler as SocketHandler)
   }, [subscribe])
 
   // ─── Any Event (for debug/logging) ────────────────────────────────────

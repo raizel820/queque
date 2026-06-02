@@ -26,7 +26,7 @@ export async function PATCH(
     const validation = validateBody(updateServiceSchema, body);
     if (validation.error) return validation.error;
 
-    const { name, nameAr, nameFr, description, avgTime, isActive } = validation.data;
+    const { name, nameAr, nameFr, description, isActive } = validation.data;
     const { prefix } = body;
 
     const service = await db.service.update({
@@ -36,7 +36,6 @@ export async function PATCH(
         ...(nameAr !== undefined && { nameAr }),
         ...(nameFr !== undefined && { nameFr }),
         ...(description !== undefined && { description }),
-        ...(avgTime !== undefined && { avgTime }),
         ...(isActive !== undefined && { isActive }),
         ...(prefix && { prefix: prefix.toUpperCase() }),
       },

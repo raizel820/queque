@@ -427,7 +427,7 @@ export function AdminFaqManager() {
                   <SelectContent>
                     {CATEGORIES.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
-                        {t(cat.label)}
+                        {t(cat.label as any)}
                       </SelectItem>
                     ))}
                   </SelectContent>

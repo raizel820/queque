@@ -42,5 +42,5 @@ export function useLanguage() {
 
   const t = useCallback((key: TranslationKeys, params?: Record<string, string>) => translate(key, effectiveLang, params), [effectiveLang]);
 
-  return { lang: effectiveLang, t };
+  return { lang: effectiveLang, t, setLang: setLanguage };
 }

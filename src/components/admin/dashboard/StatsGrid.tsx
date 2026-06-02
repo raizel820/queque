@@ -13,7 +13,8 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { AnimatedCounter, type AdminStats } from './types';
+import { AnimatedCounter } from './animated-counter';
+import type { AdminStats } from './types';
 
 interface StatsGridProps {
   stats: AdminStats | null;

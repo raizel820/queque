@@ -90,9 +90,9 @@ export function FeaturedAgencies({
               </div>
               <h3 className="font-semibold text-sm text-foreground mb-1 truncate">{getAgencyName(agency, lang)}</h3>
               <Badge variant="secondary" className="text-[10px] mb-1.5">{getCategoryLabel(agency.category, t)}</Badge>
-              {agency.reviewCount > 0 && agency.averageRating > 0 && (
+              {((agency.reviewCount ?? 0) > 0) && ((agency.averageRating ?? 0) > 0) && (
                 <div className="mb-1.5">
-                  <AgencyRatingDisplay averageRating={agency.averageRating} totalCount={agency.reviewCount} compact size="sm" />
+                  <AgencyRatingDisplay averageRating={agency.averageRating ?? 0} totalCount={agency.reviewCount ?? 0} compact size="sm" />
                 </div>
               )}
               <div className="flex items-center justify-between mt-2">

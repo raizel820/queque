@@ -35,7 +35,7 @@ export async function GET(
 
     // Verify ownership or agency access
     try {
-      await requireResourceOwnership(request, reservation.userId)
+      await requireResourceOwnership(request, reservation.userId ?? '')
     } catch {
       await requireAgencyAccess(request, reservation.agencyId)
     }

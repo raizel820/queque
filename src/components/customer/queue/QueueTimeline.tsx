@@ -177,11 +177,11 @@ export function QueueTimeline({ reservation, livePosition }: QueueTimelineProps)
   };
 
   const getDirectionLabel = (entry: TimelineEntry) => {
-    if (entry.direction === 'joined') return t('joinedAt');
-    if (entry.direction === 'current') return t('currentPosition');
-    if (entry.direction === 'up') return t('movedUp');
-    if (entry.direction === 'down') return t('movedDown');
-    return t('stayedSame');
+    if (entry.direction === 'joined') return t('joinedAt' as any);
+    if (entry.direction === 'current') return t('currentPosition' as any);
+    if (entry.direction === 'up') return t('movedUp' as any);
+    if (entry.direction === 'down') return t('movedDown' as any);
+    return t('stayedSame' as any);
   };
 
   const getDirectionColor = (entry: TimelineEntry) => {
@@ -221,7 +221,7 @@ export function QueueTimeline({ reservation, livePosition }: QueueTimelineProps)
               </div>
               <div className="text-start">
                 <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                  {t('positionTimeline')}
+                  {t('positionTimeline' as any)}
                 </p>
                 {mergedTimeline.length > 0 && (
                   <p className="text-[10px] text-muted-foreground truncate max-w-[180px] sm:max-w-[260px]">
@@ -269,7 +269,7 @@ export function QueueTimeline({ reservation, livePosition }: QueueTimelineProps)
             {!loading && !error && mergedTimeline.length === 0 && (
               <div className="text-center py-4">
                 <History className="h-8 w-8 text-emerald-300 dark:text-emerald-700 mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">{t('positionTimelineDesc')}</p>
+                <p className="text-xs text-muted-foreground">{t('positionTimelineDesc' as any)}</p>
                 <p className="text-[10px] text-muted-foreground mt-1">{t('noHistoryYet')}</p>
               </div>
             )}
@@ -403,7 +403,7 @@ export function QueueTimeline({ reservation, livePosition }: QueueTimelineProps)
               <div className="mt-3 pt-2 border-t border-emerald-200/50 dark:border-emerald-800/30">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-muted-foreground">
-                    {t('positionTimelineDesc')}
+                    {t('positionTimelineDesc' as any)}
                   </span>
                   <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                     {mergedTimeline.length - 1} {lang === 'ar' ? 'تغيير' : lang === 'fr' ? 'changement(s)' : 'change(s)'}

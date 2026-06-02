@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
       data: {
         subscriptionStatus: 'INACTIVE',
         subscriptionTier: 'BASIC',
-        subscriptionExpiresAt: null,
       },
     });
 

@@ -203,7 +203,7 @@ export async function getSmsTemplate(
 
     // If custom template is set, use it with variable substitution
     if (customTemplateField && customTemplateField.trim()) {
-      return applyTemplateVars(customTemplateField, vars);
+      return applyTemplateVars(customTemplateField, vars as unknown as Record<string, string | number>);
     }
   } catch {
     // Fall through to default templates

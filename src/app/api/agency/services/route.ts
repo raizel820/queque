@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const validation = validateBody(createServiceSchema, body);
     if (validation.error) return validation.error;
 
-    const { name, nameAr, nameFr, description, avgTime, isActive } = validation.data;
+    const { name, nameAr, nameFr, description, isActive } = validation.data;
     const { prefix } = body;
 
     if (!prefix) {
@@ -50,7 +50,6 @@ export async function POST(req: NextRequest) {
         nameFr: nameFr || null,
         prefix: prefix.toUpperCase(),
         description: description || null,
-        avgTime: avgTime || undefined,
         isActive: isActive ?? true,
       },
     });

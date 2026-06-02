@@ -54,6 +54,9 @@ export async function GET(request: NextRequest) {
     let skipped = 0;
 
     for (const reservation of unskippedCandidates) {
+      // Skip walk-ins (no user account) — can't determine language preference
+      if (!reservation.user) continue;
+
       const agencyName =
         reservation.user.language === 'ar'
           ? reservation.agency.nameAr || reservation.agency.name

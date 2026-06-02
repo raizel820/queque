@@ -1214,7 +1214,7 @@ export function AgencyDashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Users className="h-4 w-4 text-emerald-600" />
-                {t('recentCustomers') || 'Recent Customers'}
+                {t('recentCustomers' as any) || 'Recent Customers'}
                 <Badge variant="secondary" className="text-[10px] ms-auto">
                   {waitingList.length}
                 </Badge>
@@ -1727,7 +1727,7 @@ export function AgencyDashboard() {
           transition={{ delay: 0.35 }}
         >
           <WaitTimeChart
-            data={stats?.hourlyWaitTime ?? []}
+            data={stats?.hourlyWaitTime ?? [] as any[]}
             currentHour={new Date().getHours()}
           />
         </motion.div>
@@ -1736,7 +1736,7 @@ export function AgencyDashboard() {
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.4 }}
         >
-          <RatingDistribution ratings={stats?.ratingDistribution ?? []} />
+          <RatingDistribution ratings={stats?.ratingDistribution ?? [] as any[]} />
         </motion.div>
       </div>
 

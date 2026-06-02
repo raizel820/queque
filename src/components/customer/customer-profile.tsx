@@ -371,6 +371,7 @@ export function CustomerProfile() {
     } finally {
     setPurchaseHistoryLoading(false);
   }
+  };
 
   const smsRemaining = smsCount;
   const totalAvailable = smsCount + purchasedSms;
@@ -1339,5 +1340,4 @@ export function CustomerProfile() {
       </motion.div>
     </div>
   );
-}
 }

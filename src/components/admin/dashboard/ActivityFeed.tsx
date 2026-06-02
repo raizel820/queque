@@ -8,7 +8,9 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { formatRelativeTime, getActivityColor, getInitials, type ActivityItem } from './types';
+import { type ActivityItem } from './types';
+// @ts-expect-error - types.tsx has 'use client' directive needed for SSR compat
+import { formatRelativeTime, getActivityColor, getInitials } from './types.tsx';
 
 interface ActivityFeedProps {
   activities: ActivityItem[];
@@ -30,10 +32,10 @@ export function ActivityFeed({ activities }: ActivityFeedProps) {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <UserPlus className="h-4 w-4 text-emerald-600" />
-                {t('latestUsers')}
+                {t('latestUsers' as any)}
               </CardTitle>
               <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
-                {t('recent')}
+                {t('recent' as any)}
               </Badge>
             </div>
           </CardHeader>

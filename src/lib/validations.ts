@@ -84,11 +84,6 @@ export const updateAgencyProfileSchema = z.object({
 export const updateAgencySettingsSchema = z.object({
   maxQueueSize: z.number().int().min(1).max(1000).optional(),
   avgServiceTime: z.number().int().min(1).max(480).optional(),
-  allowWalkIns: z.boolean().optional(),
-  autoSkipEnabled: z.boolean().optional(),
-  autoSkipMinutes: z.number().int().min(1).max(60).optional(),
-  smsNotificationsEnabled: z.boolean().optional(),
-  fixedTimeEnabled: z.boolean().optional(),
 })
 
 export const createServiceSchema = z.object({
@@ -96,7 +91,6 @@ export const createServiceSchema = z.object({
   nameAr: z.string().optional(),
   nameFr: z.string().optional(),
   description: z.string().max(300).optional(),
-  avgTime: z.number().int().min(1).max(480).optional(),
   isActive: z.boolean().optional().default(true),
 })
 
@@ -105,7 +99,6 @@ export const updateServiceSchema = z.object({
   nameAr: z.string().optional(),
   nameFr: z.string().optional(),
   description: z.string().max(300).optional(),
-  avgTime: z.number().int().min(1).max(480).optional(),
   isActive: z.boolean().optional(),
 })
 
@@ -166,7 +159,7 @@ export const adminUpdateAgencySchema = z.object({
 // ─── SMS Settings ────────────────────────────────────────────────────────────
 
 export const smsSettingsSchema = z.object({
-  provider: z.enum(['algeria-sms', 'generic']).optional(),
+  provider: z.enum(['winsms', 'notifsend', 'algeria_sms', 'green_send', 'mtarget', 'twilio', 'vonage', 'generic']).optional(),
   apiUrl: z.string().url().optional().or(z.literal('')),
   apiKey: z.string().optional(),
   senderName: z.string().max(11).optional(),
@@ -284,14 +277,15 @@ export function validateBody<T extends z.ZodType>(
   if (result.success) {
     return { data: result.data as z.infer<T>, error: null }
   }
-  const firstError = result.error.errors[0]
+  const zodErr = result.error
+  const firstError = zodErr.issues[0]
   return {
     data: null,
     error: NextResponse.json(
       {
         success: false,
         error: firstError?.message || 'Validation error',
-        details: result.error.errors.map(e => ({
+        details: zodErr.issues.map((e: z.ZodIssue) => ({
           field: e.path.join('.'),
           message: e.message,
         })),

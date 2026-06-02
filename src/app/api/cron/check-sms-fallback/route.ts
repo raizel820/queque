@@ -79,6 +79,9 @@ export async function GET(request: NextRequest) {
     for (const reservation of candidates) {
       const user = reservation.user;
 
+      // Skip if no user account (walk-in)
+      if (!user) continue;
+
       // Check SMS credits: free credits + purchased credits
       const totalFreeCredits = user.freeSmsCount || 0;
       const totalPurchasedCredits = user.smsPurchases.reduce((sum, p) => sum + p.quantity, 0);

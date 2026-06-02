@@ -2,12 +2,10 @@
 
 import { SessionProvider } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
-import { useAppStore, parseHashToView, parseJoinCodeFromHash, isHashChangeSuppressed, updateHashForView } from '@/store/use-app-store';
-import { Loader2 } from 'lucide-react';
+import { useAppStore, updateDocumentDirection, hydrateFromSession, setViewFromHash, parseHashToView, parseJoinCodeFromHash, updateHashForView, isHashChangeSuppressed } from '@/store/use-app-store';
+import { Loader2, LogOut } from 'lucide-react';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const hydrateFromSession = useAppStore((state) => state.hydrateFromSession);
-  const setViewFromHash = useAppStore((state) => state.setViewFromHash);
   const setPendingAgencyCode = useAppStore((state) => state.setPendingAgencyCode);
   const currentView = useAppStore((state) => state.currentView);
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);

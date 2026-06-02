@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Ticket, Monitor, Globe, Clock, Users } from 'lucide-react';
 
 interface KioskLandingProps {
-  agency: {
+  agency?: {
     id: string;
     name: string;
     nameAr?: string | null;
@@ -18,24 +18,24 @@ interface KioskLandingProps {
     isQueueOpen: boolean;
     isPaused: boolean;
   };
-  queueStats: {
+  queueStats?: {
     waiting: number;
     currentServing: string | null;
     estimatedWait: number;
   };
-  onTakeTicket: () => void;
-  onViewBoard: () => void;
-  onLanguageChange: (lang: Language) => void;
-  currentLang: Language;
+  onTakeTicket?: () => void;
+  onViewBoard?: () => void;
+  onLanguageChange?: (lang: Language) => void;
+  currentLang?: Language;
 }
 
 export function KioskLanding({
-  agency,
-  queueStats,
-  onTakeTicket,
-  onViewBoard,
-  onLanguageChange,
-  currentLang,
+  agency = { id: '', name: '', workingHoursStart: '08:00', workingHoursEnd: '17:00', isQueueOpen: true, isPaused: false },
+  queueStats = { waiting: 0, currentServing: null, estimatedWait: 0 },
+  onTakeTicket = () => {},
+  onViewBoard = () => {},
+  onLanguageChange = () => {},
+  currentLang = 'en',
 }: KioskLandingProps) {
   const { t } = useLanguage();
   const rtl = isRTL(currentLang);

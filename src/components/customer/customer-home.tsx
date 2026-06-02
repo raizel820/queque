@@ -1038,9 +1038,9 @@ export function CustomerHome() {
                     </div>
                     <h3 className="font-semibold text-sm text-foreground mb-1 truncate">{getAgencyName(agency)}</h3>
                     <Badge variant="secondary" className="text-[10px] mb-1.5">{getCategoryLabel(agency.category)}</Badge>
-                    {agency.reviewCount > 0 && agency.averageRating > 0 && (
+                    {((agency.reviewCount ?? 0) > 0) && ((agency.averageRating ?? 0) > 0) && (
                       <div className="mb-1.5">
-                        <AgencyRatingDisplay averageRating={agency.averageRating} totalCount={agency.reviewCount} compact size="sm" />
+                        <AgencyRatingDisplay averageRating={agency.averageRating ?? 0} totalCount={agency.reviewCount ?? 0} compact size="sm" />
                       </div>
                     )}
                     <div className="flex items-center justify-between mt-2">
@@ -1331,11 +1331,11 @@ export function CustomerHome() {
                   )}
 
                   {/* Rating display */}
-                  {agency.reviewCount > 0 && agency.averageRating > 0 && (
+                  {((agency.reviewCount ?? 0) > 0) && ((agency.averageRating ?? 0) > 0) && (
                     <div className="mb-2">
                       <AgencyRatingDisplay
-                        averageRating={agency.averageRating}
-                        totalCount={agency.reviewCount}
+                        averageRating={agency.averageRating ?? 0}
+                        totalCount={agency.reviewCount ?? 0}
                         compact
                         size="sm"
                       />
@@ -1561,7 +1561,7 @@ function AgencyReviewsPreview({ agencyId, averageRating, reviewCount }: { agency
           className="w-full mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
           onClick={() => setShowAll(!showAll)}
         >
-          {showAll ? t('showLess') || 'Show less' : `${t('seeAllReviews')} (${reviews.length})`}
+          {showAll ? t('showLess' as any) || 'Show less' : `${t('seeAllReviews')} (${reviews.length})`}
         </Button>
       )}
     </div>

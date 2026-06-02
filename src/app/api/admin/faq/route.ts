@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
   try {
     await requireAdmin(request);
 
-    const faqs = await db.faq.findMany({
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    const faqs = await db.fAQ.findMany({
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
     });
     return NextResponse.json({ faqs });
   } catch (error) {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
     const { question, answer, questionAr, answerAr, questionFr, answerFr, category, order, isActive } = validation.data;
 
-    const faq = await db.faq.create({
+    const faq = await db.fAQ.create({
       data: {
         question,
         answer,
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         questionFr: questionFr || null,
         answerFr: answerFr || null,
         category: category || 'GENERAL',
-        sortOrder: order ?? 0,
+        order: order ?? 0,
         isActive: isActive ?? true,
       },
     });
@@ -61,7 +61,7 @@ export async function PUT(req: NextRequest) {
 
     const { id, question, answer, questionAr, answerAr, questionFr, answerFr, category, order, isActive } = validation.data;
 
-    const faq = await db.faq.update({
+    const faq = await db.fAQ.update({
       where: { id },
       data: {
         ...(question !== undefined && { question }),
@@ -71,7 +71,7 @@ export async function PUT(req: NextRequest) {
         ...(questionFr !== undefined && { questionFr }),
         ...(answerFr !== undefined && { answerFr }),
         ...(category !== undefined && { category }),
-        ...(order !== undefined && { sortOrder: order }),
+        ...(order !== undefined && { order }),
         ...(isActive !== undefined && { isActive }),
       },
     });
@@ -93,7 +93,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'FAQ ID is required' }, { status: 400 });
     }
 
-    await db.faq.delete({ where: { id } });
+    await db.fAQ.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     return authErrorResponse(error);

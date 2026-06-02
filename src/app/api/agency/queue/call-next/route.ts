@@ -37,8 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Use transaction to prevent double-calling
-    let nextReservation;
-    await db.$transaction(async (tx) => {
+    const nextReservation = await db.$transaction(async (tx) => {
       // Get all WAITING reservations for this agency, ordered by queueNumber
       const waitingReservations = await tx.reservation.findMany({
         where: {
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
 
       // Use queue scheduler to find next customer (respects preferred times)
       const nextId = getNextCustomerToCall(waitingReservations);
-      if (!nextId) return;
+      if (!nextId) return null;
 
       const candidate = await tx.reservation.findUnique({
         where: { id: nextId },
@@ -66,14 +65,14 @@ export async function POST(req: NextRequest) {
           user: { select: { id: true, fullName: true } },
         },
       });
-      if (!candidate) return;
+      if (!candidate) return null;
 
       // Re-check status inside transaction
       const recheck = await tx.reservation.findUnique({ where: { id: candidate.id } });
-      if (!recheck || recheck.status !== 'WAITING') return;
+      if (!recheck || recheck.status !== 'WAITING') return null;
 
       await processCandidate(tx, candidate, queueSettings, agencyId);
-      nextReservation = candidate;
+      return candidate;
     });
 
     if (!nextReservation) {

@@ -988,7 +988,7 @@ export function AdminDashboard() {
           <Badge variant="outline" className="ms-auto text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">99.9%</Badge>
           <div className="flex items-center gap-1 ms-2">
             <Wifi className="h-3.5 w-3.5 text-emerald-500" />
-            <span className="text-[10px] text-emerald-600 dark:text-emerald-400">{t('systemStatusOnline')}</span>
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400">{t('systemUptime')}</span>
           </div>
         </div>
       </motion.div>
@@ -1004,10 +1004,10 @@ export function AdminDashboard() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <UserPlus className="h-4 w-4 text-emerald-600" />
-                {t('latestUsers')}
+                {t('totalUsers')}
               </CardTitle>
               <Badge variant="outline" className="text-[10px] text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
-                {t('recent')}
+                {t('recentActivity')}
               </Badge>
             </div>
           </CardHeader>
@@ -1054,7 +1054,7 @@ export function AdminDashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-emerald-600" />
-              {t('subscriptionBreakdown')}
+              {t('subscription')}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
@@ -1128,7 +1128,7 @@ export function AdminDashboard() {
                 key={action.view}
                 whileHover={{ scale: 1.03, y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setView(action.view)}
+                onClick={() => setView(action.view as import('@/store/use-app-store').ViewName)}
                 className={`flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-br ${action.color} text-white font-medium shadow-lg transition-all duration-200 hover:shadow-xl text-xs sm:text-sm`}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />

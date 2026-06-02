@@ -24,7 +24,7 @@ export async function GET(
 
     // Verify ownership or agency access
     try {
-      await requireResourceOwnership(request, reservation.userId);
+      await requireResourceOwnership(request, reservation.userId ?? '');
     } catch {
       await requireAgencyAccess(request, reservation.agencyId);
     }
@@ -97,7 +97,7 @@ export async function POST(
     }
 
     // Verify ownership
-    await requireResourceOwnership(request, reservation.userId);
+    await requireResourceOwnership(request, reservation.userId ?? '');
 
     // Count people ahead (WAITING with earlier joinedAt)
     const allAhead = await db.reservation.findMany({

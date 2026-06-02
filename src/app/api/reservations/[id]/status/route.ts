@@ -8,7 +8,7 @@ import type { QueueEventType } from '@/lib/realtime-emit'
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   WAITING: ['CALLED', 'CANCELLED'],
   CALLED: ['COMPLETED', 'CANCELLED', 'NO_SHOW'],
-  SERVED: ['COMPLETED'],
+  SERVING: ['COMPLETED'],
 }
 
 export async function PUT(
@@ -45,7 +45,7 @@ export async function PUT(
 
     // Verify ownership or agency access
     try {
-      await requireResourceOwnership(request, reservation.userId)
+      await requireResourceOwnership(request, reservation.userId ?? '')
     } catch {
       // If not the owner, check agency access
       await requireAgencyAccess(request, reservation.agencyId)
@@ -77,7 +77,7 @@ export async function PUT(
       case 'NO_SHOW':
         updateData.completedAt = now
         break
-      case 'SERVED':
+      case 'SERVING':
         updateData.completedAt = now
         break
     }
@@ -96,14 +96,14 @@ export async function PUT(
         COMPLETED: 'Service Completed',
         CANCELLED: 'Reservation Cancelled',
         NO_SHOW: 'Missed Your Turn',
-        SERVED: 'Being Served',
+        SERVING: 'Being Served',
       }
       const messageMap: Record<string, string> = {
         CALLED: `Please proceed to ${reservation.agency.name} - ${reservation.service.name}. Your ticket: ${reservation.displayNumber}`,
         COMPLETED: `Your visit at ${reservation.agency.name} has been completed.`,
         CANCELLED: `Your reservation ${reservation.displayNumber} at ${reservation.agency.name} has been cancelled.`,
         NO_SHOW: `You missed your turn for ticket ${reservation.displayNumber} at ${reservation.agency.name}.`,
-        SERVED: `You are now being served at ${reservation.agency.name} - ${reservation.service.name}.`,
+        SERVING: `You are now being served at ${reservation.agency.name} - ${reservation.service.name}.`,
       }
 
       await db.notification.create({
@@ -119,7 +119,7 @@ export async function PUT(
     // Create audit log
     await db.auditLog.create({
       data: {
-        userId: reservation.userId,
+        userId: reservation.userId ?? undefined,
         action: status === 'COMPLETED' ? 'QUEUE_COMPLETE' :
                 status === 'CANCELLED' ? 'QUEUE_CANCEL' :
                 status === 'NO_SHOW' ? 'QUEUE_NOSHOW' : 'QUEUE_CALL',
@@ -140,7 +140,7 @@ export async function PUT(
       COMPLETED: 'queue:completed',
       CANCELLED: 'queue:cancelled',
       NO_SHOW: 'queue:no-show',
-      SERVED: 'queue:updated',
+      SERVING: 'queue:updated',
     }
     const queueEventType = queueEventTypeMap[status]
     if (queueEventType) {
@@ -155,7 +155,7 @@ export async function PUT(
 
     // Emit reservation event
     const reservationEventType = status === 'CANCELLED' ? 'reservation:cancelled' : 'reservation:updated'
-    emitReservationEvent(reservationEventType, reservation.agencyId, reservation.userId, {
+    emitReservationEvent(reservationEventType, reservation.agencyId, reservation.userId ?? undefined, {
       reservationId: id,
       displayNumber: reservation.displayNumber,
       previousStatus: reservation.status,

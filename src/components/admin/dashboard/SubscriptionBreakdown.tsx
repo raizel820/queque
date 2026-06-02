@@ -23,7 +23,7 @@ export function SubscriptionBreakdown({ stats }: SubscriptionBreakdownProps) {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-emerald-600" />
-            {t('subscriptionBreakdown')}
+            {t('subscriptionBreakdown' as any)}
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">

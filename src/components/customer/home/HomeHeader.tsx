@@ -156,7 +156,7 @@ export function HomeHeader({
                     onClick={onClearAllRecentSearches}
                     className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline font-medium"
                   >
-                    {t('clearSearchHistory')}
+                    {t('clearSearchHistory' as any)}
                   </button>
                 </div>
                 {recentSearches.map((term) => (
@@ -181,7 +181,7 @@ export function HomeHeader({
             ) : searchQuery === '' && recentSearches.length === 0 ? (
               <div className="px-3 py-4 text-center">
                 <History className="h-5 w-5 text-muted-foreground/40 mx-auto mb-1.5" />
-                <p className="text-xs text-muted-foreground">{t('noRecentSearches')}</p>
+                <p className="text-xs text-muted-foreground">{t('noRecentSearches' as any)}</p>
               </div>
             ) : searchSuggestions.length > 0 ? (
               <>

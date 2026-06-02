@@ -73,7 +73,7 @@ export async function PATCH(req: NextRequest) {
     if (validation.error) return validation.error;
 
     const { agencyId: agencyIdParam, isQueueOpen, workingHoursStart, workingHoursEnd, autoPauseWhenFull, kioskModeEnabled } = body;
-    const { maxQueueSize, avgServiceTime, allowWalkIns, autoSkipEnabled, autoSkipMinutes, smsNotificationsEnabled, fixedTimeEnabled } = validation.data;
+    const { maxQueueSize, avgServiceTime } = validation.data;
 
     let agencyId: string | null;
     if (agencyIdParam) {
@@ -103,11 +103,6 @@ export async function PATCH(req: NextRequest) {
         ...(workingHoursEnd !== undefined && { workingHoursEnd }),
         ...(autoPauseWhenFull !== undefined && { autoPauseWhenFull }),
         ...(kioskModeEnabled !== undefined && { kioskModeEnabled }),
-        ...(allowWalkIns !== undefined && { allowWalkIns }),
-        ...(autoSkipEnabled !== undefined && { autoSkipEnabled }),
-        ...(autoSkipMinutes !== undefined && { autoSkipMinutes }),
-        ...(smsNotificationsEnabled !== undefined && { smsNotificationsEnabled }),
-        ...(fixedTimeEnabled !== undefined && { fixedTimeEnabled }),
       },
     });
 

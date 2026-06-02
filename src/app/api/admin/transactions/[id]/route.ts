@@ -5,7 +5,7 @@ import { validateBody } from '@/lib/validations';
 import { z } from 'zod';
 
 const reviewTransactionSchema = z.object({
-  action: z.enum(['approve', 'reject'], { errorMap: () => ({ message: 'Action must be "approve" or "reject"' }) }),
+  action: z.enum(['approve', 'reject'], { message: 'Action must be "approve" or "reject"' }),
   reason: z.string().max(500).optional(),
 });
 

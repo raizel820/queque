@@ -30,7 +30,7 @@ export async function POST(
     }
 
     // Verify user owns the reservation (strictly, no agency override for rating)
-    await requireResourceOwnership(request, reservation.userId);
+    await requireResourceOwnership(request, reservation.userId ?? '');
 
     // Check not already rated
     if (reservation.rating) {
@@ -60,7 +60,7 @@ export async function POST(
     // Create audit log
     await db.auditLog.create({
       data: {
-        userId: reservation.userId,
+        userId: reservation.userId ?? undefined,
         action: 'RATING_SUBMITTED',
         entityType: 'Reservation',
         entityId: reservation.id,

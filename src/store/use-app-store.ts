@@ -171,3 +171,88 @@ export function updateDocumentDirection(lang: Language) {
     document.documentElement.lang = lang;
   }
 }
+
+// Hash-based navigation helpers
+const viewHashMap: Record<ViewName, string> = {
+  'landing': '#/',
+  'login': '#/login',
+  'register': '#/register',
+  'customer-home': '#/customer',
+  'customer-queue': '#/customer/queue',
+  'customer-history': '#/customer/history',
+  'customer-notifications': '#/customer/notifications',
+  'customer-profile': '#/customer/profile',
+  'customer-favorites': '#/customer/favorites',
+  'customer-settings': '#/customer/settings',
+  'agency-dashboard': '#/agency',
+  'agency-settings': '#/agency/settings',
+  'agency-employees': '#/agency/employees',
+  'agency-profile': '#/agency/profile',
+  'agency-reviews': '#/agency/reviews',
+  'agency-subscription': '#/agency/subscription',
+  'agency-branches': '#/agency/branches',
+  'admin-dashboard': '#/admin',
+  'admin-transactions': '#/admin/transactions',
+  'admin-agencies': '#/admin/agencies',
+  'admin-audit': '#/admin/audit',
+  'admin-users': '#/admin/users',
+  'admin-analytics': '#/admin/analytics',
+  'admin-settings': '#/admin/settings',
+  'kiosk': '#/kiosk',
+};
+
+const hashViewMap: Record<string, ViewName> = Object.fromEntries(
+  Object.entries(viewHashMap).map(([view, hash]) => [hash, view as ViewName])
+);
+
+export function parseHashToView(hash: string): ViewName | null {
+  // Handle #/join/CODE deep link
+  const joinMatch = hash.match(/^#\/join\/(.+)$/);
+  if (joinMatch) return 'customer-queue';
+
+  // Handle #/kiosk/CODE deep link
+  const kioskMatch = hash.match(/^#\/kiosk\/?(.*)$/);
+  if (kioskMatch) return 'kiosk';
+
+  // Exact match
+  if (hashViewMap[hash]) return hashViewMap[hash];
+
+  // Prefix match (e.g., #/customer/queue -> customer-queue)
+  for (const [h, v] of Object.entries(hashViewMap)) {
+    if (hash.startsWith(h) && h !== '#/') return v;
+  }
+
+  return hash === '#/' || hash === '' || hash === '#' ? 'landing' : null;
+}
+
+export function parseJoinCodeFromHash(hash: string): string | null {
+  const match = hash.match(/^#\/join\/(.+)$/);
+  return match ? match[1] : null;
+}
+
+let _suppressHashChange = false;
+
+export function isHashChangeSuppressed(): boolean {
+  return _suppressHashChange;
+}
+
+export function updateHashForView(view: ViewName): void {
+  if (typeof window === 'undefined') return;
+  const hash = viewHashMap[view] || '#/';
+  _suppressHashChange = true;
+  window.location.hash = hash;
+  setTimeout(() => { _suppressHashChange = false; }, 50);
+}
+
+// Async hydrate from session (no-op placeholder since the store doesn't have real session hydration)
+export async function hydrateFromSession(): Promise<void> {
+  // Session hydration is handled by the persist middleware rehydration
+}
+
+// Set view from hash
+export function setViewFromHash(hash: string): void {
+  const view = parseHashToView(hash);
+  if (view) {
+    useAppStore.getState().setView(view);
+  }
+}

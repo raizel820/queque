@@ -47,7 +47,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { StaffPermissionsEditor, parsePermissions } from '@/components/shared/staff-permissions-editor';
+import { StaffPermissionsEditor, parsePermissions, DEFAULT_PERMISSIONS } from '@/components/shared/staff-permissions-editor';
 
 type StaffPermissions = {
   canManageQueue: boolean;
@@ -118,7 +118,7 @@ export function AgencyEmployees() {
   // Permissions dialog
   const [permissionsOpen, setPermissionsOpen] = useState(false);
   const [permissionsEmployee, setPermissionsEmployee] = useState<Employee | null>(null);
-  const [editPermissions, setEditPermissions] = useState<StaffPermissions>(DEFAULT_PERMISSIONS);
+  const [editPermissions, setEditPermissions] = useState<StaffPermissions>({ ...DEFAULT_PERMISSIONS });
   const [permissionsLoading, setPermissionsLoading] = useState(false);
 
   const fetchEmployees = useCallback(async () => {
@@ -339,10 +339,10 @@ export function AgencyEmployees() {
   };
 
   const stats = [
-    { label: t('employeeTotal'), value: totalEmployees, icon: Users, color: 'from-emerald-500 to-emerald-700', shadow: 'shadow-emerald-500/15' },
-    { label: t('employeeActive'), value: activeEmployees, icon: UserCheck, color: 'from-teal-500 to-teal-700', shadow: 'shadow-teal-500/15' },
-    { label: t('employeeInactive'), value: inactiveEmployees, icon: UserX, color: 'from-gray-400 to-gray-600', shadow: 'shadow-gray-500/15' },
-    { label: t('employeeManagers'), value: managerCount, icon: Shield, color: 'from-amber-500 to-amber-700', shadow: 'shadow-amber-500/15' },
+    { label: t('employeeTotal' as any), value: totalEmployees, icon: Users, color: 'from-emerald-500 to-emerald-700', shadow: 'shadow-emerald-500/15' },
+    { label: t('employeeActive' as any), value: activeEmployees, icon: UserCheck, color: 'from-teal-500 to-teal-700', shadow: 'shadow-teal-500/15' },
+    { label: t('employeeInactive' as any), value: inactiveEmployees, icon: UserX, color: 'from-gray-400 to-gray-600', shadow: 'shadow-gray-500/15' },
+    { label: t('employeeManagers' as any), value: managerCount, icon: Shield, color: 'from-amber-500 to-amber-700', shadow: 'shadow-amber-500/15' },
   ];
 
   if (loading) {
@@ -367,7 +367,7 @@ export function AgencyEmployees() {
             <Users className="h-6 w-6 text-emerald-600" />
             {t('employeeManagement')}
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{t('employeeManagementDesc')}</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('employeeManagementDesc' as any)}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -424,7 +424,7 @@ export function AgencyEmployees() {
             <div className="relative flex-1">
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder={t('searchEmployees')}
+                placeholder={t('searchEmployees' as any)}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="ps-9 h-10"
@@ -451,7 +451,7 @@ export function AgencyEmployees() {
           <Card className="border-0 shadow-sm bg-white dark:bg-gray-900/80">
             <CardContent className="p-8 text-center">
               <Users className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">{t('noEmployeesFound')}</p>
+              <p className="text-sm text-muted-foreground">{t('noEmployeesFound' as any)}</p>
             </CardContent>
           </Card>
         ) : (
@@ -570,7 +570,7 @@ export function AgencyEmployees() {
               <UserPlus className="h-5 w-5 text-emerald-600" />
               {t('createStaffAccount')}
             </DialogTitle>
-            <DialogDescription>{t('createStaffAccountDesc')}</DialogDescription>
+            <DialogDescription>{t('createStaffAccountDesc' as any)}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -656,9 +656,9 @@ export function AgencyEmployees() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <KeyRound className="h-5 w-5 text-emerald-600" />
-              {t('employeeCredentials')}
+              {t('employeeCredentials' as any)}
             </DialogTitle>
-            <DialogDescription>{t('employeeCredentialsDesc')}</DialogDescription>
+            <DialogDescription>{t('employeeCredentialsDesc' as any)}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200/50 dark:border-emerald-700/30">

@@ -110,7 +110,7 @@ export function QueueControls({
                       <p className="text-sm text-emerald-200 mt-0.5">{getServiceName(currentlyServed, lang)}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <Clock className="h-3 w-3 text-emerald-300" />
-                        <span className="text-xs text-emerald-200/80">{t('calledAt')} {formatTime(currentlyServed.joinedAt, lang)}</span>
+                        <span className="text-xs text-emerald-200/80">{t('calledAt' as any)} {formatTime(currentlyServed.joinedAt, lang)}</span>
                       </div>
                     </div>
                   </div>
@@ -119,7 +119,7 @@ export function QueueControls({
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <Button onClick={() => onAction(currentlyServed.id, 'complete')} disabled={!!actionLoading} className="h-11 px-5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-900 font-bold text-sm gap-2 shadow-lg shadow-emerald-500/30">
                         {actionLoading === `${currentlyServed.id}-complete` ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                        {t('completeService')}
+                        {t('completeService' as any)}
                       </Button>
                     </motion.div>
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -143,9 +143,9 @@ export function QueueControls({
                       <span className="text-3xl font-black text-white/40">—</span>
                     </div>
                     <div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-white/80">{t('noCustomerBeingServed')}</h2>
+                      <h2 className="text-lg sm:text-xl font-semibold text-white/80">{t('noCustomerBeingServed' as any)}</h2>
                       <p className="text-sm text-emerald-200/60 mt-0.5">
-                        {waitingOnly.length > 0 ? `${waitingOnly.length} ${t('waitingLabel')} · ${t('nextUp')}: ${waitingOnly[0]?.queueNumber || ''}` : t('noQueue')}
+                        {waitingOnly.length > 0 ? `${waitingOnly.length} ${t('waitingLabel')} · ${t('nextUp' as any)}: ${waitingOnly[0]?.queueNumber || ''}` : t('noQueue')}
                       </p>
                     </div>
                   </div>

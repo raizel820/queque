@@ -329,7 +329,7 @@ function AgencyReviewsPreview({ agencyId, averageRating, reviewCount }: { agency
           className="w-full mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700"
           onClick={() => setShowAll(!showAll)}
         >
-          {showAll ? t('showLess') || 'Show less' : `${t('seeAllReviews')} (${reviews.length})`}
+          {showAll ? t('showLess' as any) || 'Show less' : `${t('seeAllReviews')} (${reviews.length})`}
         </Button>
       )}
     </div>

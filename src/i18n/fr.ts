@@ -971,8 +971,6 @@ const fr: Record<TranslationKeys, string> = {
   stepPaymentMethod: 'Méthode de paiement',
   stepReceipt: 'Reçu',
   stepReview: 'Vérifier et soumettre',
-  back: 'Retour',
-  next: 'Suivant',
   goToPayment: "S'abonner maintenant",
   mostValue: 'Meilleur rapport',
   planComparison: 'Comparaison des forfaits',
@@ -1033,7 +1031,6 @@ const fr: Record<TranslationKeys, string> = {
   postponeConfirm: 'Confirmer le report',
   postponeSuccess: 'Votre tour a été reporté',
   postponeLimit: 'Maximum 10 positions',
-  cancelReservation: 'Annuler la réservation',
   cancelConfirm: 'Êtes-vous sûr de vouloir annuler cette réservation ?',
   cancelSuccess: 'Réservation annulée avec succès',
   preferredTime: 'Heure préférée',
@@ -1063,7 +1060,6 @@ const fr: Record<TranslationKeys, string> = {
   creditPackage: 'Pack de crédits',
   credits: 'crédits',
   selectPackage: 'Sélectionner un pack',
-  bestValue: 'Meilleur rapport',
   smsPack100: '100 crédits SMS',
   smsPack100Desc: 'Idéal pour petites structures',
   smsPack100Price: '500',
@@ -1100,7 +1096,6 @@ const fr: Record<TranslationKeys, string> = {
   waitingLabel: 'En attente',
   totalToday: 'Total aujourd\'hui',
   customersServed: 'Clients servis',
-  avgWaitShort: 'Attente moy.',
   queueLengthShort: 'En file',
   noShowShort: 'Absents',
 
@@ -1150,10 +1145,8 @@ const fr: Record<TranslationKeys, string> = {
   // ─── Task 9: Agency Review & Rating ──────
   rateYourExperience: 'Évaluez votre expérience',
   rateAgency: 'Évaluez cette agence',
-  ratingSubmitted: 'Évaluation soumise',
   ratingUpdated: 'Évaluation mise à jour',
   writeComment: 'Écrivez un commentaire...',
-  submitRating: "Soumettre l'évaluation",
   reviews: 'avis',
   noReviews: 'Aucun avis',
   rateNow: 'Évaluer',
@@ -1195,28 +1188,7 @@ const fr: Record<TranslationKeys, string> = {
   inactiveAgency: 'Inactif',
 
   // ─── Task 6: Queue Features ──────
-  addWalkInCustomer: 'Ajouter un client sans réservation',
-  walkInCustomerName: 'Nom du client',
-  walkInCustomerAdded: "Client ajouté à la file d'attente",
-  walkInBadge: 'Sans réservation',
-  postponeTurn: 'Reporter son tour',
-  postponeBy: 'Reporter de',
-  postponePositions: 'positions',
-  postponeConfirm: 'Confirmer le report',
-  postponeSuccess: 'Votre tour a été reporté',
-  postponeLimit: 'Maximum 10 positions',
   cancelConfirmDialog: 'Êtes-vous sûr de vouloir annuler cette réservation ?',
-  cancelSuccess: 'Réservation annulée avec succès',
-  preferredTime: 'Heure préférée',
-  preferredTimeDesc: "Définissez l'heure la plus tôt pour votre tour",
-  fixedTimeEnabled: 'Heure fixe',
-  fixedTimeDesc: "Lorsqu'activé, votre tour ne viendra pas avant l'heure sélectionnée",
-  toggleFixedTime: "Basculer l'heure fixe",
-  fixedTimeOn: "Heure fixe activée - votre tour ne viendra pas avant",
-  fixedTimeOff: 'Heure fixe désactivée - ordre normal de la file',
-  noPreferredTime: 'Aucune heure préférée définie',
-  selectTime: "Sélectionner l'heure",
-  enableFixedTime: "Activer l'heure fixe",
   welcomeToBlasti: 'Bienvenue sur BLASTI !',
 
   // ─── Hardcoded English Fixes ─────
@@ -1295,7 +1267,6 @@ const fr: Record<TranslationKeys, string> = {
   sortByName: 'Trier par nom',
   sortByRating: 'Trier par note',
   upcoming: 'À venir',
-  today: 'Aujourd\'hui',
 
   // ─── Task 7: Empty States & Error Recovery ─────
   tryAgain: 'Réessayer',
@@ -1415,7 +1386,6 @@ const fr: Record<TranslationKeys, string> = {
   viewCounters: 'Voir les guichets',
   counterCount: 'Nombre de guichets',
   staffCount: "Nombre d'employés",
-  currentlyServing: 'En cours de service',
   none: 'Aucun',
 
   // ─── Staff Permissions ──────
@@ -1442,17 +1412,13 @@ const fr: Record<TranslationKeys, string> = {
 
   // ─── No-Show Analytics ──────
   noShowAnalytics: 'Analyse des absences',
-  noShowRate: "Taux d'absence",
   noShowTrend: 'Tendance des absences',
   noShowByService: 'Par service',
   noShowByHour: 'Par heure',
-  peakHours: 'Heures de pointe',
   busiestHours: 'Heures les plus chargées',
   avgWaitByHour: 'Attente moyenne par heure',
-  reservationsCount: 'Réservations',
   noShowCount: 'Absences',
   rate: 'Taux',
-  last7Days: '7 derniers jours',
   last30Days: '30 derniers jours',
   last90Days: '90 derniers jours',
   totalReservations: 'Total réservations',
@@ -1462,8 +1428,6 @@ const fr: Record<TranslationKeys, string> = {
   noShowTrendDesc: "Taux d'absence quotidien sur la période sélectionnée",
   noShowByServiceDesc: "Répartition du taux d'absence par service",
   noShowByHourDesc: "Taux d'absence par heure de la journée",
-  peakHoursDesc: 'Patterns de demande et heures les plus actives',
-  busiestDay: 'Jour le plus chargé',
   busiestHoursDesc: 'Top 3 des heures les plus chargées par volume de réservations',
   avgWaitByHourDesc: 'Temps d\'attente moyen estimé par heure',
   hour: 'Heure',
@@ -1471,21 +1435,17 @@ const fr: Record<TranslationKeys, string> = {
   demand: 'Demande',
 
   // ─── Empty States ──────────────────────────
-  noActiveReservations: 'Aucune réservation active',
   noActiveReservationsDesc: 'Parcourez les agences pour rejoindre une file !',
   noFavorites: 'Aucune agence favorite',
-  noFavoritesDesc: 'Ajoutez des agences aux favoris pour un accès rapide !',
   noHistory: 'Aucune réservation passée',
   noHistoryDesc: 'Commencez à utiliser BLASTI pour voir votre historique.',
   noServicesYet: 'Aucun service configuré',
   noServicesDesc: 'Ajoutez votre premier service pour gérer votre file.',
   noStaffYet: 'Aucun membre du personnel',
   noStaffDesc: 'Ajoutez du personnel pour gérer votre file.',
-  noReviewsYet: 'Aucun avis',
   noReviewsDesc: 'Fournissez un excellent service pour obtenir des avis !',
   noReservationsToday: 'Aucune réservation aujourd\'hui',
   noReservationsTodayDesc: 'Partagez votre code d\'agence pour attirer des clients.',
-  browseAgencies: 'Parcourir les agences',
   addFirstService: 'Ajouter un premier service',
   addFirstStaff: 'Ajouter du personnel',
   quickTip: 'Conseil rapide',
@@ -1494,9 +1454,7 @@ const fr: Record<TranslationKeys, string> = {
   // ─── Staff Permissions ─────────────────────
   permissions: 'Permissions',
   manageQueue: 'Gérer la file',
-  manageServices: 'Gérer les services',
   manageStaff: 'Gérer le personnel',
-  viewAnalytics: 'Voir les analyses',
   manageBranches: 'Gérer les succursales',
   manageWorkingHours: 'Gérer les horaires',
   exportData: 'Exporter les données',
@@ -1528,6 +1486,20 @@ const fr: Record<TranslationKeys, string> = {
   suggestionWaitTime: 'Réduisez les temps d\'attente estimés pour maintenir l\'engagement des clients.',
   suggestionConfirmation: 'Exigez que les clients confirment leur présence à l\'approche de leur tour.',
   avgWaitTrend: 'Tendance du temps d\'attente moyen',
+
+  // ─── Payment Gateway ─────
+  gatewaySettings: 'Passerelle de paiement',
+  gatewaySettingsDesc: 'Configurer les méthodes de paiement et passerelles',
+  ccpEnabled: 'Activer CCP',
+  bankEnabled: 'Activer le virement bancaire',
+  electronicEnabled: 'Activer le portefeuille électronique',
+  ccpAccount: 'Numéro de compte CCP',
+  ccpKey: 'Clé CCP',
+  bankName: 'Nom de la banque',
+  bankAccount: 'Numéro de compte bancaire',
+  bankRib: 'RIB bancaire',
+  ewalletNumber: 'Numéro de portefeuille électronique',
+  paymentSaved: 'Paramètres de paiement enregistrés',
 };
 
 export default fr;

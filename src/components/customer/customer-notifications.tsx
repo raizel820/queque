@@ -78,7 +78,7 @@ function getDateGroup(date: Date): string {
   return 'earlier';
 }
 
-function getDateGroupLabel(group: string, t: (key: string) => string): string {
+function getDateGroupLabel(group: string, t: (key: any) => string): string {
   switch (group) {
     case 'today': return t('today');
     case 'yesterday': return t('yesterday');
@@ -111,7 +111,7 @@ function NotificationCard({
   notif: Notification;
   config: ReturnType<typeof getNotificationConfig>;
   relativeTime: string;
-  t: (key: string) => string;
+  t: (key: any) => string;
   onMarkRead: (id: string) => void;
   onDelete: (id: string) => void;
   actionLoading: string | null;

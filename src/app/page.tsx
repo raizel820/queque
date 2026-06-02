@@ -702,7 +702,7 @@ function AdminSidebar({ open, onClose }: { open: boolean; onClose: () => void })
 }
 
 export default function Home() {
-  const { user, currentView, sidebarOpen, toggleSidebar, setView, setPendingAgencyCode, pendingAgencyCode, onboarded, setOnboarded } = useAppStore();
+  const { user, currentView, sidebarOpen, toggleSidebar, setView, setPendingAgencyCode, pendingAgencyCode, onboarded, setOnboarded, logout, isAuthenticated } = useAppStore();
  const { t, lang } = useLanguage();
   const [globalAnnouncements, setGlobalAnnouncements] = useState<Array<{ id: string; message: string; type: string; createdAt: string }>>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -858,7 +858,7 @@ export default function Home() {
     }
   }, [user?.role, pendingAgencyCode, currentView, setView]);
 
-  const isAuthenticated = !!user;
+  const isUserAuthenticated = !!user;
   const isCustomer = user?.role === 'CUSTOMER';
   const isAgency = user?.role === 'AGENCY_STAFF' || user?.role === 'AGENCY_OWNER';
   const isAdmin = user?.role === 'SUPER_ADMIN';

@@ -162,11 +162,11 @@ export function AgencyCard({
           )}
 
           {/* Rating display */}
-          {agency.reviewCount > 0 && agency.averageRating > 0 && (
+          {((agency.reviewCount ?? 0) > 0) && ((agency.averageRating ?? 0) > 0) && (
             <div className="mb-2">
               <AgencyRatingDisplay
-                averageRating={agency.averageRating}
-                totalCount={agency.reviewCount}
+                averageRating={agency.averageRating ?? 0}
+                totalCount={agency.reviewCount ?? 0}
                 compact
                 size="sm"
               />

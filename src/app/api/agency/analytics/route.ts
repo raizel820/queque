@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     for (const r of completedReservations) {
       const existing = serviceMap.get(r.serviceId);
-      const waitMs = r.calledAt ? r.completedAt.getTime() - r.joinedAt.getTime() : 0;
+      const waitMs = r.calledAt ? r.completedAt!.getTime() - r.joinedAt.getTime() : 0;
       const rating = r.rating ?? 0;
 
       if (existing) {

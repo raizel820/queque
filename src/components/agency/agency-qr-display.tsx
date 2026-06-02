@@ -86,7 +86,7 @@ export function AgencyQrDisplay() {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5">
             <Printer className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('printQr')}</span>
+            <span className="hidden sm:inline">{t('printQr' as any)}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={handleDownload} className="gap-1.5">
             <Download className="h-4 w-4" />
@@ -109,8 +109,8 @@ export function AgencyQrDisplay() {
               <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-3">
                 <QrCode className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-xl font-bold">{t('qrDisplayTitle')}</h1>
-              <p className="text-sm text-emerald-100 mt-1">{t('qrPrintInstructions')}</p>
+              <h1 className="text-xl font-bold">{t('qrDisplayTitle' as any)}</h1>
+              <p className="text-sm text-emerald-100 mt-1">{t('qrPrintInstructions' as any)}</p>
             </div>
 
             {/* QR Code */}
@@ -149,7 +149,7 @@ export function AgencyQrDisplay() {
                     <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tracking-wider">{agencyData.code}</span>
                   </div>
                 )}
-                <p className="text-sm text-muted-foreground mt-3">{t('qrScanToJoin')}</p>
+                <p className="text-sm text-muted-foreground mt-3">{t('qrScanToJoin' as any)}</p>
               </div>
 
               {/* Instructions */}

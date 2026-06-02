@@ -7,7 +7,7 @@ import { validateBody } from '@/lib/validations';
 import { z } from 'zod';
 
 const smsPurchaseSchema = z.object({
-  packId: z.enum(['20', '50', '100'], { errorMap: () => ({ message: 'Invalid pack ID. Allowed: 20, 50, 100' }) }),
+  packId: z.enum(['20', '50', '100'], { message: 'Invalid pack ID. Allowed: 20, 50, 100' }),
 });
 
 const ALLOWED_PACKS: Record<string, { quantity: number; price: number }> = {

@@ -132,7 +132,7 @@ export function OnboardingWizard({ open, user, onComplete, onSkip }: OnboardingP
                       {t('setupAccountDesc')}
                     </p>
                     <p className="text-xs text-muted-foreground mt-2">
-                      @{user.username} · {user.role === 'SUPER_ADMIN' ? t('superAdmin') : user.role === 'AGENCY_OWNER' ? t('agencyOwner') : user.role === 'AGENCY_STAFF' ? t('agencyStaff') : t('customer')}
+                      @{user.username} · {user.role === 'SUPER_ADMIN' ? t('superAdmin') : user.role === 'AGENCY_OWNER' ? t('agencyOwner') : user.role === 'AGENCY_STAFF' ? t('agencyStaff') : t('customer' as any)}
                     </p>
                   </div>
                   {user.role === 'SUPER_ADMIN' && (

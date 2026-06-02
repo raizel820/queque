@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { requireRole, authErrorResponse } from '@/lib/auth-guard'
 import { adminCreateAgencySchema, validateBody } from '@/lib/validations'
-import { enforceRateLimit, AGENCY_LISTING_RATE_LIMIT, RateLimitError, IpBlockedError, recordFailedRequest, recordSuccessfulRequest } from '@/lib/rate-limit'
+import { enforceRateLimit, getClientIp, AGENCY_LISTING_RATE_LIMIT, RateLimitError, IpBlockedError, recordFailedRequest, recordSuccessfulRequest } from '@/lib/rate-limit'
 
 export async function GET(request: NextRequest) {
   try {

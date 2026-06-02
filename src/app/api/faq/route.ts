@@ -4,9 +4,9 @@ import { db } from '@/lib/db';
 // Public endpoint - returns only active FAQs
 export async function GET() {
   try {
-    const faqs = await db.faq.findMany({
+    const faqs = await db.fAQ.findMany({
       where: { isActive: true },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
     });
     return NextResponse.json({ faqs });
   } catch (error) {

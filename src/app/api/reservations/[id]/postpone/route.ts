@@ -47,7 +47,7 @@ export async function POST(
 
     // Verify ownership or agency access
     try {
-      await requireResourceOwnership(request, reservation.userId);
+      await requireResourceOwnership(request, reservation.userId ?? '');
     } catch {
       await requireAgencyAccess(request, reservation.agencyId);
     }
@@ -145,7 +145,7 @@ export async function POST(
     });
 
     // Emit realtime events (fire-and-forget)
-    emitReservationEvent('reservation:updated', reservation.agencyId, reservation.userId, {
+    emitReservationEvent('reservation:updated', reservation.agencyId, reservation.userId ?? undefined, {
       reservationId: id,
       displayNumber: reservation.displayNumber,
       action: 'postponed',

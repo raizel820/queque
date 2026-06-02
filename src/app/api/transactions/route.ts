@@ -7,8 +7,8 @@ import { z } from 'zod'
 const createTransactionSchema = z.object({
   agencyId: z.string().min(1, 'Agency ID is required'),
   amount: z.number().int().positive('Amount must be a positive number'),
-  plan: z.enum(['BASIC', 'PREMIUM'], { errorMap: () => ({ message: 'Invalid plan. Must be BASIC or PREMIUM' }) }),
-  paymentMethod: z.enum(['CCP', 'BANK_TRANSFER', 'E_WALLET', 'CASH'], { errorMap: () => ({ message: 'Invalid payment method' }) }),
+  plan: z.enum(['BASIC', 'PREMIUM'], { message: 'Invalid plan. Must be BASIC or PREMIUM' }),
+  paymentMethod: z.enum(['CCP', 'BANK_TRANSFER', 'E_WALLET', 'CASH'], { message: 'Invalid payment method' }),
   receiptUrl: z.string().optional(),
 })
 

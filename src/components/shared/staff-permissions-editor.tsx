@@ -66,7 +66,7 @@ const PERMISSION_PRESETS: Record<string, Partial<StaffPermissions>> = {
   },
 };
 
-const DEFAULT_PERMISSIONS: StaffPermissions = {
+export const DEFAULT_PERMISSIONS: StaffPermissions = {
   canManageQueue: true,
   canManageServices: false,
   canManageStaff: false,
@@ -180,7 +180,7 @@ export function StaffPermissionsEditor({ permissions, onChange, staffRole }: Sta
                   {item.icon}
                 </div>
                 <span className={`text-sm font-medium ${isActive ? 'text-gray-800' : 'text-gray-500'}`}>
-                  {t(item.labelKey)}
+                  {t(item.labelKey as any)}
                 </span>
               </div>
               <div className={`h-6 w-11 rounded-full relative transition-colors ${

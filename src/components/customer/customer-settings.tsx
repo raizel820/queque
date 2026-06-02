@@ -315,7 +315,7 @@ export function CustomerSettings() {
           <Settings2 className="h-5 w-5 text-emerald-600" />
           {t('settings')}
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{t('customerSettingsDesc')}</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{t('customerSettingsDesc' as any)}</p>
       </motion.div>
 
       {/* Profile Section */}
@@ -392,7 +392,7 @@ export function CustomerSettings() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Info className="h-4 w-4 text-emerald-600" />
-              {t('about')}
+              {t('about' as any)}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">

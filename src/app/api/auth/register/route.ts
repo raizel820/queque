@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
         })
         agencyId = agency.id
         agencyName = agency.name
-        agencyNameAr = agency.nameAr
-        agencyNameFr = agency.nameFr
+        agencyNameAr = agency.nameAr ?? undefined
+        agencyNameFr = agency.nameFr ?? undefined
       }
     }
 

@@ -38,7 +38,7 @@ export function SystemHealthPanel({ stats }: SystemHealthPanelProps) {
           <Badge variant="outline" className="ms-auto text-[10px] font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">99.9%</Badge>
           <div className="flex items-center gap-1 ms-2">
             <Wifi className="h-3.5 w-3.5 text-emerald-500" />
-            <span className="text-[10px] text-emerald-600 dark:text-emerald-400">{t('systemStatusOnline')}</span>
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-400">{t('systemStatusOnline' as any)}</span>
           </div>
         </div>
       </motion.div>

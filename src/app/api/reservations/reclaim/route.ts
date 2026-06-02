@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify ownership (customer can only reclaim their own reservation)
-    await requireResourceOwnership(req, reservation.userId);
+    await requireResourceOwnership(req, reservation.userId ?? '');
 
     // Check if the reservation was skipped for no-show
     // Use safe access since skippedForNoShow may not exist in Prisma Client on all deployments
@@ -58,10 +58,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const userLang = reservation.user?.language || 'ar';
     const agencyName =
-      reservation.user.language === 'ar'
+      userLang === 'ar'
         ? reservation.agency.nameAr || reservation.agency.name
-        : reservation.user.language === 'fr'
+        : userLang === 'fr'
           ? reservation.agency.nameFr || reservation.agency.name
           : reservation.agency.name;
 
@@ -128,7 +129,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Emit realtime events (fire-and-forget)
-    emitReservationEvent('reservation:updated', reservation.agencyId, reservation.userId, {
+    emitReservationEvent('reservation:updated', reservation.agencyId, reservation.userId ?? undefined, {
       reservationId: reservation.id,
       displayNumber: reservation.displayNumber,
       action: 'reclaimed',

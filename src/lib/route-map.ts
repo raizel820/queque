@@ -21,6 +21,7 @@ export const viewToUrl: Record<ViewName, string> = {
   'agency-profile': '/agency/profile',
   'agency-reviews': '/agency/reviews',
   'agency-subscription': '/agency/subscription',
+  'agency-branches': '/agency/branches',
   'admin-dashboard': '/admin',
   'admin-transactions': '/admin/transactions',
   'admin-agencies': '/admin/agencies',
@@ -28,6 +29,7 @@ export const viewToUrl: Record<ViewName, string> = {
   'admin-users': '/admin/users',
   'admin-analytics': '/admin/analytics',
   'admin-settings': '/admin/settings',
+  'kiosk': '/kiosk',
 };
 
 /**

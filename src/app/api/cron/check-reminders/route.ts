@@ -63,6 +63,9 @@ export async function GET(request: NextRequest) {
     let remindersSent = 0;
 
     for (const reservation of candidates) {
+      // Skip if no user (shouldn't happen due to Prisma filter, but TS needs the guard)
+      if (!reservation.user) continue;
+
       // Calculate people ahead: WAITING reservations for same agency joined before this one
       const peopleAhead = await db.reservation.count({
         where: {
@@ -96,15 +99,17 @@ export async function GET(request: NextRequest) {
             },
           });
 
-          // Create in-app notification
-          await tx.notification.create({
-            data: {
-              userId: reservation.userId,
-              type: 'TURN_APPROACHING',
-              title: 'Your Turn is Approaching',
-              message: `Your ticket ${reservation.displayNumber} at ${agencyName} is coming up soon. ${peopleAhead === 0 ? 'You are next!' : `Approximately ${peopleAhead} ahead of you.}`}`,
-            },
-          });
+          // Create in-app notification (only for registered users)
+          if (reservation.userId) {
+            await tx.notification.create({
+              data: {
+                userId: reservation.userId,
+                type: 'TURN_APPROACHING',
+                title: 'Your Turn is Approaching',
+                message: `Your ticket ${reservation.displayNumber} at ${agencyName} is coming up soon. ${peopleAhead === 0 ? 'You are next!' : `Approximately ${peopleAhead} ahead of you.}`}`,
+              },
+            });
+          }
         });
 
         remindersSent++;

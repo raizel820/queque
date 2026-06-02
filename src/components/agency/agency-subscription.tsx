@@ -1147,7 +1147,7 @@ export function AgencySubscription() {
                     { key: t('maxServices'), values: [PLAN_COMPARISON.maxServices.basic, PLAN_COMPARISON.maxServices.premium] },
                     { key: t('maxStaff'), values: [PLAN_COMPARISON.maxStaff.basic, PLAN_COMPARISON.maxStaff.premium] },
                     { key: t('smsCreditsMonthly'), values: [PLAN_COMPARISON.smsCreditsMonthly.basic, PLAN_COMPARISON.smsCreditsMonthly.premium] },
-                    { key: t('analytics'), values: [t('basicPlan').toLowerCase(), t('full')] },
+                    { key: t('analytics'), values: [t('basicPlan').toLowerCase(), t('full' as any)] },
                     { key: t('apiAccess'), values: [false, false] },
                     { key: t('prioritySupport'), values: [false, false] },
                     { key: t('customBranding'), values: [false, false] },

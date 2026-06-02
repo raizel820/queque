@@ -98,15 +98,17 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create notification for the user
-    await db.notification.create({
-      data: {
-        userId: nextReservation.userId,
-        type: 'QUEUE_CALLED',
-        title: 'Your Turn!',
-        message: `Please proceed to ${nextReservation.agency.name} - ${nextReservation.service.name}. Your ticket: ${nextReservation.displayNumber}`,
-      },
-    })
+    // Create notification for the user (only registered users, not walk-ins)
+    if (nextReservation.userId) {
+      await db.notification.create({
+        data: {
+          userId: nextReservation.userId,
+          type: 'QUEUE_CALLED',
+          title: 'Your Turn!',
+          message: `Please proceed to ${nextReservation.agency.name} - ${nextReservation.service.name}. Your ticket: ${nextReservation.displayNumber}`,
+        },
+      })
+    }
 
     // Create audit log — use session user.id as calledBy
     await db.auditLog.create({
@@ -129,13 +131,15 @@ export async function POST(request: NextRequest) {
       reservationId: nextReservation.id,
       displayNumber: nextReservation.displayNumber,
       serviceId,
-      customerName: nextReservation.user.fullName,
+      customerName: nextReservation.user?.fullName || '',
     })
-    emitNotificationEvent('notification:your-turn', nextReservation.userId, {
-      ticketNumber: nextReservation.displayNumber,
-      agencyName: nextReservation.agency.name,
-      serviceName: nextReservation.service.name,
-    })
+    if (nextReservation.userId) {
+      emitNotificationEvent('notification:your-turn', nextReservation.userId, {
+        ticketNumber: nextReservation.displayNumber,
+        agencyName: nextReservation.agency.name,
+        serviceName: nextReservation.service.name,
+      })
+    }
     emitKioskEvent(agencyId, {
       action: 'call-next',
       displayNumber: nextReservation.displayNumber,

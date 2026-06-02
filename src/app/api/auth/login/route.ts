@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     // Agency tab: accepts AGENCY_OWNER, AGENCY_STAFF, and SUPER_ADMIN roles
     // SUPER_ADMIN can login from either tab
     const agencyRoles = ['AGENCY_OWNER', 'AGENCY_STAFF'];
-    const isAgencyTab = agencyRoles.includes(expectedRole);
+    const isAgencyTab = !!expectedRole && agencyRoles.includes(expectedRole);
     const isCustomerTab = expectedRole === 'CUSTOMER';
 
     if (expectedRole) {
