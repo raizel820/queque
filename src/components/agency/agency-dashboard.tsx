@@ -324,11 +324,12 @@ export function AgencyDashboard() {
     }
     setFetchError(false);
     try {
+      const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
       const [statsRes, listRes, servicesRes, activityRes] = await Promise.all([
-        fetch(`/api/agency/stats?agencyId=${encodeURIComponent(agencyId)}`),
-        fetch(`/api/agency/queue?agencyId=${encodeURIComponent(agencyId)}&status=WAITING,CALLED`),
-        fetch(`/api/agency/services?agencyId=${encodeURIComponent(agencyId)}`),
-        fetch(`/api/agency/activity?agencyId=${encodeURIComponent(agencyId)}`),
+        fetchWithRetry(`/api/agency/stats?agencyId=${encodeURIComponent(agencyId)}`),
+        fetchWithRetry(`/api/agency/queue?agencyId=${encodeURIComponent(agencyId)}&status=WAITING,CALLED`),
+        fetchWithRetry(`/api/agency/services?agencyId=${encodeURIComponent(agencyId)}`),
+        fetchWithRetry(`/api/agency/activity?agencyId=${encodeURIComponent(agencyId)}`),
       ]);
       // Check if all failed (network error would throw, so partial failures are ok)
       if (!statsRes.ok && !listRes.ok && !servicesRes.ok && !activityRes.ok) {

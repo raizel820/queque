@@ -822,18 +822,7 @@ export default function Home() {
     } else {
       updateDocumentDirection('ar');
     }
-
-    // Validate persisted session — if user exists in store but session is expired, clear it
-    if (isAuthenticated && user) {
-      fetch('/api/auth/session').then(res => {
-        if (!res.ok || res.status === 401) {
-          // Session expired — clear persisted state
-          logout();
-        }
-      }).catch(() => {
-        // Network error — don't clear (might be offline)
-      });
-    }
+    // Session validation is handled by AuthProvider — no need to duplicate here
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle deep links: ?code=CLINIC01, ?kiosk=true&code=AGENCY_CODE, ?mode=kiosk

@@ -46,8 +46,7 @@ export async function PATCH(request: NextRequest) {
     const validation = validateBody(updateProfileSchema, body);
     if (validation.error) return validation.error;
 
-    const { phoneNumber, language, avatarUrl, fullName } = validation.data;
-    const { notificationPreferences, reminderMinutes, smsNotificationsEnabled } = body;
+    const { phoneNumber, language, avatarUrl, fullName, notificationPreferences, reminderMinutes, smsNotificationsEnabled } = validation.data;
 
     const updateData: Record<string, unknown> = {};
     if (phoneNumber !== undefined) {

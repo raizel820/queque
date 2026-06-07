@@ -43,12 +43,15 @@ export async function PUT(
       )
     }
 
-    // Verify ownership or agency access
-    try {
-      await requireResourceOwnership(request, reservation.userId ?? '')
-    } catch {
-      // If not the owner, check agency access
+    // Verify ownership or agency access (walk-in reservations have no userId)
+    if (!reservation.userId) {
       await requireAgencyAccess(request, reservation.agencyId)
+    } else {
+      try {
+        await requireResourceOwnership(request, reservation.userId)
+      } catch {
+        await requireAgencyAccess(request, reservation.agencyId)
+      }
     }
 
     // Validate transition

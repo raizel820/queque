@@ -105,7 +105,8 @@ export function AdminAnalytics() {
     setLoading(true);
     setLoadError(false);
     try {
-      const res = await fetch('/api/admin/analytics');
+      const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
+      const res = await fetchWithRetry('/api/admin/analytics');
       if (res.ok) {
         const json = await res.json();
         setData(json);

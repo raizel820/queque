@@ -176,7 +176,8 @@ export function CustomerHome() {
     setLoading(true);
     setFetchError(false);
     try {
-      const res = await fetch('/api/agencies');
+      const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
+      const res = await fetchWithRetry('/api/agencies');
       if (res.ok) {
         const data = await res.json();
         setAgencies(data.agencies ?? []);
@@ -270,7 +271,8 @@ export function CustomerHome() {
   const fetchAgencyDetail = async (code: string) => {
     setLoadingDetail(true);
     try {
-      const res = await fetch(`/api/agencies/code/${encodeURIComponent(code)}`);
+      const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
+      const res = await fetchWithRetry(`/api/agencies/code/${encodeURIComponent(code)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.agency) {

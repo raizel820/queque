@@ -82,7 +82,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // All other routes require a valid JWT token
-  const secret = process.env.NEXTAUTH_SECRET || 'dev-only-secret-change-in-production'
+  const secret = process.env.NEXTAUTH_SECRET || 'blast1-d3v-s3cr3t-k3y-f0r-d3v3l0pm3nt-0nly'
 
   const token = await getToken({ req: request, secret })
 

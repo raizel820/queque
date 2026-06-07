@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireResourceOwnership, authErrorResponse } from '@/lib/auth-guard';
+import { requireResourceOwnership, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 import { validateBody, rateReservationSchema } from '@/lib/validations';
 
 export async function POST(
@@ -29,8 +29,16 @@ export async function POST(
       return NextResponse.json({ error: 'Can only rate completed reservations' }, { status: 400 });
     }
 
-    // Verify user owns the reservation (strictly, no agency override for rating)
-    await requireResourceOwnership(request, reservation.userId ?? '');
+    // Verify ownership or agency access (walk-in reservations have no userId)
+    if (!reservation.userId) {
+      await requireAgencyAccess(request, reservation.agencyId);
+    } else {
+      try {
+        await requireResourceOwnership(request, reservation.userId);
+      } catch {
+        await requireAgencyAccess(request, reservation.agencyId);
+      }
+    }
 
     // Check not already rated
     if (reservation.rating) {

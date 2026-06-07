@@ -104,7 +104,8 @@ export function CustomerHistory() {
     setLoading(true);
     setFetchError(false);
     try {
-      const res = await fetch(`/api/reservations/history?userId=${user.id}`);
+      const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
+      const res = await fetchWithRetry(`/api/reservations/history?userId=${user.id}`);
       if (res.ok) {
         const data = await res.json();
         const list = (data.reservations ?? []).map((r: Record<string, unknown>) => {

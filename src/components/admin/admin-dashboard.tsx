@@ -569,7 +569,8 @@ export function AdminDashboard() {
     setLoading(true);
     setFetchError(false);
     try {
-      const res = await fetch('/api/admin/dashboard');
+      const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
+      const res = await fetchWithRetry('/api/admin/dashboard');
       if (res.ok) {
         const data = await res.json();
         setStats(data.stats ?? null);

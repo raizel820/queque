@@ -121,6 +121,7 @@ export function AdminAuditLogs() {
     if (!isPoll) setLoading(true);
     setLoadError(false);
     try {
+      const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
       const params = new URLSearchParams();
       if (actionFilter !== 'ALL') params.set('action', actionFilter);
       if (entityFilter !== 'ALL') params.set('entityType', entityFilter);
@@ -131,7 +132,7 @@ export function AdminAuditLogs() {
       params.set('limit', String(PAGE_SIZE));
       params.set('offset', String((page - 1) * PAGE_SIZE));
 
-      const res = await fetch(`/api/admin/audit-logs?${params.toString()}`);
+      const res = await fetchWithRetry(`/api/admin/audit-logs?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setLogs(data.auditLogs ?? []);

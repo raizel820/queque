@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
+import { requireAuth, requireAgencyAccess, resolveUserAgencyId, authErrorResponse } from '@/lib/auth-guard';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const agencyId = searchParams.get('agencyId');
+    let agencyId = searchParams.get('agencyId');
 
+    // Fall back to session user's agencyId if not provided
     if (!agencyId) {
-      return NextResponse.json(
-        { success: false, error: 'agencyId is required' },
-        { status: 400 }
-      );
+      const user = await requireAuth(request);
+      agencyId = await resolveUserAgencyId(user);
+      if (!agencyId) {
+        return NextResponse.json(
+          { success: false, error: 'agencyId is required' },
+          { status: 400 }
+        );
+      }
     }
 
     await requireAgencyAccess(request, agencyId);

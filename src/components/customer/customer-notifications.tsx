@@ -244,7 +244,8 @@ export function CustomerNotifications() {
     if (showRefresh) setRefreshing(true);
     setFetchError(false);
     try {
-      const res = await fetch(`/api/notifications?userId=${user.id}`);
+      const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
+      const res = await fetchWithRetry(`/api/notifications?userId=${user.id}`);
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.notifications ?? []);

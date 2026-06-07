@@ -65,10 +65,9 @@ export async function GET(
         activeQueueCount: agency._count.reservations,
       },
     })
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Internal server error'
+  } catch (_error: unknown) {
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     )
   }

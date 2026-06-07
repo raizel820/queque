@@ -36,6 +36,9 @@ export const updateProfileSchema = z.object({
   phoneNumber: z.string().optional(),
   language: z.enum(['en', 'ar', 'fr']).optional(),
   avatarUrl: z.string().url().optional().or(z.literal('')),
+  notificationPreferences: z.record(z.string(), z.boolean()).optional(),
+  reminderMinutes: z.number().int().min(1).max(1440).optional(),
+  smsNotificationsEnabled: z.boolean().optional(),
 })
 
 export const updatePreferencesSchema = z.object({
@@ -49,8 +52,11 @@ export const updatePreferencesSchema = z.object({
 
 export const createReservationSchema = z.object({
   agencyId: z.string().min(1, 'Agency ID is required'),
-  serviceId: z.string().min(1, 'Service ID is required'),
+  serviceId: z.string().optional(),
   preferredTime: z.string().optional(),
+  reservedDate: z.string().optional(),
+  fixedTimeEnabled: z.boolean().optional(),
+  userId: z.string().optional(),
 })
 
 export const updateReservationStatusSchema = z.object({

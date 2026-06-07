@@ -45,11 +45,15 @@ export async function POST(
       );
     }
 
-    // Verify ownership or agency access
-    try {
-      await requireResourceOwnership(request, reservation.userId ?? '');
-    } catch {
+    // Verify ownership or agency access (walk-in reservations have no userId)
+    if (!reservation.userId) {
       await requireAgencyAccess(request, reservation.agencyId);
+    } else {
+      try {
+        await requireResourceOwnership(request, reservation.userId);
+      } catch {
+        await requireAgencyAccess(request, reservation.agencyId);
+      }
     }
 
     // Find reservations with higher queueNumbers in the same agency to swap with

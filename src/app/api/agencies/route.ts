@@ -118,16 +118,15 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: unknown) {
     if (error instanceof RateLimitError || error instanceof IpBlockedError) {
-      recordFailedRequest(enforceRateLimit.length > 0 ? getClientIp(request) : 'unknown')
+      recordFailedRequest(getClientIp(request))
       return NextResponse.json(
         { success: false, error: error.message, retryAfter: (error as RateLimitError | IpBlockedError).retryAfter },
         { status: 429, headers: { 'Retry-After': String((error as RateLimitError | IpBlockedError).retryAfter) } }
       )
     }
     console.error('[AGENCIES] Error fetching agencies:', error);
-    const message = error instanceof Error ? error.message : 'Internal server error'
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     )
   }

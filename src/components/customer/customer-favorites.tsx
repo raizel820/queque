@@ -70,7 +70,8 @@ export function CustomerFavorites() {
     setLoading(true);
     setFetchError(false);
     try {
-      const res = await fetch(`/api/favorites?userId=${user.id}`);
+      const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
+      const res = await fetchWithRetry(`/api/favorites?userId=${user.id}`);
       if (res.ok) {
         const data = await res.json();
         setFavorites(data.favorites ?? []);

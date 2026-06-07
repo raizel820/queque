@@ -132,6 +132,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/',
   },
-  secret: process.env.NEXTAUTH_SECRET || 'dev-only-secret-change-in-production',
+  secret: process.env.NEXTAUTH_SECRET || 'blast1-d3v-s3cr3t-k3y-f0r-d3v3l0pm3nt-0nly',
   debug: process.env.NODE_ENV === 'development',
 };

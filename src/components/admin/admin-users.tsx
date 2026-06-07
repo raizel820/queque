@@ -86,6 +86,7 @@ export function AdminUsers() {
     }
     setLoadError(false);
     try {
+      const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
       const params = new URLSearchParams();
       if (debouncedSearch) params.set('search', debouncedSearch);
       if (roleFilter) params.set('role', roleFilter);
@@ -93,7 +94,7 @@ export function AdminUsers() {
       params.set('page', String(targetPage));
       params.set('limit', String(PAGE_SIZE));
 
-      const res = await fetch(`/api/admin/users?${params.toString()}`);
+      const res = await fetchWithRetry(`/api/admin/users?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (loadMore) {

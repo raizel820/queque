@@ -22,11 +22,15 @@ export async function GET(
       return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
     }
 
-    // Verify ownership or agency access
-    try {
-      await requireResourceOwnership(request, reservation.userId ?? '');
-    } catch {
+    // Verify ownership or agency access (walk-in reservations have no userId)
+    if (!reservation.userId) {
       await requireAgencyAccess(request, reservation.agencyId);
+    } else {
+      try {
+        await requireResourceOwnership(request, reservation.userId);
+      } catch {
+        await requireAgencyAccess(request, reservation.agencyId);
+      }
     }
 
     // Count people ahead (WAITING with earlier joinedAt)
@@ -69,7 +73,7 @@ export async function GET(
       serviceNameFr: reservation.service.nameFr,
       position,
       estimatedWait,
-      queueUrl: typeof window !== 'undefined' ? window.location.origin : '',
+      queueUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://blasti.dz',
     });
   } catch (error) {
     return authErrorResponse(error);
@@ -96,8 +100,16 @@ export async function POST(
       return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
     }
 
-    // Verify ownership
-    await requireResourceOwnership(request, reservation.userId ?? '');
+    // Verify ownership or agency access (walk-in reservations have no userId)
+    if (!reservation.userId) {
+      await requireAgencyAccess(request, reservation.agencyId);
+    } else {
+      try {
+        await requireResourceOwnership(request, reservation.userId);
+      } catch {
+        await requireAgencyAccess(request, reservation.agencyId);
+      }
+    }
 
     // Count people ahead (WAITING with earlier joinedAt)
     const allAhead = await db.reservation.findMany({
@@ -135,7 +147,7 @@ export async function POST(
       serviceNameFr: reservation.service.nameFr,
       position,
       estimatedWait,
-      queueUrl: typeof window !== 'undefined' ? window.location.origin : '',
+      queueUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://blasti.dz',
     });
   } catch (error) {
     return authErrorResponse(error);

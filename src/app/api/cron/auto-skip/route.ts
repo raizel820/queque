@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
         // Create audit log
         await tx.auditLog.create({
           data: {
-            userId: reservation.userId,
+            userId: reservation.userId || undefined,
             action: 'AUTO_SKIP_NO_SHOW',
             entityType: 'RESERVATION',
             entityId: reservation.id,

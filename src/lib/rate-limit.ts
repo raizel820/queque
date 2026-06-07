@@ -114,6 +114,8 @@ export function checkRateLimit(identifier: string, options: RateLimitOptions): n
 /**
  * Gets the client IP from a NextRequest.
  * Handles X-Forwarded-For and other proxy headers.
+ * Falls back to a random-ish per-request identifier when IP is not available
+ * to avoid all anonymous users sharing the same "unknown" rate-limit bucket.
  */
 export function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for')
@@ -123,6 +125,17 @@ export function getClientIp(request: NextRequest): string {
   const realIp = request.headers.get('x-real-ip')
   if (realIp) {
     return realIp.trim()
+  }
+  // Use user-agent as a secondary identifier to avoid all anonymous requests
+  // sharing the same bucket, which would cause false rate-limiting
+  const ua = request.headers.get('user-agent') || ''
+  if (ua) {
+    // Simple hash of user-agent for a semi-unique identifier
+    let hash = 0
+    for (let i = 0; i < ua.length; i++) {
+      hash = ((hash << 5) - hash + ua.charCodeAt(i)) | 0
+    }
+    return `ua-${Math.abs(hash).toString(36)}`
   }
   return 'unknown'
 }
@@ -306,17 +319,17 @@ export const WALK_IN_RATE_LIMIT: RateLimitOptions = {
   prefix: 'walkin',
 }
 
-/** Public agency listing: 30 requests per minute per IP */
+/** Public agency listing: 60 requests per minute per IP */
 export const AGENCY_LISTING_RATE_LIMIT: RateLimitOptions = {
   windowMs: 60 * 1000,
-  maxRequests: 30,
+  maxRequests: 60,
   prefix: 'agencies',
 }
 
-/** General public routes: 20 requests per minute per IP */
+/** General public routes: 60 requests per minute per IP */
 export const PUBLIC_RATE_LIMIT: RateLimitOptions = {
   windowMs: 60 * 1000,
-  maxRequests: 20,
+  maxRequests: 60,
   prefix: 'public',
 }
 

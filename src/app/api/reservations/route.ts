@@ -14,8 +14,7 @@ export async function POST(request: NextRequest) {
     const validation = validateBody(createReservationSchema, body)
     if (validation.error) return validation.error
 
-    const { agencyId, serviceId, preferredTime } = validation.data
-    const { reservedDate, fixedTimeEnabled } = body
+    const { agencyId, serviceId, preferredTime, reservedDate, fixedTimeEnabled } = validation.data
 
     // Validate date if provided
     let targetDate: string | null = null

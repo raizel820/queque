@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireAuth, requireResourceOwnership, authErrorResponse } from '@/lib/auth-guard';
+import { requireAuth, requireResourceOwnership, requireAgencyAccess, authErrorResponse } from '@/lib/auth-guard';
 import { validateBody } from '@/lib/validations';
 import { z } from 'zod';
 import { emitReservationEvent, emitQueueEvent } from '@/lib/realtime-emit';
@@ -45,8 +45,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify ownership (customer can only reclaim their own reservation)
-    await requireResourceOwnership(req, reservation.userId ?? '');
+    // Verify ownership or agency access (walk-in reservations have no userId)
+    if (!reservation.userId) {
+      await requireAgencyAccess(req, reservation.agencyId);
+    } else {
+      try {
+        await requireResourceOwnership(req, reservation.userId);
+      } catch {
+        await requireAgencyAccess(req, reservation.agencyId);
+      }
+    }
 
     // Check if the reservation was skipped for no-show
     // Use safe access since skippedForNoShow may not exist in Prisma Client on all deployments

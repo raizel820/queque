@@ -6,7 +6,7 @@ const SESSION_TOKEN_NAME = 'next-auth.session-token'
 const SECURE_SESSION_TOKEN_NAME = '__Secure-next-auth.session-token'
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60 // 30 days, matches auth.ts
 
-const FALLBACK_SECRET = 'dev-only-secret-change-in-production'
+const FALLBACK_SECRET = 'blast1-d3v-s3cr3t-k3y-f0r-d3v3l0pm3nt-0nly'
 
 /**
  * Gets the NEXTAUTH_SECRET, falling back to a dev-only secret if not set.

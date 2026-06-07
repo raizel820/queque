@@ -16,11 +16,16 @@ export async function POST(
     }
 
     // Verify ownership or agency access
-    try {
-      await requireResourceOwnership(request, reservation.userId ?? '');
-    } catch {
-      // If not the owner, check agency access
+    if (!reservation.userId) {
+      // Walk-in: only agency staff or SUPER_ADMIN can modify
       await requireAgencyAccess(request, reservation.agencyId);
+    } else {
+      try {
+        await requireResourceOwnership(request, reservation.userId);
+      } catch {
+        // If not the owner, check agency access
+        await requireAgencyAccess(request, reservation.agencyId);
+      }
     }
 
     if (reservation.status !== 'WAITING') {
@@ -50,7 +55,7 @@ export async function POST(
 
       await tx.auditLog.create({
         data: {
-          userId: reservation.userId,
+          userId: reservation.userId || undefined,
           action: 'RESERVATION_CANCEL',
           entityType: 'RESERVATION',
           entityId: id,
