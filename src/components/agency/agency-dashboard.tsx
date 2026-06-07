@@ -56,6 +56,7 @@ import {
   Eye,
   Lock,
   AlertCircle,
+  Building2,
 } from 'lucide-react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -316,7 +317,11 @@ export function AgencyDashboard() {
   }, [agencyCode]);
 
   const fetchData = useCallback(async () => {
-    if (!agencyId) return;
+    if (!agencyId) {
+      // No agency assigned — show setup prompt instead of error
+      setLoading(false);
+      return;
+    }
     setFetchError(false);
     try {
       const [statsRes, listRes, servicesRes, activityRes] = await Promise.all([
@@ -731,6 +736,21 @@ export function AgencyDashboard() {
     return (
       <div className="p-4 lg:p-5">
         <ErrorState onRetry={() => { setLoading(true); setFetchError(false); fetchData(); }} />
+      </div>
+    );
+  }
+
+  // Show setup prompt if user has no agency assigned
+  if (!agencyId && !loading) {
+    return (
+      <div className="p-4 lg:p-5">
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="h-20 w-20 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
+            <Building2 className="h-10 w-10 text-amber-600 dark:text-amber-400" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">{t('noAgencyAssigned') || 'No Agency Assigned'}</h3>
+          <p className="text-sm text-muted-foreground max-w-sm">{t('noAgencyAssignedDesc') || 'Your account is not linked to any agency yet. Please contact the platform administrator to get your agency set up.'}</p>
+        </div>
       </div>
     );
   }

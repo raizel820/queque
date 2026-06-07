@@ -620,6 +620,8 @@ const en: Record<TranslationKeys, string> = {
   phone: "Phone",
   agencyCol: "Agency",
   noAgency: "No agency",
+  noAgencyAssigned: "No Agency Assigned",
+  noAgencyAssignedDesc: "Your account is not linked to any agency yet. Please contact the platform administrator to get your agency set up.",
   suspendUserFull: "Suspend User",
   reactivateUserFull: "Reactivate User",
   roleFilter: "Role Filter",

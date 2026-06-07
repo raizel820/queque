@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { requireAdmin, authErrorResponse } from '@/lib/auth-guard';
+import { requireAuth, requireAdmin, authErrorResponse } from '@/lib/auth-guard';
 import { validateBody } from '@/lib/validations';
 import { z } from 'zod';
 
@@ -9,10 +9,10 @@ const announcementSchema = z.object({
   type: z.enum(['INFO', 'WARNING', 'URGENT']).optional().default('INFO'),
 });
 
-// GET - List global announcements
+// GET - List global announcements (any authenticated user can read; admin-only write)
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin(request);
+    await requireAuth(request);
 
     const announcements = await db.globalAnnouncement.findMany({
       orderBy: { createdAt: 'desc' },

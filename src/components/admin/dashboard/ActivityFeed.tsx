@@ -9,8 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { type ActivityItem } from './types';
-// @ts-expect-error - types.tsx has 'use client' directive needed for SSR compat
-import { formatRelativeTime, getActivityColor, getInitials } from './types.tsx';
+import { formatRelativeTime, getActivityColor, getInitials } from './utils';
 
 interface ActivityFeedProps {
   activities: ActivityItem[];

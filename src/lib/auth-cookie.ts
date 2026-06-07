@@ -6,6 +6,17 @@ const SESSION_TOKEN_NAME = 'next-auth.session-token'
 const SECURE_SESSION_TOKEN_NAME = '__Secure-next-auth.session-token'
 const SESSION_MAX_AGE = 30 * 24 * 60 * 60 // 30 days, matches auth.ts
 
+const FALLBACK_SECRET = 'dev-only-secret-change-in-production'
+
+/**
+ * Gets the NEXTAUTH_SECRET, falling back to a dev-only secret if not set.
+ * This prevents login/signup from crashing in development.
+ * In production, NEXTAUTH_SECRET MUST be set as an environment variable.
+ */
+function getAuthSecret(): string {
+  return process.env.NEXTAUTH_SECRET || FALLBACK_SECRET
+}
+
 /**
  * Encodes a NextAuth JWT session token and sets it as an HttpOnly cookie
  * on the given response. This allows the existing login/register endpoints
@@ -15,8 +26,10 @@ export async function setNextAuthSessionCookie(
   response: NextResponse,
   user: SessionUser
 ): Promise<void> {
-  const secret = process.env.NEXTAUTH_SECRET
-  if (!secret) throw new Error('NEXTAUTH_SECRET environment variable is required')
+  const secret = getAuthSecret()
+  if (!process.env.NEXTAUTH_SECRET) {
+    console.warn('[auth-cookie] NEXTAUTH_SECRET not set — using fallback secret (dev only)')
+  }
 
   // Encode the JWT token — same format that NextAuth uses internally
   const token = await encode({

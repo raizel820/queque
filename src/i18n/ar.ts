@@ -615,6 +615,8 @@ const ar = {
   phone: 'الهاتف',
   agencyCol: 'المؤسسة',
   noAgency: 'لا توجد مؤسسة',
+  noAgencyAssigned: 'لا توجد مؤسسة مرتبطة',
+  noAgencyAssignedDesc: 'حسابك غير مرتبط بأي مؤسسة بعد. يرجى التواصل مع مسؤول المنصة لإعداد مؤسستك.',
   suspendUserFull: 'تعليق المستخدم',
   reactivateUserFull: 'إعادة تفعيل المستخدم',
   roleFilter: 'تصفية حسب الدور',

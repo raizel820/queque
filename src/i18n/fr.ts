@@ -620,6 +620,8 @@ const fr: Record<TranslationKeys, string> = {
   phone: "Téléphone",
   agencyCol: "Établissement",
   noAgency: "Aucun établissement",
+  noAgencyAssigned: "Aucun établissement attribué",
+  noAgencyAssignedDesc: "Votre compte n'est lié à aucun établissement. Veuillez contacter l'administrateur de la plateforme pour configurer votre établissement.",
   suspendUserFull: "Suspendre l'utilisateur",
   reactivateUserFull: "Réactiver l'utilisateur",
   roleFilter: "Filtrer par rôle",

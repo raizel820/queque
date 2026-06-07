@@ -467,7 +467,7 @@ export function CustomerHome() {
     if (!user?.id) return;
     const fetchActiveReservations = async () => {
       try {
-        const res = await fetch(`/api/reservations?userId=${user.id}&status=WAITING`);
+        const res = await fetch(`/api/reservations/active?userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
           const reservations = (data.reservations ?? []).slice(0, 2);

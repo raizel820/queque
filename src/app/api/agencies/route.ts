@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { requireRole, authErrorResponse } from '@/lib/auth-guard'
 import { adminCreateAgencySchema, validateBody } from '@/lib/validations'
@@ -69,8 +70,8 @@ export async function GET(request: NextRequest) {
           SELECT agencyId, 
                  ROUND(AVG(CAST(rating AS REAL)) * 10) / 10 as avgRating,
                  COUNT(*) as reviewCount
-          FROM reviews 
-          WHERE agencyId IN (${agencyIds.join(',')})
+          FROM Review 
+          WHERE agencyId IN (${Prisma.join(agencyIds)})
           GROUP BY agencyId
         `
       : []

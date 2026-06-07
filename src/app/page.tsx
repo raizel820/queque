@@ -1,52 +1,52 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useAppStore, updateDocumentDirection } from '@/store/use-app-store';
 import { useLanguage } from '@/hooks/use-language';
 import { isRTL, type Language } from '@/i18n';
 import { getProxiedUrl } from '@/lib/utils';
 
-// Auth Views
-import { LandingPage } from '@/components/auth/landing-page';
-import { LoginForm } from '@/components/auth/login-form';
-import { RegisterForm } from '@/components/auth/register-form';
+// Auth Views — lazy loaded to reduce initial compilation footprint
+const LandingPage = lazy(() => import('@/components/auth/landing-page').then(m => ({ default: m.LandingPage })));
+const LoginForm = lazy(() => import('@/components/auth/login-form').then(m => ({ default: m.LoginForm })));
+const RegisterForm = lazy(() => import('@/components/auth/register-form').then(m => ({ default: m.RegisterForm })));
 
 // Customer Views
-import { CustomerHome } from '@/components/customer/customer-home';
-import { CustomerQueue } from '@/components/customer/customer-queue';
-import { CustomerHistory } from '@/components/customer/customer-history';
-import { CustomerProfile } from '@/components/customer/customer-profile';
-import { CustomerNotifications } from '@/components/customer/customer-notifications';
-import { CustomerFavorites } from '@/components/customer/customer-favorites';
-import { CustomerSettings } from '@/components/customer/customer-settings';
+const CustomerHome = lazy(() => import('@/components/customer/customer-home').then(m => ({ default: m.CustomerHome })));
+const CustomerQueue = lazy(() => import('@/components/customer/customer-queue').then(m => ({ default: m.CustomerQueue })));
+const CustomerHistory = lazy(() => import('@/components/customer/customer-history').then(m => ({ default: m.CustomerHistory })));
+const CustomerProfile = lazy(() => import('@/components/customer/customer-profile').then(m => ({ default: m.CustomerProfile })));
+const CustomerNotifications = lazy(() => import('@/components/customer/customer-notifications').then(m => ({ default: m.CustomerNotifications })));
+const CustomerFavorites = lazy(() => import('@/components/customer/customer-favorites').then(m => ({ default: m.CustomerFavorites })));
+const CustomerSettings = lazy(() => import('@/components/customer/customer-settings').then(m => ({ default: m.CustomerSettings })));
 
 // Agency Views
-import { AgencyDashboard } from '@/components/agency/agency-dashboard';
-import { AgencySettings } from '@/components/agency/agency-settings';
-import { AgencyProfile } from '@/components/agency/agency-profile';
-import { AgencySubscription } from '@/components/agency/agency-subscription';
-import { AgencyReviews } from '@/components/agency/agency-reviews';
-import { AgencyEmployees } from '@/components/agency/agency-employees';
-import { AgencyBranches } from '@/components/agency/agency-branches';
+const AgencyDashboard = lazy(() => import('@/components/agency/agency-dashboard').then(m => ({ default: m.AgencyDashboard })));
+const AgencySettings = lazy(() => import('@/components/agency/agency-settings').then(m => ({ default: m.AgencySettings })));
+const AgencyProfile = lazy(() => import('@/components/agency/agency-profile').then(m => ({ default: m.AgencyProfile })));
+const AgencySubscription = lazy(() => import('@/components/agency/agency-subscription').then(m => ({ default: m.AgencySubscription })));
+const AgencyReviews = lazy(() => import('@/components/agency/agency-reviews').then(m => ({ default: m.AgencyReviews })));
+const AgencyEmployees = lazy(() => import('@/components/agency/agency-employees').then(m => ({ default: m.AgencyEmployees })));
+const AgencyBranches = lazy(() => import('@/components/agency/agency-branches').then(m => ({ default: m.AgencyBranches })));
 
 // Kiosk Views
-import { KioskLanding } from '@/components/kiosk/kiosk-landing';
-import { KioskMode } from '@/components/kiosk/kiosk-mode';
+const KioskLanding = lazy(() => import('@/components/kiosk/kiosk-landing').then(m => ({ default: m.KioskLanding })));
+const KioskMode = lazy(() => import('@/components/kiosk/kiosk-mode').then(m => ({ default: m.KioskMode })));
 
 // Admin Views
-import { AdminDashboard } from '@/components/admin/admin-dashboard';
-import { AdminTransactions } from '@/components/admin/admin-transactions';
-import { AdminAgencies } from '@/components/admin/admin-agencies';
-import { AdminAuditLogs } from '@/components/admin/admin-audit-logs';
-import { AdminUsers } from '@/components/admin/admin-users';
-import { AdminAnalytics } from '@/components/admin/admin-analytics';
-import { AdminSettings } from '@/components/admin/admin-settings';
+const AdminDashboard = lazy(() => import('@/components/admin/admin-dashboard').then(m => ({ default: m.AdminDashboard })));
+const AdminTransactions = lazy(() => import('@/components/admin/admin-transactions').then(m => ({ default: m.AdminTransactions })));
+const AdminAgencies = lazy(() => import('@/components/admin/admin-agencies').then(m => ({ default: m.AdminAgencies })));
+const AdminAuditLogs = lazy(() => import('@/components/admin/admin-audit-logs').then(m => ({ default: m.AdminAuditLogs })));
+const AdminUsers = lazy(() => import('@/components/admin/admin-users').then(m => ({ default: m.AdminUsers })));
+const AdminAnalytics = lazy(() => import('@/components/admin/admin-analytics').then(m => ({ default: m.AdminAnalytics })));
+const AdminSettings = lazy(() => import('@/components/admin/admin-settings').then(m => ({ default: m.AdminSettings })));
 
-// Shared
-import { LanguageSwitcher } from '@/components/shared/language-switcher';
-import { ThemeToggle } from '@/components/shared/theme-toggle';
+// Shared (eagerly imported — lightweight)
 import { OnboardingWizard } from '@/components/shared/onboarding-wizard';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
+import { LanguageSwitcher } from '@/components/shared/language-switcher';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { Button } from '@/components/ui/button';
 import {
   Home as HomeIcon,
@@ -97,67 +97,78 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+// Suspense fallback spinner for lazy-loaded views
+function ViewSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+    </div>
+  );
+}
+
 function ViewRouter() {
   const { currentView } = useAppStore();
 
   return (
     <ErrorBoundary>
-      {(() => {
-        switch (currentView) {
-          case 'landing':
-            return <LandingPage />;
-          case 'login':
-            return <LoginForm />;
-          case 'register':
-            return <RegisterForm />;
-          case 'customer-home':
-            return <CustomerHome />;
-          case 'customer-queue':
-            return <CustomerQueue />;
-          case 'customer-history':
-            return <CustomerHistory />;
-          case 'customer-profile':
-            return <CustomerProfile />;
-          case 'customer-notifications':
-            return <CustomerNotifications />;
-          case 'customer-favorites':
-            return <CustomerFavorites />;
-          case 'customer-settings':
-            return <CustomerSettings />;
-          case 'agency-dashboard':
-            return <AgencyDashboard />;
-          case 'agency-settings':
-            return <AgencySettings />;
-          case 'agency-profile':
-            return <AgencyProfile />;
-          case 'agency-subscription':
-            return <AgencySubscription />;
-          case 'agency-reviews':
-            return <AgencyReviews />;
-          case 'agency-employees':
-            return <AgencyEmployees />;
-          case 'agency-branches':
-            return <AgencyBranches />;
-          case 'admin-dashboard':
-            return <AdminDashboard />;
-          case 'admin-transactions':
-            return <AdminTransactions />;
-          case 'admin-agencies':
-            return <AdminAgencies />;
-          case 'admin-audit':
-            return <AdminAuditLogs />;
-          case 'admin-users':
-            return <AdminUsers />;
-          case 'admin-analytics':
-            return <AdminAnalytics />;
-          case 'admin-settings':
-            return <AdminSettings />;
-          case 'kiosk':
-            return <KioskLanding />;
-          default:
-            return <LandingPage />;
-        }
-      })()}
+      <Suspense fallback={<ViewSpinner />}>
+        {(() => {
+          switch (currentView) {
+            case 'landing':
+              return <LandingPage />;
+            case 'login':
+              return <LoginForm />;
+            case 'register':
+              return <RegisterForm />;
+            case 'customer-home':
+              return <CustomerHome />;
+            case 'customer-queue':
+              return <CustomerQueue />;
+            case 'customer-history':
+              return <CustomerHistory />;
+            case 'customer-profile':
+              return <CustomerProfile />;
+            case 'customer-notifications':
+              return <CustomerNotifications />;
+            case 'customer-favorites':
+              return <CustomerFavorites />;
+            case 'customer-settings':
+              return <CustomerSettings />;
+            case 'agency-dashboard':
+              return <AgencyDashboard />;
+            case 'agency-settings':
+              return <AgencySettings />;
+            case 'agency-profile':
+              return <AgencyProfile />;
+            case 'agency-subscription':
+              return <AgencySubscription />;
+            case 'agency-reviews':
+              return <AgencyReviews />;
+            case 'agency-employees':
+              return <AgencyEmployees />;
+            case 'agency-branches':
+              return <AgencyBranches />;
+            case 'admin-dashboard':
+              return <AdminDashboard />;
+            case 'admin-transactions':
+              return <AdminTransactions />;
+            case 'admin-agencies':
+              return <AdminAgencies />;
+            case 'admin-audit':
+              return <AdminAuditLogs />;
+            case 'admin-users':
+              return <AdminUsers />;
+            case 'admin-analytics':
+              return <AdminAnalytics />;
+            case 'admin-settings':
+              return <AdminSettings />;
+            case 'kiosk':
+              return <KioskLanding />;
+            default:
+              return <LandingPage />;
+          }
+        })()}
+      </Suspense>
     </ErrorBoundary>
   );
 }

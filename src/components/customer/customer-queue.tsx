@@ -86,16 +86,23 @@ interface Reservation {
 
 // Confetti particle component
 function ConfettiParticles({ active }: { active: boolean }) {
+  const [particles] = useState(() =>
+    Array.from({ length: 18 }, (_, i) => {
+      const x = Math.random() * 100;
+      return {
+        id: i,
+        x,
+        delay: Math.random() * 0.5,
+        duration: 1.5 + Math.random(),
+        size: 4 + Math.random() * 6,
+        color: ['#10b981', '#14b8a6', '#f59e0b', '#f43f5e', '#06b6d4', '#a78bfa'][Math.floor(Math.random() * 6)],
+        rotation: Math.random() * 360,
+        xDrift: Math.random() * 30 - 15,
+      };
+    })
+  );
+
   if (!active) return null;
-  const particles = Array.from({ length: 18 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    delay: Math.random() * 0.5,
-    duration: 1.5 + Math.random(),
-    size: 4 + Math.random() * 6,
-    color: ['#10b981', '#14b8a6', '#f59e0b', '#f43f5e', '#06b6d4', '#a78bfa'][Math.floor(Math.random() * 6)],
-    rotation: Math.random() * 360,
-  }));
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-20">
@@ -105,7 +112,7 @@ function ConfettiParticles({ active }: { active: boolean }) {
           initial={{ y: -10, x: `${p.x}%`, opacity: 1, scale: 0, rotate: 0 }}
           animate={{
             y: '120%',
-            x: `${p.x + (Math.random() * 30 - 15)}%`,
+            x: `${p.x + p.xDrift}%`,
             opacity: [1, 1, 0],
             scale: [0, 1.2, 0.5],
             rotate: [0, p.rotation * 2, p.rotation * 4],
@@ -461,7 +468,7 @@ export function CustomerQueue() {
     setCancelling(id);
     try {
       const res = await fetch(`/api/reservations/${id}/status`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'CANCELLED' }),
       });
@@ -509,7 +516,7 @@ export function CustomerQueue() {
     setCancelling(resId);
     try {
       const res = await fetch(`/api/reservations/${resId}/toggle-fixed-time`, {
-        method: 'POST',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id, fixedTimeEnabled: !currentEnabled }),
       });
@@ -531,7 +538,7 @@ export function CustomerQueue() {
     setCancelling('leaving');
     try {
       const res = await fetch(`/api/reservations/cancel-active?userId=${user?.id}`, {
-        method: 'DELETE',
+        method: 'PATCH',
       });
       if (res.ok) {
         toast.success(t('queueLeft'));

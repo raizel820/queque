@@ -22,13 +22,13 @@ export async function GET(req: NextRequest) {
 
     const [totalReservations, noShows, cancelled] = await Promise.all([
       db.reservation.count({
-        where: { agencyId, createdAt: { gte: periodAgo } },
+        where: { agencyId, joinedAt: { gte: periodAgo } },
       }),
       db.reservation.count({
-        where: { agencyId, status: 'NO_SHOW', createdAt: { gte: periodAgo } },
+        where: { agencyId, status: 'NO_SHOW', joinedAt: { gte: periodAgo } },
       }),
       db.reservation.count({
-        where: { agencyId, status: 'CANCELLED', createdAt: { gte: periodAgo } },
+        where: { agencyId, status: 'CANCELLED', joinedAt: { gte: periodAgo } },
       }),
     ])
 
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
         status: 'NO_SHOW',
         skippedForNoShow: true,
         reclaimRequestedAt: { not: null },
-        createdAt: { gte: periodAgo },
+        joinedAt: { gte: periodAgo },
       },
     })
 
