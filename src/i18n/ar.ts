@@ -1310,7 +1310,6 @@ const ar = {
   emptyNoTopAgenciesDesc: 'ستظهر المؤسسات الأكثر نشاطاً عند إجراء الحجوزات',
   emptyNoHistoryTitle: 'لا يوجد سجل بعد',
   emptyNoHistoryDesc: 'ستظهر حجوزاتك السابقة هنا',
-  emptyNoHistoryAction: 'تصفح المؤسسات',
 
   // ─── Task 4: Additional i18n keys ─────
   smsProviderAlgeriaSms: "الرسائل القصيرة الجزائرية",
