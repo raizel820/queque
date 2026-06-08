@@ -1308,7 +1308,6 @@ const en: Record<TranslationKeys, string> = {
   emptyNoTopAgenciesDesc: 'Top agencies will appear once reservations are made',
   emptyNoHistoryTitle: 'No History Yet',
   emptyNoHistoryDesc: 'Your past reservations will appear here',
-  emptyNoHistoryAction: 'Browse Agencies',
 
   // ─── Task 4: Additional i18n keys ─────
   smsProviderAlgeriaSms: "Algeria SMS",
