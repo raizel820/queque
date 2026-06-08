@@ -39,6 +39,7 @@ import {
   Sparkles,
   Circle,
   MessageCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -1209,41 +1210,71 @@ export function CustomerHome() {
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-28 w-28 rounded-full bg-emerald-200 dark:bg-emerald-800"
             />
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/60">
+            {/* Decorative dashed circle */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+              className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-24 rounded-full border-2 border-dashed border-emerald-200/60 dark:border-emerald-700/40"
+            />
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/60 shadow-inner">
               {searchQuery.trim() ? (
-                <Search className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-3xl">🔍</span>
               ) : (
-                <Building2 className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-3xl">🏢</span>
               )}
             </div>
           </div>
           {searchQuery.trim() ? (
             <>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{t('noSearchResultsTitle') || 'No Results'}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">
+              <h3 className="text-lg font-bold text-foreground mb-2">{t('noSearchResultsTitle') || 'No Results'}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[300px] mb-4">
                 {t('noSearchResultsDesc') || `No agencies match "${searchQuery}". Try a different search term.`}
               </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  className="gap-2 min-h-[44px] rounded-2xl border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+                  onClick={() => { setSearchQuery(''); setSelectedCategory('ALL'); }}
+                >
+                  <X className="h-4 w-4" />
+                  {t('clearSearch')}
+                </Button>
+                <Button
+                  className="gap-2 min-h-[44px] px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg"
+                  onClick={() => { setSearchQuery(''); setSelectedCategory('ALL'); searchSectionRef.current?.scrollIntoView({ behavior: 'smooth' }); }}
+                >
+                  <Search className="h-4 w-4" />
+                  {t('emptyNoAgenciesAction') || 'Explore Agencies'}
+                </Button>
+              </div>
             </>
           ) : selectedCategory !== 'ALL' ? (
             <>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{t('emptyNoAgenciesTitle')}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">{t('emptyNoAgenciesDesc')}</p>
+              <h3 className="text-lg font-bold text-foreground mb-2">{t('emptyNoAgenciesTitle')}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[300px] mb-4">{t('emptyNoAgenciesDesc')}</p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  className="gap-2 min-h-[44px] rounded-2xl border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
+                  onClick={() => setSelectedCategory('ALL')}
+                >
+                  <X className="h-4 w-4" />
+                  {t('clearSearch')}
+                </Button>
+              </div>
             </>
           ) : (
             <>
-              <h3 className="text-lg font-semibold text-foreground mb-2">{t('emptyNoAgenciesTitle')}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">{t('emptyNoAgenciesDesc')}</p>
+              <h3 className="text-lg font-bold text-foreground mb-2">{t('emptyNoAgenciesTitle')}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-[300px] mb-4">{t('emptyNoAgenciesDesc')}</p>
+              <Button
+                className="gap-2 min-h-[44px] px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg"
+                onClick={fetchAgencies}
+              >
+                <RefreshCw className="h-4 w-4" />
+                {t('emptyNoAgenciesRetry') || 'Retry'}
+              </Button>
             </>
-          )}
-          {(searchQuery.trim() || selectedCategory !== 'ALL') && (
-            <Button
-              variant="outline"
-              className="mt-4 gap-2 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30"
-              onClick={() => { setSearchQuery(''); setSelectedCategory('ALL'); }}
-            >
-              <X className="h-4 w-4" />
-              {t('clearSearch')}
-            </Button>
           )}
         </motion.div>
       ) : (

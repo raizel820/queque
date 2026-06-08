@@ -434,16 +434,54 @@ export function CustomerHistory() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground"
+          className="flex flex-col items-center justify-center py-12 text-center"
         >
           <div className="relative mb-6">
-            <div className="absolute inset-0 rounded-full bg-emerald-400/20 blur-xl" />
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/20 ring-1 ring-emerald-200/60 dark:ring-emerald-800/60">
-              <History className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
+            {/* Pulsing background ring */}
+            <motion.div
+              animate={{ scale: [1, 1.15, 1], opacity: [0.12, 0.04, 0.12] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-28 w-28 rounded-full bg-emerald-200 dark:bg-emerald-800"
+            />
+            {/* Decorative dashed circle */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+              className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-24 rounded-full border-2 border-dashed border-emerald-200/60 dark:border-emerald-700/40"
+            />
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20 shadow-inner">
+              <span className="text-3xl">📋</span>
             </div>
           </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">{t('emptyNoHistoryTitle')}</h3>
-          <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px]">{t('emptyNoHistoryDesc')}</p>
+          <motion.h3
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-lg font-bold text-foreground mb-2"
+          >
+            {t('emptyNoHistoryTitle')}
+          </motion.h3>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-sm text-muted-foreground leading-relaxed max-w-[300px] mb-6"
+          >
+            {t('emptyNoHistoryDesc')}
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Button
+              className="min-h-[44px] px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all gap-2"
+              onClick={() => setView('customer-home')}
+            >
+              <TicketCheck className="h-4 w-4" />
+              {t('emptyNoHistoryAction') || t('browseAgencies') || 'Browse Agencies'}
+            </Button>
+          </motion.div>
         </motion.div>
       ) : (
         <AnimatePresence mode="wait">

@@ -28,6 +28,7 @@
 
 const REALTIME_SERVICE_PORT = 3003
 const REALTIME_SERVICE_URL = `http://localhost:${REALTIME_SERVICE_PORT}`
+const REALTIME_SECRET = process.env.REALTIME_SECRET || ''
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -112,9 +113,15 @@ export async function emitQueueEvent(
   data: Record<string, unknown> = {}
 ): Promise<boolean> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (REALTIME_SECRET) {
+      headers['x-realtime-secret'] = REALTIME_SECRET
+    }
     const response = await fetch(`${REALTIME_SERVICE_URL}/emit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ type, agencyId, data }),
       signal: AbortSignal.timeout(3000),
     })
@@ -135,9 +142,15 @@ export async function emitReservationEvent(
   data: Record<string, unknown> = {}
 ): Promise<boolean> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (REALTIME_SECRET) {
+      headers['x-realtime-secret'] = REALTIME_SECRET
+    }
     const response = await fetch(`${REALTIME_SERVICE_URL}/emit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ type, agencyId, userId, data }),
       signal: AbortSignal.timeout(3000),
     })
@@ -158,9 +171,15 @@ export async function emitNotificationEvent(
   data: Record<string, unknown> = {}
 ): Promise<boolean> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (REALTIME_SECRET) {
+      headers['x-realtime-secret'] = REALTIME_SECRET
+    }
     const response = await fetch(`${REALTIME_SERVICE_URL}/emit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ type, userId, data }),
       signal: AbortSignal.timeout(3000),
     })
@@ -180,9 +199,15 @@ export async function emitKioskEvent(
   data: Record<string, unknown> = {}
 ): Promise<boolean> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (REALTIME_SECRET) {
+      headers['x-realtime-secret'] = REALTIME_SECRET
+    }
     const response = await fetch(`${REALTIME_SERVICE_URL}/emit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ type: 'kiosk:update', agencyId, data }),
       signal: AbortSignal.timeout(3000),
     })
@@ -203,9 +228,15 @@ export async function emitAgencyEvent(
   data: Record<string, unknown> = {}
 ): Promise<boolean> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (REALTIME_SECRET) {
+      headers['x-realtime-secret'] = REALTIME_SECRET
+    }
     const response = await fetch(`${REALTIME_SERVICE_URL}/emit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ type, agencyId, data }),
       signal: AbortSignal.timeout(3000),
     })
@@ -226,9 +257,15 @@ export async function emitStaffEvent(
   data: Record<string, unknown> = {}
 ): Promise<boolean> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (REALTIME_SECRET) {
+      headers['x-realtime-secret'] = REALTIME_SECRET
+    }
     const response = await fetch(`${REALTIME_SERVICE_URL}/emit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ type, agencyId, data }),
       signal: AbortSignal.timeout(3000),
     })
@@ -247,9 +284,15 @@ export async function emitBatch(
   events: Array<QueueEventPayload | ReservationEventPayload | NotificationEventPayload | KioskEventPayload | AgencyEventPayload | StaffEventPayload>
 ): Promise<boolean> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+    if (REALTIME_SECRET) {
+      headers['x-realtime-secret'] = REALTIME_SECRET
+    }
     const response = await fetch(`${REALTIME_SERVICE_URL}/emit-batch`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ events }),
       signal: AbortSignal.timeout(5000),
     })

@@ -673,10 +673,10 @@ export function CustomerNotifications() {
           </motion.div>
 
           <h2 className="text-lg font-semibold text-foreground mb-2">
-            {activeFilter === 'unread' ? (t('noUnreadNotifications') || 'No unread notifications') : t('noNotifications')}
+            {activeFilter === 'unread' ? (t('noUnreadNotifications') || 'No unread notifications') : (t('emptyNoNotificationsTitle') || t('noNotifications'))}
           </h2>
           <p className="text-sm text-muted-foreground text-center max-w-xs mb-6">
-            {t('noNotificationsDesc')}
+            {t('emptyNoNotificationsDesc') || t('noNotificationsDesc')}
           </p>
           <Button
             onClick={() => setView('customer-home')}

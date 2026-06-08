@@ -720,10 +720,10 @@ export function CustomerQueue() {
             className="text-center max-w-xs"
           >
             <h2 className="text-lg font-semibold text-foreground mb-2">
-              {t('noActiveReservations')}
+              {t('emptyNoQueueTitle') || t('noActiveReservations')}
             </h2>
             <p className="text-sm text-muted-foreground mb-2">
-              {t('welcomeSubtitle')}
+              {t('emptyNoQueueDesc') || t('welcomeSubtitle')}
             </p>
             <p className="text-xs text-muted-foreground/70 mb-6">
               {t('joinQueueHint') || 'Find an agency nearby and join their queue to save time'}

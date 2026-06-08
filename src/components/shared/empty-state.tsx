@@ -2,27 +2,47 @@
 
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/hooks/use-language';
-import { isRTL } from '@/i18n';
-import { Lightbulb, X } from 'lucide-react';
-import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 interface EmptyStateProps {
+  /** The illustration/icon area - can be a Lucide icon, emoji, or custom JSX */
   icon: React.ReactNode;
+  /** Title of the empty state - will be shown prominently */
   title: string;
-  description: string;
+  /** Description text - secondary information */
+  description?: string;
+  /** Label for the CTA button */
   actionLabel?: string;
+  /** Handler for CTA button click */
   onAction?: () => void;
-  tip?: string;
+  /** Optional icon for the CTA button */
+  actionIcon?: React.ReactNode;
+  /** Optional secondary action label */
+  secondaryActionLabel?: string;
+  /** Optional secondary action handler */
+  onSecondaryAction?: () => void;
+  /** Optional secondary action icon */
+  secondaryActionIcon?: React.ReactNode;
 }
 
 /**
- * Reusable empty state component with illustration, message, and optional action button.
- * Includes an optional "Quick Tip" that can be dismissed.
+ * Reusable empty state component with consistent styling.
+ * Shows a friendly illustration, clear message, and optional CTA buttons.
+ * Uses the emerald/teal brand color scheme.
  */
-export function EmptyState({ icon, title, description, actionLabel, onAction, tip }: EmptyStateProps) {
-  const { t, lang } = useLanguage();
-  const rtl = isRTL(lang);
-  const [showTip, setShowTip] = useState(true);
+export function EmptyState({
+  icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  actionIcon,
+  secondaryActionLabel,
+  onSecondaryAction,
+  secondaryActionIcon,
+}: EmptyStateProps) {
+  const { t } = useLanguage();
 
   return (
     <motion.div
@@ -31,14 +51,28 @@ export function EmptyState({ icon, title, description, actionLabel, onAction, ti
       transition={{ duration: 0.4, ease: 'easeOut' }}
       className="flex flex-col items-center justify-center py-12 px-4 text-center"
     >
-      {/* Icon */}
+      {/* Icon / Illustration area */}
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
-        className="h-20 w-20 rounded-3xl bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center mb-6 shadow-inner"
+        className="relative mb-6"
       >
-        {icon}
+        {/* Pulsing background ring */}
+        <motion.div
+          animate={{ scale: [1, 1.15, 1], opacity: [0.12, 0.04, 0.12] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-28 w-28 rounded-full bg-emerald-200 dark:bg-emerald-800"
+        />
+        {/* Decorative dashed circle */}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
+          className="absolute top-1/2 start-1/2 -translate-x-1/2 -translate-y-1/2 h-24 w-24 rounded-full border-2 border-dashed border-emerald-200/60 dark:border-emerald-700/40"
+        />
+        <div className="relative h-20 w-20 rounded-3xl bg-gradient-to-br from-emerald-100 to-teal-50 dark:from-emerald-900/30 dark:to-teal-900/20 flex items-center justify-center shadow-inner">
+          {icon}
+        </div>
       </motion.div>
 
       {/* Title */}
@@ -46,57 +80,50 @@ export function EmptyState({ icon, title, description, actionLabel, onAction, ti
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-xl font-bold text-gray-800 mb-2"
+        className="text-lg font-bold text-foreground mb-2"
       >
         {title}
       </motion.h3>
 
       {/* Description */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="text-gray-500 max-w-sm mb-6 text-sm leading-relaxed"
-      >
-        {description}
-      </motion.p>
-
-      {/* Action button */}
-      {actionLabel && onAction && (
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={onAction}
-          className="min-h-[48px] px-8 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
+      {description && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-muted-foreground max-w-sm mb-6 text-sm leading-relaxed"
         >
-          {actionLabel}
-        </motion.button>
+          {description}
+        </motion.p>
       )}
 
-      {/* Quick Tip */}
-      {tip && showTip && (
+      {/* CTA Buttons */}
+      {(actionLabel || secondaryActionLabel) && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-6 max-w-sm w-full bg-amber-50 border border-amber-200 rounded-2xl p-4 relative"
+          transition={{ delay: 0.4 }}
+          className="flex flex-col sm:flex-row items-center gap-3"
         >
-          <button
-            onClick={() => setShowTip(false)}
-            className="absolute top-2 end-2 h-6 w-6 rounded-full bg-amber-100 hover:bg-amber-200 flex items-center justify-center transition-colors"
-          >
-            <X className="h-3.5 w-3.5 text-amber-600" />
-          </button>
-          <div className={`flex items-start gap-2 ${rtl ? 'flex-row-reverse' : ''}`}>
-            <Lightbulb className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div className={`text-start ${rtl ? 'text-end' : ''}`}>
-              <p className="text-xs font-semibold text-amber-700 mb-1">{t('quickTip')}</p>
-              <p className="text-xs text-amber-600 leading-relaxed">{tip}</p>
-            </div>
-          </div>
+          {actionLabel && onAction && (
+            <Button
+              onClick={onAction}
+              className="min-h-[44px] px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all gap-2"
+            >
+              {actionIcon}
+              {actionLabel}
+            </Button>
+          )}
+          {secondaryActionLabel && onSecondaryAction && (
+            <Button
+              variant="outline"
+              onClick={onSecondaryAction}
+              className="min-h-[44px] px-6 rounded-2xl border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 gap-2"
+            >
+              {secondaryActionIcon}
+              {secondaryActionLabel}
+            </Button>
+          )}
         </motion.div>
       )}
     </motion.div>

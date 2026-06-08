@@ -53,6 +53,9 @@ type SocketHandler = (...args: unknown[]) => void
 const SOCKET_URL = '/'
 const REALTIME_PORT = 3003
 
+// Client-side token for Socket.IO handshake auth (matches REALTIME_SECRET on the server)
+const REALTIME_TOKEN = process.env.NEXT_PUBLIC_REALTIME_TOKEN || ''
+
 let globalSocket: Socket | null = null
 let connectionCount = 0
 
@@ -68,6 +71,9 @@ function getSocket(): Socket {
       timeout: 10000,
       query: {
         XTransformPort: String(REALTIME_PORT),
+      },
+      auth: {
+        token: REALTIME_TOKEN,
       },
     })
   }

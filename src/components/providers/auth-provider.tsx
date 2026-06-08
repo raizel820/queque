@@ -39,12 +39,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!persistRehydrated) return;
     if (!isAuthenticated || !useAppStore.getState().user) return;
 
-    // Validate session with the server
+    // Validate session with the server using fetchWithRetry for resilience
     // NextAuth returns {user: {...}, expires: "..."} for valid sessions
     // and {} for expired/unauthenticated sessions
-    fetch('/api/auth/session')
-      .then(res => res.json())
-      .then(data => {
+    (async () => {
+      try {
+        const { fetchWithRetry } = await import('@/lib/fetch-with-retry');
+        const res = await fetchWithRetry('/api/auth/session');
+        const data = await res.json();
         // If session has no user object, the session is expired/invalid
         if (!data.user) {
           const store = useAppStore.getState();
@@ -55,10 +57,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             store.logout();
           }
         }
-      })
-      .catch(() => {
+      } catch {
         // Network error — don't clear session (might be offline)
-      });
+      }
+    })();
   }, [persistRehydrated, isAuthenticated]);
 
   // On initial load, read hash and set the appropriate view
@@ -187,5 +189,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <SessionProvider>{children}</SessionProvider>;
+  // Disable SessionProvider's internal polling since the app uses a custom Zustand-based
+  // auth system. SessionProvider's background fetch to /api/auth/session was the root
+  // cause of [next-auth][error][CLIENT_FETCH_ERROR] because it polls even though no
+  // component uses useSession(). We keep the provider for compatibility but disable polling.
+  return (
+    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
+      {children}
+    </SessionProvider>
+  );
 }

@@ -372,14 +372,14 @@ export function CustomerFavorites() {
               <Heart className="h-3 w-3 text-teal-300 dark:text-teal-700 fill-teal-300 dark:fill-teal-700" />
             </motion.div>
           </div>
-          <p className="text-lg font-semibold text-foreground mb-1">{t('noFavoritesYet')}</p>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">{t('noFavoritesDesc')}</p>
+          <p className="text-lg font-semibold text-foreground mb-1">{t('emptyNoFavoritesTitle') || t('noFavoritesYet')}</p>
+          <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">{t('emptyNoFavoritesDesc') || t('noFavoritesDesc')}</p>
           <Button
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 rounded-xl h-11 shadow-lg shadow-emerald-500/20"
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 rounded-xl h-11 shadow-lg shadow-emerald-500/20 gap-2"
             onClick={() => setView('customer-home')}
           >
-            <Search className="h-4 w-4 me-2" />
-            {t('joinQueue')}
+            <Search className="h-4 w-4 me-1" />
+            {t('emptyNoFavoritesAction') || t('browseAgencies') || 'Browse Agencies'}
           </Button>
         </motion.div>
       ) : (

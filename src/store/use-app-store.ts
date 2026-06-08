@@ -132,11 +132,16 @@ export const useAppStore = create<AppState>()(
           onboarded: false,
         });
         // Clear persisted storage AFTER set (persist middleware writes during set)
+        // Also call NextAuth signOut to clear the server-side session cookie
         setTimeout(() => {
           if (typeof window !== 'undefined') {
             localStorage.removeItem('blasti-app');
             localStorage.removeItem('blasti-lang');
-            window.location.href = '/';
+            // Clear the NextAuth session cookie by calling the signOut endpoint
+            // This prevents stale cookies from causing CLIENT_FETCH_ERROR after logout
+            fetch('/api/auth/signout', { method: 'POST' })
+              .catch(() => { /* silent — best effort */ })
+              .finally(() => { window.location.href = '/'; });
           }
         }, 100);
       },
